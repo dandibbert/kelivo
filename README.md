@@ -57,6 +57,7 @@ English | [简体中文](README_ZH_CN.md)
 - 🌐 **Custom Requests** - Supports custom HTTP request headers and bodies.
 - 🔡 **Custom Fonts** - Bring your own fonts (system fonts / local fonts).
 - ⚙️ **Android Background Generation** - Keep chat generation running in the background (optional setting).
+- 🔗 **Deep Links** - Open chats, compose or send messages from other apps via `kelivo://v1/...` URLs (iOS).
 
 ## 📱 Platform Support
 
@@ -66,6 +67,33 @@ English | [简体中文](README_ZH_CN.md)
 - ✅ Windows
 - ✅ macOS
 - ✅ Linux
+
+## 🔗 Deep Links
+
+Kelivo supports the `kelivo://v1/...` URL scheme on iOS so other apps (shortcuts, browsers, automation tools, etc.) can drive the app:
+
+| Purpose | URL |
+|---|---|
+| Open the chat page | `kelivo://v1/chat` |
+| Start a new conversation | `kelivo://v1/chat/new?assistant=<id>&temporary=1` |
+| Open an existing conversation | `kelivo://v1/chat/<conversationId>` |
+| Fill the message box (replace) | `kelivo://v1/compose?text=<text>&insert=replace` |
+| Fill the message box (append) | `kelivo://v1/compose?text=<text>&insert=append` |
+| Send a message directly | `kelivo://v1/send?text=<text>&target=new` |
+| Open a settings page | `kelivo://v1/settings/<section>` |
+| Open an assistant settings page | `kelivo://v1/assistant/<assistantId>` |
+
+**Query parameters:**
+
+- `text` — the message content (URL-encoded, up to 16 KB).
+- `target` — `current`, `new`, or a specific conversation ID (defaults to `current`).
+- `assistant` / `assistant_name` — select an assistant by ID or unique name (new conversations only).
+- `temporary` — `1`/`0`, create the conversation as temporary (new conversations only).
+- `insert` — `replace` (default) or `append`, for `compose` only.
+
+**Security:** `send` (auto-send) is **disabled by default**. Enable it in *Settings → Allow External Auto-Send* before links can send messages without confirmation. When disabled, external text is only inserted into the input box for review.
+
+Supported settings sections: `display`, `assistants`, `models`, `providers`, `search`, `tts`, `mcp`, `world-book`, `quick-phrases`, `instruction-injection`, `network`, `backup`, `storage`, `about`, `stats`, `logs`.
 
 ## 🤝 Contribution Guide
 

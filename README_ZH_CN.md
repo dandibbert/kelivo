@@ -57,6 +57,7 @@
 - 🌐 **自定义请求** - 支持自定义 HTTP 请求头和请求体
 - 🔡 **自定义字体** - 支持自定义字体（系统字体 / 本地字体）
 - ⚙️ **Android 后台生成对话** - 可在后台持续生成消息（可在设置中开启）。
+- 🔗 **深链接** - 通过 `kelivo://v1/...` URL 从其他应用打开聊天、编辑或发送消息（iOS）。
 
 ## 📱 平台支持
 
@@ -66,6 +67,33 @@
 - ✅ Windows
 - ✅ macOS
 - ✅ Linux
+
+## 🔗 深链接
+
+Kelivo 在 iOS 上支持 `kelivo://v1/...` URL 协议，其他应用（快捷指令、浏览器、自动化工具等）可以通过链接驱动应用：
+
+| 用途 | URL |
+|---|---|
+| 打开聊天页面 | `kelivo://v1/chat` |
+| 新建会话 | `kelivo://v1/chat/new?assistant=<id>&temporary=1` |
+| 打开指定会话 | `kelivo://v1/chat/<conversationId>` |
+| 填入消息框（替换） | `kelivo://v1/compose?text=<text>&insert=replace` |
+| 填入消息框（追加） | `kelivo://v1/compose?text=<text>&insert=append` |
+| 直接发送消息 | `kelivo://v1/send?text=<text>&target=new` |
+| 打开设置页面 | `kelivo://v1/settings/<section>` |
+| 打开助手设置页面 | `kelivo://v1/assistant/<assistantId>` |
+
+**查询参数：**
+
+- `text` — 消息内容（URL 编码，最大 16 KB）。
+- `target` — `current`、`new` 或指定会话 ID（默认 `current`）。
+- `assistant` / `assistant_name` — 按 ID 或唯一名称选择助手（仅限新会话）。
+- `temporary` — `1`/`0`，将会话创建为临时会话（仅限新会话）。
+- `insert` — `replace`（默认）或 `append`，仅用于 `compose`。
+
+**安全说明：** `send`（自动发送）**默认关闭**。需要在 *设置 → 允许外部自动发送* 中开启后，链接才能免确认直接发送消息；未开启时外部文本只会填入输入框供您确认。
+
+支持的设置页面：`display`、`assistants`、`models`、`providers`、`search`、`tts`、`mcp`、`world-book`、`quick-phrases`、`instruction-injection`、`network`、`backup`、`storage`、`about`、`stats`、`logs`。
 
 ## 🤝 贡献指南
 

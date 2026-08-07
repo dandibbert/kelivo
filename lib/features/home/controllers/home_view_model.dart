@@ -960,7 +960,10 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// Create a new conversation.
-  Future<void> createNewConversation() async {
+  Future<void> createNewConversation({
+    String? assistantId,
+    bool temporary = false,
+  }) async {
     // Flush current conversation progress before creating new
     await _chatActions.flushConversationProgress(currentConversation);
     if (!_contextProvider.mounted) return;
@@ -976,12 +979,15 @@ class HomeViewModel extends ChangeNotifier {
       return;
     }
     if (!_contextProvider.mounted) return;
-    final assistantId = ap.currentAssistantId;
-    final a = ap.currentAssistant;
+    final resolvedAssistantId = assistantId ?? ap.currentAssistantId;
+    final a = resolvedAssistantId == null
+        ? ap.currentAssistant
+        : ap.getById(resolvedAssistantId);
 
     final conversation = await _chatService.createDraftConversation(
       title: getTitleForLocale(_contextProvider),
-      assistantId: assistantId,
+      assistantId: resolvedAssistantId,
+      temporary: temporary,
     );
 
     _chatController.setDraftConversation(conversation);

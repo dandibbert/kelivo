@@ -2894,5 +2894,19 @@
   "messageStyleSettingsPageCornerRadius": "圓角半徑",
   "messageStyleSettingsPagePreviewUser": "這是一則使用者訊息",
   "messageStyleSettingsPagePreviewAssistant": "這是一則助手回覆。",
-  "messageStyleSettingsPagePreviewThinking": "思考中"
+  "messageStyleSettingsPagePreviewThinking": "思考中",
+  "settingsPageExternalAutoSend": "允許外部自動發送",
+  "settingsPageExternalAutoSendSubtitle": "允許 kelivo://v1/... 連結從其他應用程式傳送訊息或填入輸入框。關閉時，外部文字僅填入供您確認。",
+  "settingsPageDeepLinks": "深層連結",
+  "settingsPageDeepLinksSubtitle": "透過 kelivo://v1/... URL 從其他應用程式開啟 Kelivo",
+  "aboutPageDeepLinksSection": "深層連結",
+  "aboutPageDeepLinksDescription": "Kelivo 支援 kelivo://v1/... URL 協定，其他應用程式可透過連結開啟聊天、編輯或傳送訊息：",
+  "aboutPageDeepLinkChat": "開啟聊天頁面",
+  "aboutPageDeepLinkNewChat": "新增對話",
+  "aboutPageDeepLinkOpenConversation": "開啟指定對話",
+  "aboutPageDeepLinkCompose": "填入訊息框（取代或附加）",
+  "aboutPageDeepLinkSend": "直接傳送訊息（需開啟對應設定）",
+  "aboutPageDeepLinkSettings": "跳轉到設定頁面",
+  "aboutPageDeepLinkAssistant": "開啟助手設定頁面",
+  "aboutPageDeepLinksFooter": "出於安全考量，自動傳送預設關閉；可在 設定 → 允許外部自動傳送 中開啟。"
 }

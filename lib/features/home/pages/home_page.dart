@@ -24,6 +24,8 @@ import '../../../core/models/chat_message.dart';
 import '../../../core/models/compress_context_options.dart';
 import '../../../core/services/android_process_text.dart';
 import '../../../core/services/logging/flutter_logger.dart';
+import '../../../core/services/deep_link/deep_link_action.dart';
+import '../../../core/services/deep_link/deep_link_service.dart';
 import '../../../utils/sandbox_path_resolver.dart';
 import '../../../utils/platform_utils.dart';
 import '../../../desktop/search_provider_popover.dart';
@@ -41,6 +43,21 @@ import '../../search/widgets/search_settings_sheet.dart';
 import '../../model/widgets/model_select_sheet.dart';
 import '../../mcp/pages/mcp_page.dart';
 import '../../provider/pages/providers_page.dart';
+import '../../assistant/pages/assistant_settings_page.dart';
+import '../../assistant/pages/assistant_settings_edit_page.dart';
+import '../../model/pages/default_model_page.dart';
+import '../../settings/pages/settings_page.dart';
+import '../../settings/pages/display_settings_page.dart';
+import '../../settings/pages/tts_services_page.dart';
+import '../../settings/pages/network_proxy_page.dart';
+import '../../settings/pages/storage_space_page.dart';
+import '../../settings/pages/about_page.dart';
+import '../../settings/pages/log_viewer_page.dart';
+import '../../search/pages/search_services_page.dart';
+import '../../backup/pages/backup_page.dart';
+import '../../instruction_injection/pages/instruction_injection_page.dart';
+import '../../world_book/pages/world_book_page.dart';
+import '../../stats/pages/stats_page.dart';
 import '../../assistant/widgets/mcp_assistant_sheet.dart';
 import '../../quick_phrase/pages/quick_phrases_page.dart';
 import '../../quick_phrase/widgets/quick_phrase_menu.dart';
@@ -64,6 +81,12 @@ import '../controllers/scroll_controller.dart' as scroll_ctrl;
 import 'home_mobile_layout.dart';
 import 'home_desktop_layout.dart';
 import 'package:Kelivo/theme/app_semantic_colors.dart';
+
+class _DeepLinkExecutionException implements Exception {
+  const _DeepLinkExecutionException(this.code);
+
+  final String code;
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -701,6 +724,9 @@ class _HomePageState extends State<HomePage>
   bool _scrollNavHovering = false;
   double _lastViewInsetBottom = 0;
   StreamSubscription<String>? _processTextSub;
+  StreamSubscription<DeepLinkAction>? _deepLinkSub;
+  Future<void> _deepLinkChain = Future<void>.value();
+  late Future<void> _chatInitFuture;
 
   // ============================================================================
   // Page Controller (manages all business logic and state)
@@ -733,8 +759,9 @@ class _HomePageState extends State<HomePage>
     _controller.addListener(_onControllerChanged);
     _drawerController.addListener(_onDrawerValueChanged);
 
-    _controller.initChat();
+    _chatInitFuture = _controller.initChat();
     _initProcessText();
+    _initDeepLinks();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -786,6 +813,7 @@ class _HomePageState extends State<HomePage>
       WidgetsBinding.instance.removeObserver(this);
     } catch (_) {}
     _processTextSub?.cancel();
+    _deepLinkSub?.cancel();
     _controller.removeListener(_onControllerChanged);
     _drawerController.removeListener(_onDrawerValueChanged);
     _inputFocus.dispose();
@@ -829,6 +857,268 @@ class _HomePageState extends State<HomePage>
         _handleProcessText(text);
       }
     });
+  }
+
+  void _initDeepLinks() {
+    final service = DeepLinkService.instance;
+    _deepLinkSub = service.actions.listen(_enqueueDeepLinkAction);
+    for (final action in service.drainPendingActions()) {
+      _enqueueDeepLinkAction(action);
+    }
+  }
+
+  void _enqueueDeepLinkAction(DeepLinkAction action) {
+    _deepLinkChain = _deepLinkChain
+        .then((_) async {
+          await _chatInitFuture;
+          if (!mounted) return;
+          await _handleDeepLinkAction(action);
+        })
+        .catchError((Object error, StackTrace stackTrace) {
+          if (!mounted) return;
+          _showDeepLinkError(
+            error is _DeepLinkExecutionException
+                ? error.code
+                : 'deep_link_failed',
+          );
+        });
+  }
+
+  Future<void> _handleDeepLinkAction(DeepLinkAction action) async {
+    if (action is InvalidDeepLinkAction) {
+      _showDeepLinkError(action.code);
+      return;
+    }
+    if (action is OpenSettingsDeepLinkAction) {
+      _openSettingsDeepLink(action.section);
+      return;
+    }
+    if (action is OpenAssistantDeepLinkAction) {
+      final assistantProvider = context.read<AssistantProvider>();
+      await assistantProvider.loaded;
+      if (assistantProvider.getById(action.assistantId) == null) {
+        throw const _DeepLinkExecutionException('assistant_not_found');
+      }
+      _returnToHomeRoute();
+      rootNavigatorKey.currentState?.push(
+        MaterialPageRoute<void>(
+          builder: (_) => AssistantSettingsEditPage(
+            assistantId: action.assistantId,
+          ),
+        ),
+      );
+      return;
+    }
+
+    _returnToHomeRoute();
+    if (action is OpenChatDeepLinkAction) {
+      _inputFocus.requestFocus();
+      return;
+    }
+    if (action is NewChatDeepLinkAction) {
+      final assistantId = await _resolveDeepLinkAssistant(
+        assistantId: action.assistantId,
+        assistantName: action.assistantName,
+      );
+      await _createDeepLinkConversation(
+        assistantId: assistantId,
+        temporary: action.temporary,
+      );
+      _inputFocus.requestFocus();
+      return;
+    }
+    if (action is OpenConversationDeepLinkAction) {
+      await _switchToDeepLinkConversation(action.conversationId);
+      _inputFocus.requestFocus();
+      return;
+    }
+    if (action is ComposeDeepLinkAction) {
+      await _prepareDeepLinkTarget(
+        action.target,
+        assistantId: action.assistantId,
+        assistantName: action.assistantName,
+        temporary: action.temporary,
+      );
+      _writeExternalText(action.text, action.insertMode);
+      return;
+    }
+    if (action is SendDeepLinkAction) {
+      await _prepareDeepLinkTarget(
+        action.target,
+        assistantId: action.assistantId,
+        assistantName: action.assistantName,
+        temporary: action.temporary,
+      );
+      final settings = context.read<SettingsProvider>();
+      if (!settings.allowExternalAutoSend) {
+        _writeExternalText(action.text, DeepLinkInsertMode.replace);
+        showAppSnackBar(
+          context,
+          message:
+              'External auto-send is disabled. Review the message and send it manually.',
+          type: NotificationType.warning,
+          duration: const Duration(seconds: 4),
+        );
+        return;
+      }
+      final result = await _controller.sendMessage(
+        ChatInputData(text: action.text),
+      );
+      if (result == ChatInputSubmissionResult.rejected) {
+        throw const _DeepLinkExecutionException('send_rejected');
+      }
+    }
+  }
+
+  Future<void> _prepareDeepLinkTarget(
+    DeepLinkTarget target, {
+    String? assistantId,
+    String? assistantName,
+    bool temporary = false,
+  }) async {
+    if (target.type == DeepLinkTargetType.current) {
+      if (_controller.currentConversation == null) {
+        await _createDeepLinkConversation();
+      }
+      return;
+    }
+    if (target.type == DeepLinkTargetType.newConversation) {
+      final resolvedAssistantId = await _resolveDeepLinkAssistant(
+        assistantId: assistantId,
+        assistantName: assistantName,
+      );
+      await _createDeepLinkConversation(
+        assistantId: resolvedAssistantId,
+        temporary: temporary,
+      );
+      return;
+    }
+    await _switchToDeepLinkConversation(target.conversationId!);
+  }
+
+  Future<String?> _resolveDeepLinkAssistant({
+    String? assistantId,
+    String? assistantName,
+  }) async {
+    final provider = context.read<AssistantProvider>();
+    await provider.loaded;
+    if (assistantId != null) {
+      if (provider.getById(assistantId) == null) {
+        throw const _DeepLinkExecutionException('assistant_not_found');
+      }
+      return assistantId;
+    }
+    if (assistantName == null) return null;
+    final matches = provider.assistants
+        .where((assistant) => assistant.name == assistantName)
+        .toList(growable: false);
+    if (matches.isEmpty) {
+      throw const _DeepLinkExecutionException('assistant_not_found');
+    }
+    if (matches.length > 1) {
+      throw const _DeepLinkExecutionException('assistant_name_ambiguous');
+    }
+    return matches.single.id;
+  }
+
+  Future<void> _createDeepLinkConversation({
+    String? assistantId,
+    bool temporary = false,
+  }) async {
+    if (assistantId != null) {
+      await context.read<AssistantProvider>().setCurrentAssistant(assistantId);
+    }
+    await _controller.createExternalConversation(
+      assistantId: assistantId,
+      temporary: temporary,
+    );
+  }
+
+  Future<void> _switchToDeepLinkConversation(String conversationId) async {
+    if (!_controller.hasConversation(conversationId)) {
+      throw const _DeepLinkExecutionException('conversation_not_found');
+    }
+    await _controller.switchConversationAnimated(conversationId);
+  }
+
+  void _writeExternalText(String text, DeepLinkInsertMode mode) {
+    if (!mounted) return;
+    if (mode == DeepLinkInsertMode.replace) {
+      _inputController.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+    } else {
+      final current = _inputController.text;
+      final selection = _inputController.selection;
+      final start =
+          (selection.start >= 0 && selection.start <= current.length)
+          ? selection.start
+          : current.length;
+      final end =
+          (selection.end >= start && selection.end <= current.length)
+          ? selection.end
+          : start;
+      final next = current.replaceRange(start, end, text);
+      _inputController.value = TextEditingValue(
+        text: next,
+        selection: TextSelection.collapsed(offset: start + text.length),
+      );
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _controller.forceScrollToBottomSoon(animate: false);
+      _inputFocus.requestFocus();
+    });
+  }
+
+  void _returnToHomeRoute() {
+    rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+  }
+
+  void _openSettingsDeepLink(String? section) {
+    _returnToHomeRoute();
+    final Widget page = switch (section) {
+      null => const SettingsPage(),
+      'display' => const DisplaySettingsPage(),
+      'assistants' => const AssistantSettingsPage(),
+      'models' => const DefaultModelPage(),
+      'providers' => const ProvidersPage(),
+      'search' => const SearchServicesPage(),
+      'tts' => const TtsServicesPage(),
+      'mcp' => const McpPage(),
+      'world-book' => const WorldBookPage(),
+      'quick-phrases' => const QuickPhrasesPage(),
+      'instruction-injection' => const InstructionInjectionPage(),
+      'network' => const NetworkProxyPage(),
+      'backup' => const BackupPage(),
+      'storage' => const StorageSpacePage(),
+      'about' => const AboutPage(),
+      'stats' => const StatsPage(),
+      'logs' => const LogViewerPage(),
+      _ => const SettingsPage(),
+    };
+    rootNavigatorKey.currentState?.push(
+      MaterialPageRoute<void>(builder: (_) => page),
+    );
+  }
+
+  void _showDeepLinkError(String code) {
+    if (!mounted) return;
+    final message = switch (code) {
+      'assistant_not_found' => 'The requested assistant could not be found.',
+      'assistant_name_ambiguous' =>
+        'More than one assistant has that name. Use the assistant ID instead.',
+      'conversation_not_found' =>
+        'The requested conversation could not be found.',
+      'payload_too_large' => 'The external text is too large for a URL link.',
+      'assistant_target_conflict' =>
+        'Assistant selection can only be used with a new conversation.',
+      'send_rejected' => 'Kelivo could not send the external message.',
+      'unsupported_route' => 'This Kelivo link is not supported.',
+      _ => 'Kelivo could not handle this external link.',
+    };
+    showAppSnackBar(context, message: message, type: NotificationType.error);
   }
 
   void _handleProcessText(String text) {

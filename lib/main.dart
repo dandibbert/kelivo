@@ -47,6 +47,7 @@ import 'core/database/business_repository.dart';
 import 'core/database/business_startup_gate.dart';
 import 'core/database/chat_database_gateway.dart';
 import 'core/services/chat/chat_service.dart';
+import 'core/services/deep_link/deep_link_service.dart';
 import 'core/services/app_exit_flush.dart';
 import 'core/services/backup/restore_archive_pruner.dart';
 import 'core/services/backup/restore_business_lease.dart';
@@ -214,6 +215,7 @@ Future<void> main() async {
       unawaited(_pruneRestoreArchive(appDataDirectory));
       // Enable edge-to-edge to allow content under system bars (Android)
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await DeepLinkService.instance.initialize();
       // Start app (Flutter log capture is toggleable and off by default)
       runApp(
         MyApp(
