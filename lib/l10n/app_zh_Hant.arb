@@ -4299,5 +4299,19 @@
   "phoneControlAssistantHint": "需要同時完成兩項設定：在系統無障礙設定中啟用「Kelivo 手機控制」，並在要使用的助手 → 本地工具中開啟「手機控制」（也可從對話工具選單開啟）。每個助手單獨設定，執行任務時請保持手機解鎖。",
   "phoneControlRestrictedTitle": "無法開啟無障礙？",
   "phoneControlRestrictedHint": "部分下載的 APK 需要先在應用程式資訊右上角選單中選擇「允許受限制的設定」。點擊開啟 Kelivo 應用程式資訊，完成後再返回無障礙設定。",
-  "phoneControlEnableAssistant": "允許此助手使用手機控制"
+  "phoneControlEnableAssistant": "允許此助手使用手機控制",
+  "settingsPageExternalAutoSend": "允許外部自動發送",
+  "settingsPageExternalAutoSendSubtitle": "允許 kelivo://v1/... 連結從其他應用程式傳送訊息或填入輸入框。關閉時，外部文字僅填入供您確認。",
+  "settingsPageDeepLinks": "深層連結",
+  "settingsPageDeepLinksSubtitle": "透過 kelivo://v1/... URL 從其他應用程式開啟 Kelivo",
+  "aboutPageDeepLinksSection": "深層連結",
+  "aboutPageDeepLinksDescription": "Kelivo 支援 kelivo://v1/... URL 協定，其他應用程式可透過連結開啟聊天、編輯或傳送訊息：",
+  "aboutPageDeepLinkChat": "開啟聊天頁面",
+  "aboutPageDeepLinkNewChat": "新增對話",
+  "aboutPageDeepLinkOpenConversation": "開啟指定對話",
+  "aboutPageDeepLinkCompose": "填入訊息框（取代或附加）",
+  "aboutPageDeepLinkSend": "直接傳送訊息（需開啟對應設定）",
+  "aboutPageDeepLinkSettings": "跳轉到設定頁面",
+  "aboutPageDeepLinkAssistant": "開啟助手設定頁面",
+  "aboutPageDeepLinksFooter": "出於安全考量，自動傳送預設關閉；可在 設定 → 允許外部自動傳送 中開啟。"
 }

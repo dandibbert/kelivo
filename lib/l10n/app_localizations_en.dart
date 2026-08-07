@@ -8260,6 +8260,55 @@ class AppLocalizationsEn extends AppLocalizations {
       'Long edge 1024 px · quality 70';
 
   @override
+  String get settingsPageExternalAutoSend => 'Allow External Auto-Send';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      'Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.';
+
+  @override
+  String get settingsPageDeepLinks => 'Deep Links';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      'Open Kelivo from other apps with kelivo://v1/... URLs';
+
+  @override
+  String get aboutPageDeepLinksSection => 'Deep Links';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:';
+
+  @override
+  String get aboutPageDeepLinkChat => 'Open the chat page';
+
+  @override
+  String get aboutPageDeepLinkNewChat => 'Start a new conversation';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation =>
+      'Open an existing conversation';
+
+  @override
+  String get aboutPageDeepLinkCompose =>
+      'Fill the message box (replace or append)';
+
+  @override
+  String get aboutPageDeepLinkSend =>
+      'Send a message directly (requires the setting to be enabled)';
+
+  @override
+  String get aboutPageDeepLinkSettings => 'Jump to a settings page';
+
+  @override
+  String get aboutPageDeepLinkAssistant => 'Open an assistant settings page';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.';
+
+  @override
   String get imageSettingsPageQualityCustom => 'Custom';
 
   @override

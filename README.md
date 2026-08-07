@@ -162,6 +162,19 @@ The [User Guide](https://kelivo.psycheas.top/guide) (Chinese) covers providers, 
 
 - **Mobile**: generation continues in the background with completion notifications, Live Activities on iOS, and Live Updates or a floating status capsule on Android. Share text and files to Kelivo from other apps, or send selected text to it from the Android text selection menu.
 - **Desktop**: a multi-pane layout, customizable keyboard shortcuts including a global shortcut to show or hide Kelivo, system tray, drag-and-drop attachments, and window size and position restored between launches.
+- **Deep links (iOS)**: other apps can open Kelivo with `kelivo://v1/...` URLs. `send` is disabled until *Settings → Allow External Auto-Send* is turned on; otherwise the text is only inserted into the input box.
+
+| Purpose | URL |
+|---|---|
+| Open the chat page | `kelivo://v1/chat` |
+| Start a new conversation | `kelivo://v1/chat/new?assistant=<id>&temporary=1` |
+| Open an existing conversation | `kelivo://v1/chat/<conversationId>` |
+| Fill the message box | `kelivo://v1/compose?text=<text>&insert=replace\|append` |
+| Send a message directly | `kelivo://v1/send?text=<text>&target=new` |
+| Open a settings page | `kelivo://v1/settings/<section>` |
+| Open an assistant settings page | `kelivo://v1/assistant/<assistantId>` |
+
+`text` is URL-encoded and limited to 16 KB. `target` is `current` (default), `new`, or a conversation ID. `assistant` / `assistant_name` and `temporary` apply only to a new conversation. Settings sections: `display`, `assistants`, `models`, `providers`, `search`, `tts`, `mcp`, `world-book`, `quick-phrases`, `instruction-injection`, `network`, `backup`, `storage`, `about`, `stats`, `logs`.
 
 ## 📊 Platform Differences
 

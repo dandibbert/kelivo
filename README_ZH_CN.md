@@ -162,6 +162,19 @@ Kelivo 不只是聊天。模型可以联网搜索、调用 MCP 服务器、按�
 
 - **手机端**：生成可在后台持续进行，并在完成时通知；iOS 支持实时活动，Android 支持实时通知和任务悬浮窗。可以从其他应用分享文本和文件到 Kelivo，Android 上还能通过文本选择菜单直接发送选中的文字。
 - **桌面端**：多栏布局、可自定义的快捷键（包括显示/隐藏 Kelivo 的全局快捷键）、系统托盘、拖拽添加附件，并在重新启动后恢复窗口大小与位置。
+- **深链接（iOS）**：其他应用可以用 `kelivo://v1/...` 打开 Kelivo。`send` 默认关闭，需在 *设置 → 允许外部自动发送* 中开启；未开启时文本只会填入输入框。
+
+| 用途 | URL |
+|---|---|
+| 打开聊天页面 | `kelivo://v1/chat` |
+| 新建会话 | `kelivo://v1/chat/new?assistant=<id>&temporary=1` |
+| 打开指定会话 | `kelivo://v1/chat/<conversationId>` |
+| 填入消息框 | `kelivo://v1/compose?text=<text>&insert=replace\|append` |
+| 直接发送消息 | `kelivo://v1/send?text=<text>&target=new` |
+| 打开设置页面 | `kelivo://v1/settings/<section>` |
+| 打开助手设置页面 | `kelivo://v1/assistant/<assistantId>` |
+
+`text` 需 URL 编码，最大 16 KB。`target` 为 `current`（默认）、`new` 或会话 ID。`assistant` / `assistant_name` 和 `temporary` 只用于新会话。设置页面：`display`、`assistants`、`models`、`providers`、`search`、`tts`、`mcp`、`world-book`、`quick-phrases`、`instruction-injection`、`network`、`backup`、`storage`、`about`、`stats`、`logs`。
 
 ## 📊 平台差异
 

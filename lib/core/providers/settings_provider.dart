@@ -253,6 +253,8 @@ class SettingsProvider extends ChangeNotifier {
       'display_new_chat_on_launch_v1';
   static const String _displayNewChatAfterDeleteKey =
       'display_new_chat_after_delete_v1';
+  static const String _allowExternalAutoSendKey =
+      'external_auto_send_enabled_v1';
   static const String _displayEnterToSendOnMobileKey =
       'display_enter_to_send_on_mobile_v1';
   static const String _displayLongPasteAsFileKey =
@@ -1167,6 +1169,7 @@ class SettingsProvider extends ChangeNotifier {
     _newChatOnAssistantSwitch =
         prefs.getBool(_displayNewChatOnAssistantSwitchKey) ?? false;
     _newChatAfterDelete = prefs.getBool(_displayNewChatAfterDeleteKey) ?? false;
+    _allowExternalAutoSend = prefs.getBool(_allowExternalAutoSendKey) ?? false;
     // Enter to send on mobile: iOS defaults to true, Android defaults to false
     final enterToSendPref = prefs.getBool(_displayEnterToSendOnMobileKey);
     if (enterToSendPref == null) {
@@ -4838,6 +4841,17 @@ Requirements:
     await prefs.setBool(_displayNewChatAfterDeleteKey, v);
   }
 
+  // Security: external deep links may only trigger a real send when opted in.
+  bool _allowExternalAutoSend = false;
+  bool get allowExternalAutoSend => _allowExternalAutoSend;
+  Future<void> setAllowExternalAutoSend(bool v) async {
+    if (_allowExternalAutoSend == v) return;
+    _allowExternalAutoSend = v;
+    notifyListeners();
+    final prefs = _preferences;
+    await prefs.setBool(_allowExternalAutoSendKey, v);
+  }
+
   // Display: enter key sends message on mobile (iOS defaults true, Android defaults false)
   bool _enterToSendOnMobile = false;
   bool get enterToSendOnMobile => _enterToSendOnMobile;
@@ -5810,6 +5824,7 @@ Requirements:
     copy._longPasteAsFile = _longPasteAsFile;
     copy._longPasteAsFileThreshold = _longPasteAsFileThreshold;
     copy._mobileBackground = _mobileBackground;
+    copy._allowExternalAutoSend = _allowExternalAutoSend;
     copy._desktopSendShortcut = _desktopSendShortcut;
     copy._desktopMessageNavButtonsMode = _desktopMessageNavButtonsMode;
     copy._chatFontScale = _chatFontScale;

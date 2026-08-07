@@ -8,24 +8,47 @@
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
-   private let fileSaveHandler = NativeFileSaveHandler()
-   private let backgroundGenerationHandler = MobileBackgroundHandler()
-   private let oauthHandler = IosOAuthHandler()
-   private let deviceLocalToolsHandler = DeviceLocalToolsHandler()
-   private let iosTranslationHandler = IosTranslationHandler()
-   private let scheduledTaskNotifications = ScheduledTaskNotifications()
-   private let incomingShareHandler = IosIncomingShareHandler()
+  private let fileSaveHandler = NativeFileSaveHandler()
+  private let backgroundGenerationHandler = MobileBackgroundHandler()
+  private let oauthHandler = IosOAuthHandler()
+  private let deviceLocalToolsHandler = DeviceLocalToolsHandler()
+  private let iosTranslationHandler = IosTranslationHandler()
+  private let scheduledTaskNotifications = ScheduledTaskNotifications()
+  private let incomingShareHandler = IosIncomingShareHandler()
+  private var deepLinkChannel: FlutterMethodChannel?
+  private var deepLinkDartReady = false
+  private var pendingInitialDeepLink: String?
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    if let launchURL = launchOptions?[.url] as? URL, isPublicKelivoDeepLink(launchURL) {
+      pendingInitialDeepLink = launchURL.absoluteString
+    }
     GeneratedPluginRegistrant.register(with: self)
     // FlutterAppDelegate forwards foreground presentation and cold/warm taps
     // to flutter_local_notifications. Assigning a delegate requests no access.
     UNUserNotificationCenter.current().delegate = self
     if let controller = window?.rootViewController as? FlutterViewController {
       incomingShareHandler.register(messenger: controller.binaryMessenger)
+      let deepLinkChannel = FlutterMethodChannel(name: "app.deep_link", binaryMessenger: controller.binaryMessenger)
+      self.deepLinkChannel = deepLinkChannel
+      deepLinkChannel.setMethodCallHandler { [weak self] call, result in
+        guard call.method == "getInitialUrl" else {
+          result(FlutterMethodNotImplemented)
+          return
+        }
+        guard let self else {
+          result(nil)
+          return
+        }
+        self.deepLinkDartReady = true
+        let pending = self.pendingInitialDeepLink
+        self.pendingInitialDeepLink = nil
+        result(pending)
+      }
+
       let clipboardChannel = FlutterMethodChannel(name: "app.clipboard", binaryMessenger: controller.binaryMessenger)
       clipboardChannel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
         if call.method == "getClipboardImages" {
@@ -165,7 +188,19 @@
     if url.scheme == "kelivo" && url.host == "oauth-return" {
       return true
     }
+    if isPublicKelivoDeepLink(url) {
+      if deepLinkDartReady {
+        deepLinkChannel?.invokeMethod("onUrl", arguments: url.absoluteString)
+      } else {
+        pendingInitialDeepLink = url.absoluteString
+      }
+      return true
+    }
     return super.application(app, open: url, options: options)
+  }
+
+  private func isPublicKelivoDeepLink(_ url: URL) -> Bool {
+    url.scheme?.lowercased() == "kelivo" && url.host?.lowercased() == "v1"
   }
 }
 

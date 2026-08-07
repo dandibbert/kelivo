@@ -7918,6 +7918,52 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageSettingsPageQualitySaverSubtitle => '最长边 1024 像素 · 质量 70';
 
   @override
+  String get settingsPageExternalAutoSend => '允许外部自动发送';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      '允许 kelivo://v1/... 链接从其他应用发送消息或填入输入框。关闭时，外部文本仅填入供您确认。';
+
+  @override
+  String get settingsPageDeepLinks => '深链接';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      '通过 kelivo://v1/... URL 从其他应用打开 Kelivo';
+
+  @override
+  String get aboutPageDeepLinksSection => '深链接';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo 支持 kelivo://v1/... URL 协议，其他应用可通过链接打开聊天、编辑或发送消息：';
+
+  @override
+  String get aboutPageDeepLinkChat => '打开聊天页面';
+
+  @override
+  String get aboutPageDeepLinkNewChat => '新建会话';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => '打开指定会话';
+
+  @override
+  String get aboutPageDeepLinkCompose => '填入消息框（替换或追加）';
+
+  @override
+  String get aboutPageDeepLinkSend => '直接发送消息（需开启对应设置）';
+
+  @override
+  String get aboutPageDeepLinkSettings => '跳转到设置页面';
+
+  @override
+  String get aboutPageDeepLinkAssistant => '打开助手设置页面';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      '出于安全考虑，自动发送默认关闭；可在 设置 → 允许外部自动发送 中开启。';
+
+  @override
   String get imageSettingsPageQualityCustom => '自定义';
 
   @override
@@ -19549,6 +19595,52 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get imageSettingsPageQualitySaverSubtitle => '最长边 1024 像素 · 质量 70';
+
+  @override
+  String get settingsPageExternalAutoSend => '允许外部自动发送';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      '允许 kelivo://v1/... 链接从其他应用发送消息或填入输入框。关闭时，外部文本仅填入供您确认。';
+
+  @override
+  String get settingsPageDeepLinks => '深链接';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      '通过 kelivo://v1/... URL 从其他应用打开 Kelivo';
+
+  @override
+  String get aboutPageDeepLinksSection => '深链接';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo 支持 kelivo://v1/... URL 协议，其他应用可通过链接打开聊天、编辑或发送消息：';
+
+  @override
+  String get aboutPageDeepLinkChat => '打开聊天页面';
+
+  @override
+  String get aboutPageDeepLinkNewChat => '新建会话';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => '打开指定会话';
+
+  @override
+  String get aboutPageDeepLinkCompose => '填入消息框（替换或追加）';
+
+  @override
+  String get aboutPageDeepLinkSend => '直接发送消息（需开启对应设置）';
+
+  @override
+  String get aboutPageDeepLinkSettings => '跳转到设置页面';
+
+  @override
+  String get aboutPageDeepLinkAssistant => '打开助手设置页面';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      '出于安全考虑，自动发送默认关闭；可在 设置 → 允许外部自动发送 中开启。';
 
   @override
   String get imageSettingsPageQualityCustom => '自定义';
@@ -31257,6 +31349,52 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get imageSettingsPageQualitySaverSubtitle => '最長邊 1024 像素 · 品質 70';
+
+  @override
+  String get settingsPageExternalAutoSend => '允許外部自動發送';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      '允許 kelivo://v1/... 連結從其他應用程式傳送訊息或填入輸入框。關閉時，外部文字僅填入供您確認。';
+
+  @override
+  String get settingsPageDeepLinks => '深層連結';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      '透過 kelivo://v1/... URL 從其他應用程式開啟 Kelivo';
+
+  @override
+  String get aboutPageDeepLinksSection => '深層連結';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo 支援 kelivo://v1/... URL 協定，其他應用程式可透過連結開啟聊天、編輯或傳送訊息：';
+
+  @override
+  String get aboutPageDeepLinkChat => '開啟聊天頁面';
+
+  @override
+  String get aboutPageDeepLinkNewChat => '新增對話';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => '開啟指定對話';
+
+  @override
+  String get aboutPageDeepLinkCompose => '填入訊息框（取代或附加）';
+
+  @override
+  String get aboutPageDeepLinkSend => '直接傳送訊息（需開啟對應設定）';
+
+  @override
+  String get aboutPageDeepLinkSettings => '跳轉到設定頁面';
+
+  @override
+  String get aboutPageDeepLinkAssistant => '開啟助手設定頁面';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      '出於安全考量，自動傳送預設關閉；可在 設定 → 允許外部自動傳送 中開啟。';
 
   @override
   String get imageSettingsPageQualityCustom => '自訂';
