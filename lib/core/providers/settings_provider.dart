@@ -206,6 +206,8 @@ class SettingsProvider extends ChangeNotifier {
       'display_new_chat_on_launch_v1';
   static const String _displayNewChatAfterDeleteKey =
       'display_new_chat_after_delete_v1';
+  static const String _allowExternalAutoSendKey =
+      'external_auto_send_enabled_v1';
   static const String _displayEnterToSendOnMobileKey =
       'display_enter_to_send_on_mobile_v1';
   static const String _desktopSendShortcutKey = 'desktop_send_shortcut_v1';
@@ -1038,6 +1040,7 @@ class SettingsProvider extends ChangeNotifier {
     _newChatOnAssistantSwitch =
         prefs.getBool(_displayNewChatOnAssistantSwitchKey) ?? false;
     _newChatAfterDelete = prefs.getBool(_displayNewChatAfterDeleteKey) ?? false;
+    _allowExternalAutoSend = prefs.getBool(_allowExternalAutoSendKey) ?? false;
     // Enter to send on mobile: iOS defaults to true, Android defaults to false
     final enterToSendPref = prefs.getBool(_displayEnterToSendOnMobileKey);
     if (enterToSendPref == null) {
@@ -4214,6 +4217,17 @@ Requirements:
     await prefs.setBool(_displayNewChatAfterDeleteKey, v);
   }
 
+  // Security: external deep links may only trigger a real send when opted in.
+  bool _allowExternalAutoSend = false;
+  bool get allowExternalAutoSend => _allowExternalAutoSend;
+  Future<void> setAllowExternalAutoSend(bool v) async {
+    if (_allowExternalAutoSend == v) return;
+    _allowExternalAutoSend = v;
+    notifyListeners();
+    final prefs = _preferences;
+    await prefs.setBool(_allowExternalAutoSendKey, v);
+  }
+
   // Display: enter key sends message on mobile (iOS defaults true, Android defaults false)
   bool _enterToSendOnMobile = false;
   bool get enterToSendOnMobile => _enterToSendOnMobile;
@@ -5049,6 +5063,7 @@ Requirements:
     copy._newChatOnLaunch = _newChatOnLaunch;
     copy._newChatOnAssistantSwitch = _newChatOnAssistantSwitch;
     copy._newChatAfterDelete = _newChatAfterDelete;
+    copy._allowExternalAutoSend = _allowExternalAutoSend;
     copy._iosBackgroundGenerationEnabled = _iosBackgroundGenerationEnabled;
     copy._iosBackgroundTaskRefreshEnabled = _iosBackgroundTaskRefreshEnabled;
     copy._iosLiveActivityEnabled = _iosLiveActivityEnabled;

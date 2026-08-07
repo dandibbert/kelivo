@@ -446,6 +446,90 @@ class _AboutPageState extends State<AboutPage> {
 
           const SizedBox(height: 12),
 
+          // Deep Links explanation card
+          _iosSectionCard(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Lucide.Link2,
+                          size: 18,
+                          color: cs.onSurface.withValues(alpha: 0.9),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.aboutPageDeepLinksSection,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: AppFontWeights.semibold,
+                            color: cs.onSurface.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.aboutPageDeepLinksDescription,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.onSurface.withValues(alpha: 0.7),
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _DeepLinkExampleRow(
+                      label: l10n.aboutPageDeepLinkChat,
+                      example: 'kelivo://v1/chat',
+                    ),
+                    _DeepLinkExampleRow(
+                      label: l10n.aboutPageDeepLinkNewChat,
+                      example: 'kelivo://v1/chat/new',
+                    ),
+                    _DeepLinkExampleRow(
+                      label: l10n.aboutPageDeepLinkOpenConversation,
+                      example: 'kelivo://v1/chat/{conversationId}',
+                    ),
+                    _DeepLinkExampleRow(
+                      label: l10n.aboutPageDeepLinkCompose,
+                      example: 'kelivo://v1/compose?text=hi&insert=replace',
+                    ),
+                    _DeepLinkExampleRow(
+                      label: l10n.aboutPageDeepLinkSend,
+                      example: 'kelivo://v1/send?text=hi&target=new',
+                    ),
+                    _DeepLinkExampleRow(
+                      label: l10n.aboutPageDeepLinkSettings,
+                      example: 'kelivo://v1/settings/general',
+                    ),
+                    _DeepLinkExampleRow(
+                      label: l10n.aboutPageDeepLinkAssistant,
+                      example: 'kelivo://v1/assistant/{assistantId}',
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n.aboutPageDeepLinksFooter,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurface.withValues(alpha: 0.6),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
           // iOS-style list card
           _iosSectionCard(
             children: [
@@ -546,6 +630,58 @@ Widget _iosSectionCard({required List<Widget> children}) {
       );
     },
   );
+}
+
+class _DeepLinkExampleRow extends StatelessWidget {
+  const _DeepLinkExampleRow({required this.label, required this.example});
+
+  final String label;
+  final String example;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '• ',
+            style: TextStyle(
+              fontSize: 13,
+              color: cs.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: cs.onSurface.withValues(alpha: 0.85),
+                    fontWeight: AppFontWeights.medium,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  example,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                    color: cs.primary.withValues(alpha: 0.9),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Widget _iosDivider(BuildContext context) {

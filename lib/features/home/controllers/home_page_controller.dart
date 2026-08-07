@@ -1111,6 +1111,22 @@ class HomePageController extends ChangeNotifier {
     }
   }
 
+  Future<void> createExternalConversation({
+    String? assistantId,
+    bool temporary = false,
+  }) async {
+    _exitUserMessageEdit(clearDraft: true);
+    _translations.clear();
+    await _viewModel.createNewConversation(
+      assistantId: assistantId,
+      temporary: temporary,
+    );
+    notifyListeners();
+    _scrollToBottomSoon(animate: false);
+  }
+
+  bool hasConversation(String id) => _chatService.getConversation(id) != null;
+
   Future<void> _createNewConversation() async {
     _exitUserMessageEdit(clearDraft: true);
     _translations.clear();

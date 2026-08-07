@@ -13255,6 +13255,90 @@ abstract class AppLocalizations {
   /// **'Long edge 1024 px · quality 70'**
   String get imageSettingsPageQualitySaverSubtitle;
 
+  /// No description provided for @settingsPageExternalAutoSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow External Auto-Send'**
+  String get settingsPageExternalAutoSend;
+
+  /// No description provided for @settingsPageExternalAutoSendSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.'**
+  String get settingsPageExternalAutoSendSubtitle;
+
+  /// No description provided for @settingsPageDeepLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Links'**
+  String get settingsPageDeepLinks;
+
+  /// No description provided for @settingsPageDeepLinksSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Kelivo from other apps with kelivo://v1/... URLs'**
+  String get settingsPageDeepLinksSubtitle;
+
+  /// No description provided for @aboutPageDeepLinksSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Links'**
+  String get aboutPageDeepLinksSection;
+
+  /// No description provided for @aboutPageDeepLinksDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:'**
+  String get aboutPageDeepLinksDescription;
+
+  /// No description provided for @aboutPageDeepLinkChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the chat page'**
+  String get aboutPageDeepLinkChat;
+
+  /// No description provided for @aboutPageDeepLinkNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new conversation'**
+  String get aboutPageDeepLinkNewChat;
+
+  /// No description provided for @aboutPageDeepLinkOpenConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an existing conversation'**
+  String get aboutPageDeepLinkOpenConversation;
+
+  /// No description provided for @aboutPageDeepLinkCompose.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill the message box (replace or append)'**
+  String get aboutPageDeepLinkCompose;
+
+  /// No description provided for @aboutPageDeepLinkSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a message directly (requires the setting to be enabled)'**
+  String get aboutPageDeepLinkSend;
+
+  /// No description provided for @aboutPageDeepLinkSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to a settings page'**
+  String get aboutPageDeepLinkSettings;
+
+  /// No description provided for @aboutPageDeepLinkAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an assistant settings page'**
+  String get aboutPageDeepLinkAssistant;
+
+  /// No description provided for @aboutPageDeepLinksFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.'**
+  String get aboutPageDeepLinksFooter;
+
   /// No description provided for @imageSettingsPageQualityCustom.
   ///
   /// In en, this message translates to:
