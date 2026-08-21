@@ -13969,6 +13969,60 @@ abstract class AppLocalizations {
   /// **'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.'**
   String get aboutPageDeepLinksFooter;
 
+  /// No description provided for @deepLinkAutoSendDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'External auto-send is disabled. Review the message and send it manually.'**
+  String get deepLinkAutoSendDisabled;
+
+  /// No description provided for @deepLinkAssistantNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested assistant could not be found.'**
+  String get deepLinkAssistantNotFound;
+
+  /// No description provided for @deepLinkAssistantNameAmbiguous.
+  ///
+  /// In en, this message translates to:
+  /// **'More than one assistant has that name. Use the assistant ID instead.'**
+  String get deepLinkAssistantNameAmbiguous;
+
+  /// No description provided for @deepLinkConversationNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested conversation could not be found.'**
+  String get deepLinkConversationNotFound;
+
+  /// No description provided for @deepLinkPayloadTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The external text is too large for a URL link.'**
+  String get deepLinkPayloadTooLarge;
+
+  /// No description provided for @deepLinkAssistantTargetConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant selection can only be used with a new conversation.'**
+  String get deepLinkAssistantTargetConflict;
+
+  /// No description provided for @deepLinkSendRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo could not send the external message.'**
+  String get deepLinkSendRejected;
+
+  /// No description provided for @deepLinkUnsupportedRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'This Kelivo link is not supported.'**
+  String get deepLinkUnsupportedRoute;
+
+  /// No description provided for @deepLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo could not handle this external link.'**
+  String get deepLinkFailed;
+
   /// No description provided for @imageSettingsPageQualityCustom.
   ///
   /// In en, this message translates to:

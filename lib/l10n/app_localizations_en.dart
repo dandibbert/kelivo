@@ -7692,6 +7692,40 @@ class AppLocalizationsEn extends AppLocalizations {
       'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.';
 
   @override
+  String get deepLinkAutoSendDisabled =>
+      'External auto-send is disabled. Review the message and send it manually.';
+
+  @override
+  String get deepLinkAssistantNotFound =>
+      'The requested assistant could not be found.';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous =>
+      'More than one assistant has that name. Use the assistant ID instead.';
+
+  @override
+  String get deepLinkConversationNotFound =>
+      'The requested conversation could not be found.';
+
+  @override
+  String get deepLinkPayloadTooLarge =>
+      'The external text is too large for a URL link.';
+
+  @override
+  String get deepLinkAssistantTargetConflict =>
+      'Assistant selection can only be used with a new conversation.';
+
+  @override
+  String get deepLinkSendRejected =>
+      'Kelivo could not send the external message.';
+
+  @override
+  String get deepLinkUnsupportedRoute => 'This Kelivo link is not supported.';
+
+  @override
+  String get deepLinkFailed => 'Kelivo could not handle this external link.';
+
+  @override
   String get imageSettingsPageQualityCustom => 'Custom';
 
   @override

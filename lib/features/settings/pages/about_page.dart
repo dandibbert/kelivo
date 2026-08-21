@@ -539,7 +539,7 @@ class _AboutPageState extends State<AboutPage> {
                     ),
                     _DeepLinkExampleRow(
                       label: l10n.aboutPageDeepLinkSettings,
-                      example: 'kelivo://v1/settings/general',
+                      example: 'kelivo://v1/settings',
                     ),
                     _DeepLinkExampleRow(
                       label: l10n.aboutPageDeepLinkAssistant,

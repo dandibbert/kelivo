@@ -2908,5 +2908,14 @@
   "aboutPageDeepLinkSend": "直接傳送訊息（需開啟對應設定）",
   "aboutPageDeepLinkSettings": "跳轉到設定頁面",
   "aboutPageDeepLinkAssistant": "開啟助手設定頁面",
-  "aboutPageDeepLinksFooter": "出於安全考量，自動傳送預設關閉；可在 設定 → 允許外部自動傳送 中開啟。"
+  "aboutPageDeepLinksFooter": "出於安全考量，自動傳送預設關閉；可在 設定 → 允許外部自動傳送 中開啟。",
+  "deepLinkAutoSendDisabled": "外部自動傳送已關閉。請檢查訊息後手動傳送。",
+  "deepLinkAssistantNotFound": "找不到指定的助手。",
+  "deepLinkAssistantNameAmbiguous": "有多個同名助手，請改用助手 ID。",
+  "deepLinkConversationNotFound": "找不到指定的對話。",
+  "deepLinkPayloadTooLarge": "外部文字過長，無法透過 URL 連結處理。",
+  "deepLinkAssistantTargetConflict": "只有新增對話時可以指定助手。",
+  "deepLinkSendRejected": "Kelivo 無法傳送外部訊息。",
+  "deepLinkUnsupportedRoute": "不支援此 Kelivo 連結。",
+  "deepLinkFailed": "Kelivo 無法處理此外部連結。"
 }

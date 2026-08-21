@@ -2908,5 +2908,14 @@
   "messageStyleSettingsPageCornerRadius": "圆角半径",
   "messageStyleSettingsPagePreviewUser": "这是一条用户消息",
   "messageStyleSettingsPagePreviewAssistant": "这是一条助手回复。",
-  "messageStyleSettingsPagePreviewThinking": "思考中"
+  "messageStyleSettingsPagePreviewThinking": "思考中",
+  "deepLinkAutoSendDisabled": "外部自动发送已关闭。请检查消息后手动发送。",
+  "deepLinkAssistantNotFound": "找不到指定的助手。",
+  "deepLinkAssistantNameAmbiguous": "存在多个同名助手，请改用助手 ID。",
+  "deepLinkConversationNotFound": "找不到指定的会话。",
+  "deepLinkPayloadTooLarge": "外部文本过长，无法通过 URL 链接处理。",
+  "deepLinkAssistantTargetConflict": "仅新建会话时可以指定助手。",
+  "deepLinkSendRejected": "Kelivo 无法发送外部消息。",
+  "deepLinkUnsupportedRoute": "不支持此 Kelivo 链接。",
+  "deepLinkFailed": "Kelivo 无法处理此外部链接。"
 }
