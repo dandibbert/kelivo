@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.4] - 2026-08-21
+
+### Fixed
+- Preserve widget lifecycle safety while processing external deep links.
+- Localize external deep-link warnings and errors in English, Simplified Chinese, and Traditional Chinese.
+- Correct the About page settings deep-link example.
+
 ## [1.1.18] - 2026-08-07
 
 ### Added

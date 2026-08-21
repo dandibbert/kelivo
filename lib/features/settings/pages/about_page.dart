@@ -480,7 +480,7 @@ class _AboutPageState extends State<AboutPage> {
           const SizedBox(height: 12),
 
           // Deep Links explanation card
-          _iosSectionCard(
+          SectionCard(
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -540,7 +540,7 @@ class _AboutPageState extends State<AboutPage> {
                     ),
                     _DeepLinkExampleRow(
                       label: l10n.aboutPageDeepLinkSettings,
-                      example: 'kelivo://v1/settings/general',
+                      example: 'kelivo://v1/settings',
                     ),
                     _DeepLinkExampleRow(
                       label: l10n.aboutPageDeepLinkAssistant,
@@ -638,32 +638,6 @@ class _AboutPageState extends State<AboutPage> {
 }
 
 // --- iOS-style helpers (mirroring Settings/Display pages) ---
-
-Widget _iosSectionCard({required List<Widget> children}) {
-  return Builder(
-    builder: (context) {
-      final theme = Theme.of(context);
-      final cs = theme.colorScheme;
-      final isDark = theme.brightness == Brightness.dark;
-      final Color bg = context.appColors.surfaceCard;
-      return Container(
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: cs.outlineVariant.withValues(alpha: isDark ? 0.08 : 0.06),
-            width: 0.6,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(children: children),
-        ),
-      );
-    },
-  );
-}
 
 class _DeepLinkExampleRow extends StatelessWidget {
   const _DeepLinkExampleRow({required this.label, required this.example});

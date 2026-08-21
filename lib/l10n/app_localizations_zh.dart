@@ -7964,6 +7964,33 @@ class AppLocalizationsZh extends AppLocalizations {
       '出于安全考虑，自动发送默认关闭；可在 设置 → 允许外部自动发送 中开启。';
 
   @override
+  String get deepLinkAutoSendDisabled => '外部自动发送已关闭。请检查消息后手动发送。';
+
+  @override
+  String get deepLinkAssistantNotFound => '找不到指定的助手。';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous => '存在多个同名助手，请改用助手 ID。';
+
+  @override
+  String get deepLinkConversationNotFound => '找不到指定的会话。';
+
+  @override
+  String get deepLinkPayloadTooLarge => '外部文本过长，无法通过 URL 链接处理。';
+
+  @override
+  String get deepLinkAssistantTargetConflict => '仅新建会话时可以指定助手。';
+
+  @override
+  String get deepLinkSendRejected => 'Kelivo 无法发送外部消息。';
+
+  @override
+  String get deepLinkUnsupportedRoute => '不支持此 Kelivo 链接。';
+
+  @override
+  String get deepLinkFailed => 'Kelivo 无法处理此外部链接。';
+
+  @override
   String get imageSettingsPageQualityCustom => '自定义';
 
   @override
@@ -19641,6 +19668,33 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get aboutPageDeepLinksFooter =>
       '出于安全考虑，自动发送默认关闭；可在 设置 → 允许外部自动发送 中开启。';
+
+  @override
+  String get deepLinkAutoSendDisabled => '外部自动发送已关闭。请检查消息后手动发送。';
+
+  @override
+  String get deepLinkAssistantNotFound => '找不到指定的助手。';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous => '存在多个同名助手，请改用助手 ID。';
+
+  @override
+  String get deepLinkConversationNotFound => '找不到指定的会话。';
+
+  @override
+  String get deepLinkPayloadTooLarge => '外部文本过长，无法通过 URL 链接处理。';
+
+  @override
+  String get deepLinkAssistantTargetConflict => '仅新建会话时可以指定助手。';
+
+  @override
+  String get deepLinkSendRejected => 'Kelivo 无法发送外部消息。';
+
+  @override
+  String get deepLinkUnsupportedRoute => '不支持此 Kelivo 链接。';
+
+  @override
+  String get deepLinkFailed => 'Kelivo 无法处理此外部链接。';
 
   @override
   String get imageSettingsPageQualityCustom => '自定义';
@@ -31395,6 +31449,33 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get aboutPageDeepLinksFooter =>
       '出於安全考量，自動傳送預設關閉；可在 設定 → 允許外部自動傳送 中開啟。';
+
+  @override
+  String get deepLinkAutoSendDisabled => '外部自動傳送已關閉。請檢查訊息後手動傳送。';
+
+  @override
+  String get deepLinkAssistantNotFound => '找不到指定的助手。';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous => '有多個同名助手，請改用助手 ID。';
+
+  @override
+  String get deepLinkConversationNotFound => '找不到指定的對話。';
+
+  @override
+  String get deepLinkPayloadTooLarge => '外部文字過長，無法透過 URL 連結處理。';
+
+  @override
+  String get deepLinkAssistantTargetConflict => '只有新增對話時可以指定助手。';
+
+  @override
+  String get deepLinkSendRejected => 'Kelivo 無法傳送外部訊息。';
+
+  @override
+  String get deepLinkUnsupportedRoute => '不支援此 Kelivo 連結。';
+
+  @override
+  String get deepLinkFailed => 'Kelivo 無法處理此外部連結。';
 
   @override
   String get imageSettingsPageQualityCustom => '自訂';

@@ -742,7 +742,6 @@ class _HomePageState extends State<HomePage>
   bool _incomingShareChanged = false;
   StreamSubscription<DeepLinkAction>? _deepLinkSub;
   Future<void> _deepLinkChain = Future<void>.value();
-  late Future<void> _chatInitFuture;
 
   // ============================================================================
   // Page Controller (manages all business logic and state)
@@ -1050,13 +1049,13 @@ class _HomePageState extends State<HomePage>
         assistantName: action.assistantName,
         temporary: action.temporary,
       );
+      if (!mounted) return;
       final settings = context.read<SettingsProvider>();
       if (!settings.allowExternalAutoSend) {
         _writeExternalText(action.text, DeepLinkInsertMode.replace);
         showAppSnackBar(
           context,
-          message:
-              'External auto-send is disabled. Review the message and send it manually.',
+          message: AppLocalizations.of(context)!.deepLinkAutoSendDisabled,
           type: NotificationType.warning,
           duration: const Duration(seconds: 4),
         );
@@ -1206,18 +1205,16 @@ class _HomePageState extends State<HomePage>
 
   void _showDeepLinkError(String code) {
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
     final message = switch (code) {
-      'assistant_not_found' => 'The requested assistant could not be found.',
-      'assistant_name_ambiguous' =>
-        'More than one assistant has that name. Use the assistant ID instead.',
-      'conversation_not_found' =>
-        'The requested conversation could not be found.',
-      'payload_too_large' => 'The external text is too large for a URL link.',
-      'assistant_target_conflict' =>
-        'Assistant selection can only be used with a new conversation.',
-      'send_rejected' => 'Kelivo could not send the external message.',
-      'unsupported_route' => 'This Kelivo link is not supported.',
-      _ => 'Kelivo could not handle this external link.',
+      'assistant_not_found' => l10n.deepLinkAssistantNotFound,
+      'assistant_name_ambiguous' => l10n.deepLinkAssistantNameAmbiguous,
+      'conversation_not_found' => l10n.deepLinkConversationNotFound,
+      'payload_too_large' => l10n.deepLinkPayloadTooLarge,
+      'assistant_target_conflict' => l10n.deepLinkAssistantTargetConflict,
+      'send_rejected' => l10n.deepLinkSendRejected,
+      'unsupported_route' => l10n.deepLinkUnsupportedRoute,
+      _ => l10n.deepLinkFailed,
     };
     showAppSnackBar(context, message: message, type: NotificationType.error);
   }
