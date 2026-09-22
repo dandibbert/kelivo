@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-09-22
+
+### Changed
+- Rebase onto upstream Kelivo 1.3.0 and keep the iOS `kelivo://v1` deep links.
+- Bump version to 1.3.1+80.
+
 ## [1.2.4] - 2026-08-21
 
 ### Fixed
