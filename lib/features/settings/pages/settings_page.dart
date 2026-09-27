@@ -33,7 +33,8 @@ import '../../home/services/local_tools_service.dart';
 import 'storage_space_page.dart';
 import '../../stats/pages/stats_page.dart';
 import '../../../core/services/storage/storage_usage_service.dart';
-import '../../../shared/widgets/ios_switch.dart';
+import '../../../core/services/deep_link/deep_link_service.dart';
+import 'deep_link_settings_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/services/haptics.dart';
 import 'package:Kelivo/theme/app_font_weights.dart';
@@ -204,15 +205,6 @@ class SettingsPage extends StatelessWidget {
                   );
                 },
               ),
-              _iosDivider(context),
-              _iosToggleRow(
-                context,
-                icon: Lucide.ExternalLink,
-                label: l10n.settingsPageExternalAutoSend,
-                subtitle: l10n.settingsPageExternalAutoSendSubtitle,
-                value: settings.allowExternalAutoSend,
-                onChanged: settings.setAllowExternalAutoSend,
-              ),
             ],
           ),
 
@@ -382,6 +374,21 @@ class SettingsPage extends StatelessWidget {
                   );
                 },
               ),
+              if (DeepLinkService.supported) ...[
+                _iosDivider(context),
+                _iosNavRow(
+                  context,
+                  icon: Lucide.Link2,
+                  label: l10n.deepLinkPageTitle,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const DeepLinkSettingsPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ],
           ),
 
@@ -680,61 +687,6 @@ Widget _iosNavRow(
         },
       );
     },
-  );
-}
-
-Widget _iosToggleRow(
-  BuildContext context, {
-  required IconData icon,
-  required String label,
-  String? subtitle,
-  required bool value,
-  required ValueChanged<bool> onChanged,
-}) {
-  final cs = Theme.of(context).colorScheme;
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    child: Row(
-      children: [
-        SizedBox(
-          width: 36,
-          child: Icon(
-            icon,
-            size: 20,
-            color: cs.onSurface.withValues(alpha: 0.9),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: cs.onSurface.withValues(alpha: 0.9),
-                  fontWeight: AppFontWeights.medium,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: cs.onSurface.withValues(alpha: 0.6),
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        IosSwitch(value: value, onChanged: onChanged),
-      ],
-    ),
   );
 }
 

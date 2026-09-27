@@ -8260,55 +8260,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Long edge 1024 px · quality 70';
 
   @override
-  String get settingsPageExternalAutoSend => 'Allow External Auto-Send';
-
-  @override
-  String get settingsPageExternalAutoSendSubtitle =>
-      'Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.';
-
-  @override
-  String get settingsPageDeepLinks => 'Deep Links';
-
-  @override
-  String get settingsPageDeepLinksSubtitle =>
-      'Open Kelivo from other apps with kelivo://v1/... URLs';
-
-  @override
-  String get aboutPageDeepLinksSection => 'Deep Links';
-
-  @override
-  String get aboutPageDeepLinksDescription =>
-      'Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:';
-
-  @override
-  String get aboutPageDeepLinkChat => 'Open the chat page';
-
-  @override
-  String get aboutPageDeepLinkNewChat => 'Start a new conversation';
-
-  @override
-  String get aboutPageDeepLinkOpenConversation =>
-      'Open an existing conversation';
-
-  @override
-  String get aboutPageDeepLinkCompose =>
-      'Fill the message box (replace or append)';
-
-  @override
-  String get aboutPageDeepLinkSend =>
-      'Send a message directly (requires the setting to be enabled)';
-
-  @override
-  String get aboutPageDeepLinkSettings => 'Jump to a settings page';
-
-  @override
-  String get aboutPageDeepLinkAssistant => 'Open an assistant settings page';
-
-  @override
-  String get aboutPageDeepLinksFooter =>
-      'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.';
-
-  @override
   String get deepLinkAutoSendDisabled =>
       'External auto-send is disabled. Review the message and send it manually.';
 
@@ -8341,6 +8292,104 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deepLinkFailed => 'Kelivo could not handle this external link.';
+
+  @override
+  String get deepLinkPageTitle => 'Deep Links';
+
+  @override
+  String get deepLinkPagePermissionSection => 'Permission';
+
+  @override
+  String get deepLinkPageAutoSend => 'Allow External Auto-Send';
+
+  @override
+  String get deepLinkPageAutoSendFooter =>
+      'When off, send links only fill the input box so you can review the message before sending it yourself.';
+
+  @override
+  String get deepLinkPageBuilderSection => 'Create Link';
+
+  @override
+  String get deepLinkPageAction => 'Action';
+
+  @override
+  String get deepLinkPageActionOpenChat => 'Open Chat';
+
+  @override
+  String get deepLinkPageActionNewChat => 'New Conversation';
+
+  @override
+  String get deepLinkPageActionCompose => 'Fill Input Box';
+
+  @override
+  String get deepLinkPageActionSend => 'Send Message';
+
+  @override
+  String get deepLinkPageActionSettings => 'Open Settings Page';
+
+  @override
+  String get deepLinkPageActionAssistant => 'Open Assistant Settings';
+
+  @override
+  String get deepLinkPageTarget => 'Conversation';
+
+  @override
+  String get deepLinkPageTargetCurrent => 'Current';
+
+  @override
+  String get deepLinkPageTargetNew => 'New';
+
+  @override
+  String get deepLinkPageAssistant => 'Assistant';
+
+  @override
+  String get deepLinkPageAssistantCurrent => 'Current Assistant';
+
+  @override
+  String get deepLinkPageInsertMode => 'Insert Mode';
+
+  @override
+  String get deepLinkPageInsertReplace => 'Replace';
+
+  @override
+  String get deepLinkPageInsertAppend => 'Append';
+
+  @override
+  String get deepLinkPageSettingsSection => 'Page';
+
+  @override
+  String get deepLinkPageMessage => 'Message';
+
+  @override
+  String get deepLinkPageMessageRequiredHint => 'Message to send';
+
+  @override
+  String get deepLinkPageMessageOptionalHint =>
+      'Text to put in the input box (optional)';
+
+  @override
+  String get deepLinkPageLinkSection => 'Link';
+
+  @override
+  String get deepLinkPageLinkIncomplete =>
+      'Enter a message to generate the link.';
+
+  @override
+  String get deepLinkPageTryLink => 'Try It';
+
+  @override
+  String get deepLinkPageSendNeedsPermission =>
+      'Auto-send is off, so this link will only fill the input box.';
+
+  @override
+  String get deepLinkPageShortcutFooter =>
+      'Paste the link into Shortcuts or any app that opens URLs. To link a specific conversation or assistant, long-press it in the sidebar and choose Copy Link.';
+
+  @override
+  String get deepLinkCopyLink => 'Copy Link';
+
+  @override
+  String get deepLinkLinkCopied => 'Link copied';
 
   @override
   String get imageSettingsPageQualityCustom => 'Custom';

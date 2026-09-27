@@ -1002,9 +1002,8 @@ class _HomePageState extends State<HomePage>
       _returnToHomeRoute();
       rootNavigatorKey.currentState?.push(
         MaterialPageRoute<void>(
-          builder: (_) => AssistantSettingsEditPage(
-            assistantId: action.assistantId,
-          ),
+          builder: (_) =>
+              AssistantSettingsEditPage(assistantId: action.assistantId),
         ),
       );
       return;
@@ -1151,12 +1150,10 @@ class _HomePageState extends State<HomePage>
     } else {
       final current = _inputController.text;
       final selection = _inputController.selection;
-      final start =
-          (selection.start >= 0 && selection.start <= current.length)
+      final start = (selection.start >= 0 && selection.start <= current.length)
           ? selection.start
           : current.length;
-      final end =
-          (selection.end >= start && selection.end <= current.length)
+      final end = (selection.end >= start && selection.end <= current.length)
           ? selection.end
           : start;
       final next = current.replaceRange(start, end, text);

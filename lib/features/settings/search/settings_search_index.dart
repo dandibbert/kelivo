@@ -33,6 +33,7 @@ enum SettingsSearchDestination {
   worldBook,
   memory,
   networkProxy,
+  deepLinks,
   backup,
   storage,
   scheduledTasks,
@@ -77,6 +78,7 @@ extension SettingsSearchDestinationDetails on SettingsSearchDestination {
     SettingsSearchDestination.worldBook => l.settingsPageWorldBook,
     SettingsSearchDestination.memory => l.settingsPageMemory,
     SettingsSearchDestination.networkProxy => l.settingsPageNetworkProxy,
+    SettingsSearchDestination.deepLinks => l.deepLinkPageTitle,
     SettingsSearchDestination.backup => l.settingsPageBackup,
     SettingsSearchDestination.storage => l.settingsPageChatStorage,
     SettingsSearchDestination.scheduledTasks => l.scheduledTasksTitle,
@@ -115,6 +117,7 @@ extension SettingsSearchDestinationDetails on SettingsSearchDestination {
     SettingsSearchDestination.worldBook => LucideIcons.bookOpen,
     SettingsSearchDestination.memory => LucideIcons.brain,
     SettingsSearchDestination.networkProxy => LucideIcons.ethernetPort,
+    SettingsSearchDestination.deepLinks => LucideIcons.link2,
     SettingsSearchDestination.backup => LucideIcons.database,
     SettingsSearchDestination.storage => LucideIcons.hardDrive,
     SettingsSearchDestination.scheduledTasks => LucideIcons.clock,
@@ -443,6 +446,16 @@ class SettingsSearchIndex {
       page: true,
       keywords: 'network proxy socks http 网络 網路 代理 端口 埠',
     );
+    if (!kIsWeb && platform == TargetPlatform.iOS) {
+      add(
+        'deepLinks',
+        SettingsSearchDestination.deepLinks,
+        (l) => l.deepLinkPageTitle,
+        page: true,
+        keywords:
+            'deep link url scheme shortcuts auto send 深链接 深層連結 链接 連結 快捷指令 捷徑 自动发送 自動發送',
+      );
+    }
     add(
       'backup',
       SettingsSearchDestination.backup,

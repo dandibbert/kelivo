@@ -162,7 +162,7 @@ The [User Guide](https://kelivo.psycheas.top/guide) (Chinese) covers providers, 
 
 - **Mobile**: generation continues in the background with completion notifications, Live Activities on iOS, and Live Updates or a floating status capsule on Android. Share text and files to Kelivo from other apps, or send selected text to it from the Android text selection menu.
 - **Desktop**: a multi-pane layout, customizable keyboard shortcuts including a global shortcut to show or hide Kelivo, system tray, drag-and-drop attachments, and window size and position restored between launches.
-- **Deep links (iOS)**: other apps can open Kelivo with `kelivo://v1/...` URLs. `send` is disabled until *Settings → Allow External Auto-Send* is turned on; otherwise the text is only inserted into the input box.
+- **Deep links (iOS)**: other apps can open Kelivo with `kelivo://v1/...` URLs. `send` is disabled until *Settings → Deep Links → Allow External Auto-Send* is turned on; otherwise the text is only inserted into the input box. *Settings → Deep Links* also builds and copies links for you, and the sidebar long-press menu of a conversation or assistant has **Copy Link**.
 
 | Purpose | URL |
 |---|---|

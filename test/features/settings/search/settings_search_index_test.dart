@@ -73,7 +73,9 @@ void main() {
         reason: 'The title bar setting is Linux-only.',
       );
     }
-    expect(ios, contains('scheduledTasks'));
+    expect(ios, containsAll(['scheduledTasks', 'deepLinks']));
+    expect(android, isNot(contains('deepLinks')));
+    expect(desktop, isNot(contains('deepLinks')));
     expect(ios, isNot(contains('hotkeys')));
     expect(ios, isNot(contains('logs')));
     expect(

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Settings → Deep Links** page (iOS): the auto-send permission plus a link builder that assembles `kelivo://v1/...` links from pickers and copies them in one tap.
+- **Copy Link** in the sidebar long-press menus of conversations and assistants (iOS).
+
+### Changed
+- Move the external auto-send toggle out of the General section into the Deep Links page, and drop the deep-link reference card from the About page.
+
 ## [1.3.1] - 2026-09-22
 
 ### Changed

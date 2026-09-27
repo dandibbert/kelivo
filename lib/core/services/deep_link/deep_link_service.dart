@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
 
 import 'deep_link_action.dart';
@@ -9,6 +11,9 @@ class DeepLinkService {
   DeepLinkService._();
 
   static final DeepLinkService instance = DeepLinkService._();
+
+  /// Only the iOS runner registers the `kelivo` scheme and native bridge.
+  static bool get supported => defaultTargetPlatform == TargetPlatform.iOS;
 
   static const MethodChannel _channel = MethodChannel('app.deep_link');
   static const Duration _dedupeWindow = Duration(seconds: 1);

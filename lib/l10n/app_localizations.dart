@@ -14959,90 +14959,6 @@ abstract class AppLocalizations {
   /// **'Long edge 1024 px · quality 70'**
   String get imageSettingsPageQualitySaverSubtitle;
 
-  /// No description provided for @settingsPageExternalAutoSend.
-  ///
-  /// In en, this message translates to:
-  /// **'Allow External Auto-Send'**
-  String get settingsPageExternalAutoSend;
-
-  /// No description provided for @settingsPageExternalAutoSendSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.'**
-  String get settingsPageExternalAutoSendSubtitle;
-
-  /// No description provided for @settingsPageDeepLinks.
-  ///
-  /// In en, this message translates to:
-  /// **'Deep Links'**
-  String get settingsPageDeepLinks;
-
-  /// No description provided for @settingsPageDeepLinksSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Kelivo from other apps with kelivo://v1/... URLs'**
-  String get settingsPageDeepLinksSubtitle;
-
-  /// No description provided for @aboutPageDeepLinksSection.
-  ///
-  /// In en, this message translates to:
-  /// **'Deep Links'**
-  String get aboutPageDeepLinksSection;
-
-  /// No description provided for @aboutPageDeepLinksDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:'**
-  String get aboutPageDeepLinksDescription;
-
-  /// No description provided for @aboutPageDeepLinkChat.
-  ///
-  /// In en, this message translates to:
-  /// **'Open the chat page'**
-  String get aboutPageDeepLinkChat;
-
-  /// No description provided for @aboutPageDeepLinkNewChat.
-  ///
-  /// In en, this message translates to:
-  /// **'Start a new conversation'**
-  String get aboutPageDeepLinkNewChat;
-
-  /// No description provided for @aboutPageDeepLinkOpenConversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Open an existing conversation'**
-  String get aboutPageDeepLinkOpenConversation;
-
-  /// No description provided for @aboutPageDeepLinkCompose.
-  ///
-  /// In en, this message translates to:
-  /// **'Fill the message box (replace or append)'**
-  String get aboutPageDeepLinkCompose;
-
-  /// No description provided for @aboutPageDeepLinkSend.
-  ///
-  /// In en, this message translates to:
-  /// **'Send a message directly (requires the setting to be enabled)'**
-  String get aboutPageDeepLinkSend;
-
-  /// No description provided for @aboutPageDeepLinkSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Jump to a settings page'**
-  String get aboutPageDeepLinkSettings;
-
-  /// No description provided for @aboutPageDeepLinkAssistant.
-  ///
-  /// In en, this message translates to:
-  /// **'Open an assistant settings page'**
-  String get aboutPageDeepLinkAssistant;
-
-  /// No description provided for @aboutPageDeepLinksFooter.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.'**
-  String get aboutPageDeepLinksFooter;
-
   /// No description provided for @deepLinkAutoSendDisabled.
   ///
   /// In en, this message translates to:
@@ -15096,6 +15012,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Kelivo could not handle this external link.'**
   String get deepLinkFailed;
+
+  /// No description provided for @deepLinkPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Links'**
+  String get deepLinkPageTitle;
+
+  /// No description provided for @deepLinkPagePermissionSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission'**
+  String get deepLinkPagePermissionSection;
+
+  /// No description provided for @deepLinkPageAutoSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow External Auto-Send'**
+  String get deepLinkPageAutoSend;
+
+  /// No description provided for @deepLinkPageAutoSendFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, send links only fill the input box so you can review the message before sending it yourself.'**
+  String get deepLinkPageAutoSendFooter;
+
+  /// No description provided for @deepLinkPageBuilderSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Link'**
+  String get deepLinkPageBuilderSection;
+
+  /// No description provided for @deepLinkPageAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get deepLinkPageAction;
+
+  /// No description provided for @deepLinkPageActionOpenChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Chat'**
+  String get deepLinkPageActionOpenChat;
+
+  /// No description provided for @deepLinkPageActionNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New Conversation'**
+  String get deepLinkPageActionNewChat;
+
+  /// No description provided for @deepLinkPageActionCompose.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill Input Box'**
+  String get deepLinkPageActionCompose;
+
+  /// No description provided for @deepLinkPageActionSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Message'**
+  String get deepLinkPageActionSend;
+
+  /// No description provided for @deepLinkPageActionSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings Page'**
+  String get deepLinkPageActionSettings;
+
+  /// No description provided for @deepLinkPageActionAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Assistant Settings'**
+  String get deepLinkPageActionAssistant;
+
+  /// No description provided for @deepLinkPageTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get deepLinkPageTarget;
+
+  /// No description provided for @deepLinkPageTargetCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get deepLinkPageTargetCurrent;
+
+  /// No description provided for @deepLinkPageTargetNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get deepLinkPageTargetNew;
+
+  /// No description provided for @deepLinkPageAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get deepLinkPageAssistant;
+
+  /// No description provided for @deepLinkPageAssistantCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Assistant'**
+  String get deepLinkPageAssistantCurrent;
+
+  /// No description provided for @deepLinkPageInsertMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert Mode'**
+  String get deepLinkPageInsertMode;
+
+  /// No description provided for @deepLinkPageInsertReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get deepLinkPageInsertReplace;
+
+  /// No description provided for @deepLinkPageInsertAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Append'**
+  String get deepLinkPageInsertAppend;
+
+  /// No description provided for @deepLinkPageSettingsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Page'**
+  String get deepLinkPageSettingsSection;
+
+  /// No description provided for @deepLinkPageMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get deepLinkPageMessage;
+
+  /// No description provided for @deepLinkPageMessageRequiredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message to send'**
+  String get deepLinkPageMessageRequiredHint;
+
+  /// No description provided for @deepLinkPageMessageOptionalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Text to put in the input box (optional)'**
+  String get deepLinkPageMessageOptionalHint;
+
+  /// No description provided for @deepLinkPageLinkSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get deepLinkPageLinkSection;
+
+  /// No description provided for @deepLinkPageLinkIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a message to generate the link.'**
+  String get deepLinkPageLinkIncomplete;
+
+  /// No description provided for @deepLinkPageTryLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Try It'**
+  String get deepLinkPageTryLink;
+
+  /// No description provided for @deepLinkPageSendNeedsPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-send is off, so this link will only fill the input box.'**
+  String get deepLinkPageSendNeedsPermission;
+
+  /// No description provided for @deepLinkPageShortcutFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the link into Shortcuts or any app that opens URLs. To link a specific conversation or assistant, long-press it in the sidebar and choose Copy Link.'**
+  String get deepLinkPageShortcutFooter;
+
+  /// No description provided for @deepLinkCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Link'**
+  String get deepLinkCopyLink;
+
+  /// No description provided for @deepLinkLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get deepLinkLinkCopied;
 
   /// No description provided for @imageSettingsPageQualityCustom.
   ///

@@ -7,6 +7,26 @@ class DeepLinkParser {
 
   static const int maxTextBytes = 16 * 1024;
 
+  /// Settings pages reachable through `kelivo://v1/settings/<section>`.
+  static const List<String> settingsSections = <String>[
+    'display',
+    'assistants',
+    'models',
+    'providers',
+    'search',
+    'tts',
+    'mcp',
+    'world-book',
+    'quick-phrases',
+    'instruction-injection',
+    'network',
+    'backup',
+    'storage',
+    'about',
+    'stats',
+    'logs',
+  ];
+
   DeepLinkAction? parse(Uri uri) {
     if (uri.scheme.toLowerCase() != 'kelivo') return null;
     if (uri.host.toLowerCase() != 'v1') return null;
@@ -146,26 +166,8 @@ class DeepLinkParser {
     if (segments.length != 2) {
       return const InvalidDeepLinkAction('unsupported_route');
     }
-    const supported = <String>{
-      'display',
-      'assistants',
-      'models',
-      'providers',
-      'search',
-      'tts',
-      'mcp',
-      'world-book',
-      'quick-phrases',
-      'instruction-injection',
-      'network',
-      'backup',
-      'storage',
-      'about',
-      'stats',
-      'logs',
-    };
     final section = segments[1];
-    return supported.contains(section)
+    return settingsSections.contains(section)
         ? OpenSettingsDeepLinkAction(section: section)
         : const InvalidDeepLinkAction('unsupported_route');
   }

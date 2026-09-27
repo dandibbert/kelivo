@@ -5,8 +5,7 @@ enum DeepLinkInsertMode { replace, append }
 class DeepLinkTarget {
   const DeepLinkTarget._(this.type, this.conversationId);
 
-  const DeepLinkTarget.current()
-    : this._(DeepLinkTargetType.current, null);
+  const DeepLinkTarget.current() : this._(DeepLinkTargetType.current, null);
 
   const DeepLinkTarget.newConversation()
     : this._(DeepLinkTargetType.newConversation, null);

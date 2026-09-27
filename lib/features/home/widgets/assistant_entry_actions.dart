@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../../../core/models/assistant.dart';
 import '../../../core/providers/assistant_provider.dart';
+import '../../../core/services/deep_link/deep_link_action.dart';
+import '../../../core/services/deep_link/deep_link_service.dart';
 import '../controllers/chat_actions.dart';
 import '../../../core/providers/tag_provider.dart';
 import '../../../desktop/desktop_context_menu.dart';
@@ -16,6 +18,7 @@ import '../../../shared/widgets/snackbar.dart';
 import '../../assistant/pages/assistant_settings_edit_page.dart';
 import '../../assistant/pages/tags_manager_page.dart';
 import '../../assistant/widgets/tags_manager_dialog.dart';
+import '../../settings/pages/deep_link_settings_page.dart';
 import 'package:Kelivo/theme/app_font_weights.dart';
 import 'package:Kelivo/theme/app_semantic_colors.dart';
 
@@ -226,6 +229,14 @@ class AssistantEntryActions {
                   beforeAction?.call();
                   await _duplicateAssistantFromMenu(context, assistant);
                 }),
+                if (DeepLinkService.supported)
+                  row(l10n.deepLinkCopyLink, Lucide.Link2, () async {
+                    beforeAction?.call();
+                    await copyDeepLink(
+                      context,
+                      OpenAssistantDeepLinkAction(assistant.id),
+                    );
+                  }),
                 if (hasTag)
                   row(l10n.assistantTagsClearTag, Lucide.Eraser, () async {
                     beforeAction?.call();

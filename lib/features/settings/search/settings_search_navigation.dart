@@ -15,6 +15,7 @@ import '../../workspace/pages/workspace_settings_page.dart';
 import '../../world_book/pages/world_book_page.dart';
 import '../pages/about_page.dart';
 import '../pages/auto_retry_page.dart';
+import '../pages/deep_link_settings_page.dart';
 import '../pages/display_settings_page.dart';
 import '../pages/image_settings_page.dart';
 import '../pages/log_viewer_page.dart';
@@ -66,6 +67,7 @@ Future<void> openMobileSettingsSearchResult(
     SettingsSearchDestination.worldBook => const WorldBookPage(),
     SettingsSearchDestination.memory => const MemorySettingsPage(),
     SettingsSearchDestination.networkProxy => const NetworkProxyPage(),
+    SettingsSearchDestination.deepLinks => const DeepLinkSettingsPage(),
     SettingsSearchDestination.backup => const BackupPage(),
     SettingsSearchDestination.storage => const StorageSpacePage(),
     SettingsSearchDestination.scheduledTasks => const ScheduledTasksPage(),

@@ -13,6 +13,9 @@ import '../../../core/providers/backup_reminder_provider.dart';
 import '../../../core/models/chat_item.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../settings/pages/settings_page.dart';
+import '../../settings/pages/deep_link_settings_page.dart';
+import '../../../core/services/deep_link/deep_link_action.dart';
+import '../../../core/services/deep_link/deep_link_service.dart';
 import '../../translate/pages/translate_page.dart';
 import '../../backup/pages/backup_page.dart';
 import '../../../core/providers/assistant_provider.dart';
@@ -517,6 +520,15 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                         await chatService.duplicateConversation(chat.id);
                       },
                     ),
+                    if (DeepLinkService.supported)
+                      row(
+                        icon: Lucide.Link2,
+                        label: l10n.deepLinkCopyLink,
+                        action: () => copyDeepLink(
+                          context,
+                          OpenConversationDeepLinkAction(chat.id),
+                        ),
+                      ),
                     row(
                       icon: Lucide.Shuffle,
                       label: l10n.sideDrawerMenuMoveTo,
