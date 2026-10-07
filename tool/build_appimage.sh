@@ -37,7 +37,8 @@ Icon=kelivo
 Type=Application
 Categories=Utility;
 DESKTOP
-cp "$repo_root/assets/app_icon.png" "$work_dir/kelivo.png"
+# linuxdeploy rejects 1024x1024; 512x512 is its largest valid icon size.
+convert "$repo_root/assets/app_icon.png" -resize 512x512 "$work_dir/kelivo.png"
 
 curl -fL --retry 3 -o "$work_dir/linuxdeploy.AppImage" \
   "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${arch}.AppImage"
