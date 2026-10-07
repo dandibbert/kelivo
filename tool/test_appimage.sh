@@ -21,7 +21,7 @@ apt-get update -qq
 # Desktop/display dependencies only. Installing GStreamer here would hide the
 # missing-library regression this check is intended to catch.
 apt-get install -y --no-install-recommends \
-  ca-certificates libgtk-3-0 libgl1-mesa-dri libegl1 libasound2 \
+  ca-certificates libgtk-3-0 libgl1-mesa-dri libegl1 libgles2 libasound2 \
   dbus-x11 xvfb xauth xdotool
 
 cd /tmp
