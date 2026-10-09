@@ -39,6 +39,7 @@ class DeepLinkParser {
   }
 
   DeepLinkAction _parseChat(Uri uri, List<String> segments) {
+    final query = _queryOf(uri);
     if (segments.length == 1) return const OpenChatDeepLinkAction();
     if (segments.length != 2) {
       return const InvalidDeepLinkAction('unsupported_route');
@@ -51,28 +52,29 @@ class DeepLinkParser {
           : OpenConversationDeepLinkAction(second);
     }
 
-    final temporary = _parseBool(uri.queryParameters['temporary']);
-    if (temporary == null && uri.queryParameters.containsKey('temporary')) {
+    final temporary = _parseBool(query['temporary']);
+    if (temporary == null && query.containsKey('temporary')) {
       return const InvalidDeepLinkAction('invalid_parameter');
     }
     return NewChatDeepLinkAction(
-      assistantId: _clean(uri.queryParameters['assistant']),
-      assistantName: _clean(uri.queryParameters['assistant_name']),
+      assistantId: _clean(query['assistant']),
+      assistantName: _clean(query['assistant_name']),
       temporary: temporary ?? false,
     );
   }
 
   DeepLinkAction _parseCompose(Uri uri) {
-    final target = _parseTarget(uri.queryParameters['target']);
+    final query = _queryOf(uri);
+    final target = _parseTarget(query['target']);
     if (target == null) {
       return const InvalidDeepLinkAction('invalid_parameter');
     }
-    final temporary = _parseBool(uri.queryParameters['temporary']);
-    if (temporary == null && uri.queryParameters.containsKey('temporary')) {
+    final temporary = _parseBool(query['temporary']);
+    if (temporary == null && query.containsKey('temporary')) {
       return const InvalidDeepLinkAction('invalid_parameter');
     }
-    final assistantId = _clean(uri.queryParameters['assistant']);
-    final assistantName = _clean(uri.queryParameters['assistant_name']);
+    final assistantId = _clean(query['assistant']);
+    final assistantName = _clean(query['assistant_name']);
     final conflict = _validateNewTargetOnlyOptions(
       target,
       assistantId: assistantId,
@@ -81,7 +83,7 @@ class DeepLinkParser {
     );
     if (conflict != null) return conflict;
 
-    final insert = switch (uri.queryParameters['insert']?.toLowerCase()) {
+    final insert = switch (query['insert']?.toLowerCase()) {
       null || '' || 'replace' => DeepLinkInsertMode.replace,
       'append' => DeepLinkInsertMode.append,
       _ => null,
@@ -90,7 +92,7 @@ class DeepLinkParser {
       return const InvalidDeepLinkAction('invalid_parameter');
     }
 
-    final text = uri.queryParameters['text'] ?? '';
+    final text = query['text'] ?? '';
     if (!_textFits(text)) {
       return const InvalidDeepLinkAction('payload_too_large');
     }
@@ -105,16 +107,17 @@ class DeepLinkParser {
   }
 
   DeepLinkAction _parseSend(Uri uri) {
-    final target = _parseTarget(uri.queryParameters['target']);
+    final query = _queryOf(uri);
+    final target = _parseTarget(query['target']);
     if (target == null) {
       return const InvalidDeepLinkAction('invalid_parameter');
     }
-    final temporary = _parseBool(uri.queryParameters['temporary']);
-    if (temporary == null && uri.queryParameters.containsKey('temporary')) {
+    final temporary = _parseBool(query['temporary']);
+    if (temporary == null && query.containsKey('temporary')) {
       return const InvalidDeepLinkAction('invalid_parameter');
     }
-    final assistantId = _clean(uri.queryParameters['assistant']);
-    final assistantName = _clean(uri.queryParameters['assistant_name']);
+    final assistantId = _clean(query['assistant']);
+    final assistantName = _clean(query['assistant_name']);
     final conflict = _validateNewTargetOnlyOptions(
       target,
       assistantId: assistantId,
@@ -123,7 +126,7 @@ class DeepLinkParser {
     );
     if (conflict != null) return conflict;
 
-    final text = uri.queryParameters['text'];
+    final text = query['text'];
     if (text == null || text.trim().isEmpty) {
       return const InvalidDeepLinkAction('invalid_parameter');
     }
@@ -220,6 +223,55 @@ class DeepLinkParser {
   String? _clean(String? value) {
     final trimmed = value?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  /// Reads the query leniently so hand-written links that mix encoded and raw
+  /// text still work. Unlike [Uri.queryParameters]:
+  ///  * `+` stays a literal plus (RFC 3986). Spaces are `%20` or raw spaces.
+  ///  * A `%` that does not start a valid escape stays literal, and invalid
+  ///    UTF-8 is replaced instead of throwing.
+  static Map<String, String> _queryOf(Uri uri) {
+    final result = <String, String>{};
+    final raw = uri.query;
+    if (raw.isEmpty) return result;
+    for (final pair in raw.split('&')) {
+      if (pair.isEmpty) continue;
+      final eq = pair.indexOf('=');
+      final key = _decode(eq < 0 ? pair : pair.substring(0, eq));
+      final value = eq < 0 ? '' : _decode(pair.substring(eq + 1));
+      result[key] = value;
+    }
+    return result;
+  }
+
+  static String _decode(String input) {
+    if (!input.contains('%')) return input;
+    final bytes = <int>[];
+    var literalStart = 0;
+    var i = 0;
+    while (i < input.length) {
+      if (input.codeUnitAt(i) == 0x25) {
+        final hi = i + 1 < input.length ? _hex(input.codeUnitAt(i + 1)) : -1;
+        final lo = i + 2 < input.length ? _hex(input.codeUnitAt(i + 2)) : -1;
+        if (hi >= 0 && lo >= 0) {
+          bytes.addAll(utf8.encode(input.substring(literalStart, i)));
+          bytes.add(hi * 16 + lo);
+          i += 3;
+          literalStart = i;
+          continue;
+        }
+      }
+      i++;
+    }
+    bytes.addAll(utf8.encode(input.substring(literalStart)));
+    return utf8.decode(bytes, allowMalformed: true);
+  }
+
+  static int _hex(int c) {
+    if (c >= 0x30 && c <= 0x39) return c - 0x30;
+    if (c >= 0x41 && c <= 0x46) return c - 0x41 + 10;
+    if (c >= 0x61 && c <= 0x66) return c - 0x61 + 10;
+    return -1;
   }
 
   bool _textFits(String text) => utf8.encode(text).length <= maxTextBytes;

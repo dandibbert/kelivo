@@ -78,4 +78,51 @@ void main() {
   test('ignores non-public kelivo callbacks', () {
     expect(parser.parse(Uri.parse('kelivo://oauth-return?code=1')), isNull);
   });
+
+  group('lenient query decoding', () {
+    String composeText(String url) =>
+        (parser.parse(Uri.parse(url))! as ComposeDeepLinkAction).text;
+
+    test('mixes encoded and raw text', () {
+      expect(
+        composeText('kelivo://v1/compose?text=hello%20world 你好'),
+        'hello world 你好',
+      );
+      expect(composeText('kelivo://v1/compose?text=%E4%BD%A0好'), '你好');
+      expect(composeText('kelivo://v1/compose?text=a b%0Ac'), 'a b\nc');
+    });
+
+    test('keeps a raw plus and decodes an escaped one', () {
+      expect(
+        composeText('kelivo://v1/compose?text=C++ and C%2B%2B'),
+        'C++ and C++',
+      );
+    });
+
+    test('keeps a stray percent literal', () {
+      expect(composeText('kelivo://v1/compose?text=100% sure'), '100% sure');
+      expect(composeText('kelivo://v1/compose?text=100%'), '100%');
+      expect(composeText('kelivo://v1/compose?text=%4'), '%4');
+      expect(composeText('kelivo://v1/compose?text=%zz%41'), '%zzA');
+    });
+
+    test('invalid utf-8 does not throw', () {
+      expect(composeText('kelivo://v1/compose?text=50%E4%BD'), '50\uFFFD');
+    });
+
+    test('non-BMP characters survive mixed encoding', () {
+      expect(composeText('kelivo://v1/compose?text=😀%20😀'), '😀 😀');
+    });
+
+    test('equals signs and empty values', () {
+      expect(composeText('kelivo://v1/compose?text=a=b'), 'a=b');
+      expect(composeText('kelivo://v1/compose?text='), '');
+      expect(
+        (parser.parse(Uri.parse('kelivo://v1/compose?text&insert=append'))!
+                as ComposeDeepLinkAction)
+            .insertMode,
+        DeepLinkInsertMode.append,
+      );
+    });
+  });
 }

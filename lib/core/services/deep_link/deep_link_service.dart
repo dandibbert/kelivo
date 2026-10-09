@@ -68,7 +68,14 @@ class DeepLinkService {
       _emit(const InvalidDeepLinkAction('invalid_parameter'));
       return;
     }
-    final action = _parser.parse(uri);
+    final DeepLinkAction? action;
+    try {
+      action = _parser.parse(uri);
+    } on FormatException {
+      // Malformed percent-escapes in the path.
+      _emit(const InvalidDeepLinkAction('invalid_parameter'));
+      return;
+    }
     if (action != null) _emit(action);
   }
 
