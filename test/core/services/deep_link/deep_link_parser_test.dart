@@ -6,7 +6,10 @@ void main() {
   const parser = DeepLinkParser();
 
   test('parses chat routes', () {
-    expect(parser.parse(Uri.parse('kelivo://v1/chat')), isA<OpenChatDeepLinkAction>());
+    expect(
+      parser.parse(Uri.parse('kelivo://v1/chat')),
+      isA<OpenChatDeepLinkAction>(),
+    );
 
     final newChat = parser.parse(
       Uri.parse('kelivo://v1/chat/new?assistant=a1&temporary=1'),
@@ -57,7 +60,10 @@ void main() {
   });
 
   test('rejects oversized payloads', () {
-    final text = List<String>.filled(DeepLinkParser.maxTextBytes + 1, 'a').join();
+    final text = List<String>.filled(
+      DeepLinkParser.maxTextBytes + 1,
+      'a',
+    ).join();
     final uri = Uri(
       scheme: 'kelivo',
       host: 'v1',

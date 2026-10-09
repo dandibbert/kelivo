@@ -12982,4 +12982,141 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mcpOAuthExchangingToken => 'Completing sign-in…';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme Generator';
+
+  @override
+  String get deepLinkGenSubtitle =>
+      'Build kelivo:// links for Shortcuts, automation and other apps';
+
+  @override
+  String get deepLinkGenSectionAction => 'Action';
+
+  @override
+  String get deepLinkGenSectionMessage => 'Message';
+
+  @override
+  String get deepLinkGenSectionTarget => 'Conversation';
+
+  @override
+  String get deepLinkGenSectionOptions => 'Options';
+
+  @override
+  String get deepLinkGenSectionResult => 'Generated link';
+
+  @override
+  String get deepLinkGenText => 'Message text';
+
+  @override
+  String get deepLinkGenTextHint => 'Text to fill in or send';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max bytes';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => 'If the input box has text';
+
+  @override
+  String get deepLinkGenInsertReplace => 'Replace it';
+
+  @override
+  String get deepLinkGenInsertAppend => 'Append to it';
+
+  @override
+  String get deepLinkGenTarget => 'Send to';
+
+  @override
+  String get deepLinkGenTargetCurrent => 'Current conversation';
+
+  @override
+  String get deepLinkGenTargetNew => 'New conversation';
+
+  @override
+  String get deepLinkGenTargetConversation => 'Specific conversation';
+
+  @override
+  String get deepLinkGenConversation => 'Conversation';
+
+  @override
+  String get deepLinkGenConversationPick => 'Choose a conversation';
+
+  @override
+  String get deepLinkGenConversationId => 'Conversation ID';
+
+  @override
+  String get deepLinkGenConversationIdHint =>
+      'Paste an ID, or choose one above';
+
+  @override
+  String get deepLinkGenConversationEmpty => 'No conversations yet';
+
+  @override
+  String get deepLinkGenAssistant => 'Assistant';
+
+  @override
+  String get deepLinkGenAssistantDefault => 'Default (current assistant)';
+
+  @override
+  String get deepLinkGenAssistantPick => 'Choose an assistant';
+
+  @override
+  String get deepLinkGenAssistantRef => 'Reference assistant by';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => 'Name';
+
+  @override
+  String get deepLinkGenAssistantId => 'Assistant ID';
+
+  @override
+  String get deepLinkGenAssistantName => 'Assistant name';
+
+  @override
+  String get deepLinkGenTemporary => 'Temporary chat';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => 'Not saved to history';
+
+  @override
+  String get deepLinkGenSettingsSection => 'Settings page';
+
+  @override
+  String get deepLinkGenSettingsHome => 'Settings home';
+
+  @override
+  String get deepLinkGenCopy => 'Copy link';
+
+  @override
+  String get deepLinkGenCopyMarkdown => 'Copy as Markdown';
+
+  @override
+  String get deepLinkGenCopied => 'Link copied';
+
+  @override
+  String get deepLinkGenRun => 'Run now';
+
+  @override
+  String get deepLinkGenNeedText =>
+      'Enter the message text to generate a link.';
+
+  @override
+  String get deepLinkGenNeedConversation =>
+      'Choose a conversation or enter its ID.';
+
+  @override
+  String get deepLinkGenNeedAssistant => 'Choose an assistant.';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      'Auto-send is off, so this link will only fill the input box for review. Enable it in Settings → Allow External Auto-Send.';
+
+  @override
+  String get deepLinkGenNewOnlyHint =>
+      'Assistant and temporary chat only apply to a new conversation.';
 }

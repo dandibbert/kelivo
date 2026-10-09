@@ -23177,6 +23177,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Completing sign-in…'**
   String get mcpOAuthExchangingToken;
+
+  /// No description provided for @deepLinkGenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'URL Scheme Generator'**
+  String get deepLinkGenTitle;
+
+  /// No description provided for @deepLinkGenSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build kelivo:// links for Shortcuts, automation and other apps'**
+  String get deepLinkGenSubtitle;
+
+  /// No description provided for @deepLinkGenSectionAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get deepLinkGenSectionAction;
+
+  /// No description provided for @deepLinkGenSectionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get deepLinkGenSectionMessage;
+
+  /// No description provided for @deepLinkGenSectionTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get deepLinkGenSectionTarget;
+
+  /// No description provided for @deepLinkGenSectionOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get deepLinkGenSectionOptions;
+
+  /// No description provided for @deepLinkGenSectionResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated link'**
+  String get deepLinkGenSectionResult;
+
+  /// No description provided for @deepLinkGenText.
+  ///
+  /// In en, this message translates to:
+  /// **'Message text'**
+  String get deepLinkGenText;
+
+  /// No description provided for @deepLinkGenTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Text to fill in or send'**
+  String get deepLinkGenTextHint;
+
+  /// No description provided for @deepLinkGenTextBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} / {max} bytes'**
+  String deepLinkGenTextBytes(int used, int max);
+
+  /// No description provided for @deepLinkGenInsertMode.
+  ///
+  /// In en, this message translates to:
+  /// **'If the input box has text'**
+  String get deepLinkGenInsertMode;
+
+  /// No description provided for @deepLinkGenInsertReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace it'**
+  String get deepLinkGenInsertReplace;
+
+  /// No description provided for @deepLinkGenInsertAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Append to it'**
+  String get deepLinkGenInsertAppend;
+
+  /// No description provided for @deepLinkGenTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to'**
+  String get deepLinkGenTarget;
+
+  /// No description provided for @deepLinkGenTargetCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current conversation'**
+  String get deepLinkGenTargetCurrent;
+
+  /// No description provided for @deepLinkGenTargetNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New conversation'**
+  String get deepLinkGenTargetNew;
+
+  /// No description provided for @deepLinkGenTargetConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific conversation'**
+  String get deepLinkGenTargetConversation;
+
+  /// No description provided for @deepLinkGenConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get deepLinkGenConversation;
+
+  /// No description provided for @deepLinkGenConversationPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a conversation'**
+  String get deepLinkGenConversationPick;
+
+  /// No description provided for @deepLinkGenConversationId.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation ID'**
+  String get deepLinkGenConversationId;
+
+  /// No description provided for @deepLinkGenConversationIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste an ID, or choose one above'**
+  String get deepLinkGenConversationIdHint;
+
+  /// No description provided for @deepLinkGenConversationEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get deepLinkGenConversationEmpty;
+
+  /// No description provided for @deepLinkGenAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get deepLinkGenAssistant;
+
+  /// No description provided for @deepLinkGenAssistantDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default (current assistant)'**
+  String get deepLinkGenAssistantDefault;
+
+  /// No description provided for @deepLinkGenAssistantPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an assistant'**
+  String get deepLinkGenAssistantPick;
+
+  /// No description provided for @deepLinkGenAssistantRef.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference assistant by'**
+  String get deepLinkGenAssistantRef;
+
+  /// No description provided for @deepLinkGenRefId.
+  ///
+  /// In en, this message translates to:
+  /// **'ID'**
+  String get deepLinkGenRefId;
+
+  /// No description provided for @deepLinkGenRefName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get deepLinkGenRefName;
+
+  /// No description provided for @deepLinkGenAssistantId.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant ID'**
+  String get deepLinkGenAssistantId;
+
+  /// No description provided for @deepLinkGenAssistantName.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant name'**
+  String get deepLinkGenAssistantName;
+
+  /// No description provided for @deepLinkGenTemporary.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary chat'**
+  String get deepLinkGenTemporary;
+
+  /// No description provided for @deepLinkGenTemporarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved to history'**
+  String get deepLinkGenTemporarySubtitle;
+
+  /// No description provided for @deepLinkGenSettingsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings page'**
+  String get deepLinkGenSettingsSection;
+
+  /// No description provided for @deepLinkGenSettingsHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings home'**
+  String get deepLinkGenSettingsHome;
+
+  /// No description provided for @deepLinkGenCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get deepLinkGenCopy;
+
+  /// No description provided for @deepLinkGenCopyMarkdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as Markdown'**
+  String get deepLinkGenCopyMarkdown;
+
+  /// No description provided for @deepLinkGenCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get deepLinkGenCopied;
+
+  /// No description provided for @deepLinkGenRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run now'**
+  String get deepLinkGenRun;
+
+  /// No description provided for @deepLinkGenNeedText.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the message text to generate a link.'**
+  String get deepLinkGenNeedText;
+
+  /// No description provided for @deepLinkGenNeedConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a conversation or enter its ID.'**
+  String get deepLinkGenNeedConversation;
+
+  /// No description provided for @deepLinkGenNeedAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an assistant.'**
+  String get deepLinkGenNeedAssistant;
+
+  /// No description provided for @deepLinkGenAutoSendOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-send is off, so this link will only fill the input box for review. Enable it in Settings → Allow External Auto-Send.'**
+  String get deepLinkGenAutoSendOff;
+
+  /// No description provided for @deepLinkGenNewOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant and temporary chat only apply to a new conversation.'**
+  String get deepLinkGenNewOnlyHint;
 }
 
 class _AppLocalizationsDelegate

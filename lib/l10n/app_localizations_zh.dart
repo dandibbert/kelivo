@@ -12384,6 +12384,138 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mcpOAuthExchangingToken => '正在完成登录…';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme 生成器';
+
+  @override
+  String get deepLinkGenSubtitle => '生成 kelivo:// 链接，用于快捷指令、自动化和其他应用';
+
+  @override
+  String get deepLinkGenSectionAction => '动作';
+
+  @override
+  String get deepLinkGenSectionMessage => '消息';
+
+  @override
+  String get deepLinkGenSectionTarget => '会话';
+
+  @override
+  String get deepLinkGenSectionOptions => '选项';
+
+  @override
+  String get deepLinkGenSectionResult => '生成的链接';
+
+  @override
+  String get deepLinkGenText => '消息内容';
+
+  @override
+  String get deepLinkGenTextHint => '要填入或发送的文字';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max 字节';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => '输入框已有内容时';
+
+  @override
+  String get deepLinkGenInsertReplace => '替换';
+
+  @override
+  String get deepLinkGenInsertAppend => '追加';
+
+  @override
+  String get deepLinkGenTarget => '发送到';
+
+  @override
+  String get deepLinkGenTargetCurrent => '当前会话';
+
+  @override
+  String get deepLinkGenTargetNew => '新会话';
+
+  @override
+  String get deepLinkGenTargetConversation => '指定会话';
+
+  @override
+  String get deepLinkGenConversation => '会话';
+
+  @override
+  String get deepLinkGenConversationPick => '选择会话';
+
+  @override
+  String get deepLinkGenConversationId => '会话 ID';
+
+  @override
+  String get deepLinkGenConversationIdHint => '粘贴 ID，或在上方选择';
+
+  @override
+  String get deepLinkGenConversationEmpty => '还没有会话';
+
+  @override
+  String get deepLinkGenAssistant => '助手';
+
+  @override
+  String get deepLinkGenAssistantDefault => '默认（当前助手）';
+
+  @override
+  String get deepLinkGenAssistantPick => '选择助手';
+
+  @override
+  String get deepLinkGenAssistantRef => '助手引用方式';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => '名称';
+
+  @override
+  String get deepLinkGenAssistantId => '助手 ID';
+
+  @override
+  String get deepLinkGenAssistantName => '助手名称';
+
+  @override
+  String get deepLinkGenTemporary => '临时聊天';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => '不保存到历史记录';
+
+  @override
+  String get deepLinkGenSettingsSection => '设置页面';
+
+  @override
+  String get deepLinkGenSettingsHome => '设置首页';
+
+  @override
+  String get deepLinkGenCopy => '复制链接';
+
+  @override
+  String get deepLinkGenCopyMarkdown => '复制为 Markdown';
+
+  @override
+  String get deepLinkGenCopied => '链接已复制';
+
+  @override
+  String get deepLinkGenRun => '立即运行';
+
+  @override
+  String get deepLinkGenNeedText => '请输入消息内容以生成链接。';
+
+  @override
+  String get deepLinkGenNeedConversation => '请选择会话或输入会话 ID。';
+
+  @override
+  String get deepLinkGenNeedAssistant => '请选择助手。';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      '自动发送已关闭，此链接只会把内容填入输入框供确认。可在 设置 → 允许外部自动发送 中开启。';
+
+  @override
+  String get deepLinkGenNewOnlyHint => '助手和临时聊天仅对新会话生效。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -24692,6 +24824,138 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get mcpOAuthExchangingToken => '正在完成登录…';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme 生成器';
+
+  @override
+  String get deepLinkGenSubtitle => '生成 kelivo:// 链接，用于快捷指令、自动化和其他应用';
+
+  @override
+  String get deepLinkGenSectionAction => '动作';
+
+  @override
+  String get deepLinkGenSectionMessage => '消息';
+
+  @override
+  String get deepLinkGenSectionTarget => '会话';
+
+  @override
+  String get deepLinkGenSectionOptions => '选项';
+
+  @override
+  String get deepLinkGenSectionResult => '生成的链接';
+
+  @override
+  String get deepLinkGenText => '消息内容';
+
+  @override
+  String get deepLinkGenTextHint => '要填入或发送的文字';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max 字节';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => '输入框已有内容时';
+
+  @override
+  String get deepLinkGenInsertReplace => '替换';
+
+  @override
+  String get deepLinkGenInsertAppend => '追加';
+
+  @override
+  String get deepLinkGenTarget => '发送到';
+
+  @override
+  String get deepLinkGenTargetCurrent => '当前会话';
+
+  @override
+  String get deepLinkGenTargetNew => '新会话';
+
+  @override
+  String get deepLinkGenTargetConversation => '指定会话';
+
+  @override
+  String get deepLinkGenConversation => '会话';
+
+  @override
+  String get deepLinkGenConversationPick => '选择会话';
+
+  @override
+  String get deepLinkGenConversationId => '会话 ID';
+
+  @override
+  String get deepLinkGenConversationIdHint => '粘贴 ID，或在上方选择';
+
+  @override
+  String get deepLinkGenConversationEmpty => '还没有会话';
+
+  @override
+  String get deepLinkGenAssistant => '助手';
+
+  @override
+  String get deepLinkGenAssistantDefault => '默认（当前助手）';
+
+  @override
+  String get deepLinkGenAssistantPick => '选择助手';
+
+  @override
+  String get deepLinkGenAssistantRef => '助手引用方式';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => '名称';
+
+  @override
+  String get deepLinkGenAssistantId => '助手 ID';
+
+  @override
+  String get deepLinkGenAssistantName => '助手名称';
+
+  @override
+  String get deepLinkGenTemporary => '临时聊天';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => '不保存到历史记录';
+
+  @override
+  String get deepLinkGenSettingsSection => '设置页面';
+
+  @override
+  String get deepLinkGenSettingsHome => '设置首页';
+
+  @override
+  String get deepLinkGenCopy => '复制链接';
+
+  @override
+  String get deepLinkGenCopyMarkdown => '复制为 Markdown';
+
+  @override
+  String get deepLinkGenCopied => '链接已复制';
+
+  @override
+  String get deepLinkGenRun => '立即运行';
+
+  @override
+  String get deepLinkGenNeedText => '请输入消息内容以生成链接。';
+
+  @override
+  String get deepLinkGenNeedConversation => '请选择会话或输入会话 ID。';
+
+  @override
+  String get deepLinkGenNeedAssistant => '请选择助手。';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      '自动发送已关闭，此链接只会把内容填入输入框供确认。可在 设置 → 允许外部自动发送 中开启。';
+
+  @override
+  String get deepLinkGenNewOnlyHint => '助手和临时聊天仅对新会话生效。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -37079,4 +37343,136 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get mcpOAuthExchangingToken => '正在完成登入…';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme 產生器';
+
+  @override
+  String get deepLinkGenSubtitle => '產生 kelivo:// 連結，用於捷徑、自動化和其他應用';
+
+  @override
+  String get deepLinkGenSectionAction => '動作';
+
+  @override
+  String get deepLinkGenSectionMessage => '訊息';
+
+  @override
+  String get deepLinkGenSectionTarget => '對話';
+
+  @override
+  String get deepLinkGenSectionOptions => '選項';
+
+  @override
+  String get deepLinkGenSectionResult => '產生的連結';
+
+  @override
+  String get deepLinkGenText => '訊息內容';
+
+  @override
+  String get deepLinkGenTextHint => '要填入或傳送的文字';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max 位元組';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => '輸入框已有內容時';
+
+  @override
+  String get deepLinkGenInsertReplace => '取代';
+
+  @override
+  String get deepLinkGenInsertAppend => '附加';
+
+  @override
+  String get deepLinkGenTarget => '傳送到';
+
+  @override
+  String get deepLinkGenTargetCurrent => '目前對話';
+
+  @override
+  String get deepLinkGenTargetNew => '新對話';
+
+  @override
+  String get deepLinkGenTargetConversation => '指定對話';
+
+  @override
+  String get deepLinkGenConversation => '對話';
+
+  @override
+  String get deepLinkGenConversationPick => '選擇對話';
+
+  @override
+  String get deepLinkGenConversationId => '對話 ID';
+
+  @override
+  String get deepLinkGenConversationIdHint => '貼上 ID，或在上方選擇';
+
+  @override
+  String get deepLinkGenConversationEmpty => '還沒有對話';
+
+  @override
+  String get deepLinkGenAssistant => '助理';
+
+  @override
+  String get deepLinkGenAssistantDefault => '預設（目前助理）';
+
+  @override
+  String get deepLinkGenAssistantPick => '選擇助理';
+
+  @override
+  String get deepLinkGenAssistantRef => '助理引用方式';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => '名稱';
+
+  @override
+  String get deepLinkGenAssistantId => '助理 ID';
+
+  @override
+  String get deepLinkGenAssistantName => '助理名稱';
+
+  @override
+  String get deepLinkGenTemporary => '臨時聊天';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => '不儲存到歷史記錄';
+
+  @override
+  String get deepLinkGenSettingsSection => '設定頁面';
+
+  @override
+  String get deepLinkGenSettingsHome => '設定首頁';
+
+  @override
+  String get deepLinkGenCopy => '複製連結';
+
+  @override
+  String get deepLinkGenCopyMarkdown => '複製為 Markdown';
+
+  @override
+  String get deepLinkGenCopied => '連結已複製';
+
+  @override
+  String get deepLinkGenRun => '立即執行';
+
+  @override
+  String get deepLinkGenNeedText => '請輸入訊息內容以產生連結。';
+
+  @override
+  String get deepLinkGenNeedConversation => '請選擇對話或輸入對話 ID。';
+
+  @override
+  String get deepLinkGenNeedAssistant => '請選擇助理。';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      '自動傳送已關閉，此連結只會把內容填入輸入框供確認。可在 設定 → 允許外部自動傳送 中開啟。';
+
+  @override
+  String get deepLinkGenNewOnlyHint => '助理和臨時聊天僅對新對話生效。';
 }

@@ -11,10 +11,12 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/ios_switch.dart';
+import '../../../shared/widgets/ios_tile_button.dart';
 import '../../../shared/widgets/qq_group_join_sheet.dart';
 import '../../../shared/widgets/snackbar.dart';
 import '../../../core/services/haptics.dart';
 import 'debug_page.dart';
+import 'deep_link_generator_page.dart';
 import 'log_viewer_page.dart';
 import 'package:Kelivo/shared/widgets/section_card.dart';
 import 'package:Kelivo/theme/app_semantic_colors.dart';
@@ -545,6 +547,21 @@ class _AboutPageState extends State<AboutPage> {
                     _DeepLinkExampleRow(
                       label: l10n.aboutPageDeepLinkAssistant,
                       example: 'kelivo://v1/assistant/{assistantId}',
+                    ),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IosTileButton(
+                        icon: Lucide.Link2,
+                        label: l10n.deepLinkGenTitle,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const DeepLinkGeneratorPage(),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Text(

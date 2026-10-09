@@ -50,6 +50,9 @@ class DeepLinkService {
     return actions;
   }
 
+  /// Feeds a URL through the same path as one received from the OS.
+  void handleUrl(String raw) => _handleRawUrl(raw);
+
   void _handleRawUrl(String raw) {
     final now = DateTime.now();
     if (_lastRawUrl == raw &&

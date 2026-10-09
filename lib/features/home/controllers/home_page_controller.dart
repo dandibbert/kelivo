@@ -1691,7 +1691,10 @@ class HomePageController extends ChangeNotifier {
     String? assistantId,
     bool temporary = false,
   }) async {
-    await _createNewConversation(assistantId: assistantId, temporary: temporary);
+    await _createNewConversation(
+      assistantId: assistantId,
+      temporary: temporary,
+    );
   }
 
   bool hasConversation(String id) => _chatService.getConversation(id) != null;

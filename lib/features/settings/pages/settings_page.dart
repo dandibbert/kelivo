@@ -8,6 +8,7 @@ import '../../../icons/lucide_adapter.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../model/pages/default_model_page.dart';
 import '../../provider/pages/providers_page.dart';
+import 'deep_link_generator_page.dart';
 import 'display_settings_page.dart';
 import 'settings_search_page.dart';
 import '../widgets/settings_search_entry.dart';
@@ -212,6 +213,19 @@ class SettingsPage extends StatelessWidget {
                 subtitle: l10n.settingsPageExternalAutoSendSubtitle,
                 value: settings.allowExternalAutoSend,
                 onChanged: settings.setAllowExternalAutoSend,
+              ),
+              _iosDivider(context),
+              _iosNavRow(
+                context,
+                icon: Lucide.Link2,
+                label: l10n.deepLinkGenTitle,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const DeepLinkGeneratorPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
