@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.2] - 2026-10-17
+
+### Added
+- **URL Scheme Generator** (Settings → URL Scheme Generator, also linked from About): build `kelivo://v1/...` links for every supported route with text, insert mode, target conversation, assistant by ID or name, temporary chat and settings page options. Copy the link, copy it as Markdown, or run it in the app. Links are validated with the same parser the app uses.
+
+### Fixed
+- Deep-link text that mixes percent-encoded and raw characters is decoded leniently: a raw `+` stays a plus (use `%20` for spaces), a stray `%` stays literal, and malformed UTF-8 or path escapes no longer drop the link silently.
+
+### Changed
+- Rebase onto upstream Kelivo 1.3.1 (Flutter 3.47) and keep the iOS `kelivo://v1` deep links.
+- Bump version to 1.3.2+81.
+
 ## [1.3.1] - 2026-09-22
 
 ### Changed
