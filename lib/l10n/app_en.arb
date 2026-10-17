@@ -646,6 +646,32 @@
   "backupPagePath": "Path",
   "backupPageChatsLabel": "Chats",
   "backupPageFilesLabel": "Files",
+  "backupPageScopeTitle": "Backup and import content",
+  "backupPageScopeSelectedCount": "{selected}/{total}",
+  "@backupPageScopeSelectedCount": {
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "backupPageBackupManagementDescription": "Choose what to back up and import. Applies to local, WebDAV and S3 backups. Unselected content stays unchanged on import. Skills and workspaces include their own files.",
+  "backupPageAssistantsLabel": "Assistants",
+  "backupPageProvidersLabel": "Providers",
+  "backupPageMcpLabel": "MCP servers",
+  "backupPageEnvironmentVariablesLabel": "Environment variables",
+  "backupPageSkillsLabel": "Skills",
+  "backupPageWorldBooksLabel": "World books",
+  "backupPageMemoriesLabel": "Memories",
+  "backupPageQuickPhrasesLabel": "Quick phrases",
+  "backupPageInstructionsLabel": "Prompt injections",
+  "backupPageWorkspacesLabel": "Workspaces",
+  "backupPageSearchServicesLabel": "Search services",
+  "backupPageSpeechServicesLabel": "Speech services",
+  "backupPageSettingsLabel": "Other settings",
   "backupPageTestDone": "Test done",
   "backupPageTestConnection": "Test",
   "backupPageRestartRequired": "Restart Required",
@@ -801,7 +827,7 @@
   "backupPageOK": "OK",
   "backupPageCancel": "Cancel",
   "backupPageSelectImportMode": "Select Import Mode",
-  "backupPageSelectImportModeDescription": "Choose a restore mode. The chat and file switches determine which components are included.",
+  "backupPageSelectImportModeDescription": "Choose a restore mode. The switches in Backup Management apply to this import.",
   "backupPageOverwriteMode": "Complete Overwrite",
   "backupPageOverwriteModeDescription": "Replace the selected components; keep unselected components and unrelated local settings. Replacing chats also clears local unsent drafts.",
   "backupPageMergeMode": "Merge",
@@ -1139,6 +1165,12 @@
       "query": {
         "type": "String"
       }
+    }
+  },
+  "chatMessageWidgetWebFetch": "Read page: {target}",
+  "@chatMessageWidgetWebFetch": {
+    "placeholders": {
+      "target": { "type": "String" }
     }
   },
   "chatMessageWidgetBuiltinSearch": "Built-in Search",
@@ -2051,6 +2083,28 @@
   "searchServicesPageSearchProviders": "Search Providers",
   "searchServicesPageGeneralOptions": "General Options",
   "searchServicesPageAutoTestTitle": "Auto-test connections on launch",
+  "searchServicesPageWebFetchSection": "Web page reading",
+  "searchServicesPageWebFetchModeTitle": "Read pages with",
+  "searchServicesPageWebFetchFollow": "Follow search service",
+  "searchServicesPageWebFetchFollowValue": "Follow search · {name}",
+  "@searchServicesPageWebFetchFollowValue": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "searchServicesPageWebFetchFollowSubtitle": "Currently {name}",
+  "@searchServicesPageWebFetchFollowSubtitle": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "searchServicesPageWebFetchLocal": "Local",
+  "searchServicesPageWebFetchLocalSubtitle": "Free. This device requests the page directly.",
+  "searchServicesPageWebFetchProviderSubtitle": "Uses this service's API key and quota",
+  "searchServicesPageWebFetchOff": "Off",
+  "searchServicesPageWebFetchOffSubtitle": "Search only, without reading pages",
+  "searchServicesPageWebFetchFooter": "With web search on, the model can also read full pages. When the search service can't read pages, local reading is used, which can't handle pages that need JavaScript or block bots.",
+  "searchServicesPageWebFetchSupported": "Can read web pages",
   "searchServicesPageMaxResults": "Max Results",
   "searchServicesPageTimeoutSeconds": "Timeout (seconds)",
   "searchServicesPageAtLeastOneServiceRequired": "At least one search service is required",
@@ -2084,6 +2138,7 @@
   "searchServicesAddDialogApiKeyRequired": "API Key is required",
   "searchServicesFieldCustomUrlOptional": "Custom URL (optional)",
   "searchServicesDialogApiKey": "API Key",
+  "searchServicesDialogApiKeyOptional": "API Key (optional)",
   "searchServicesDialogModel": "Model",
   "searchServicesDialogSystemPrompt": "System Prompt",
   "searchServicesAddDialogInstanceUrl": "Instance URL",
@@ -2168,6 +2223,24 @@
   "@searchServiceEditorTestFailed": {
     "placeholders": {
       "message": { "type": "String" }
+    }
+  },
+  "searchServiceEditorTestModeSearch": "Search",
+  "searchServiceEditorTestModeFetch": "Read page",
+  "searchServiceEditorTestUrlHint": "Enter a URL",
+  "searchServiceEditorTestFetchRun": "Run test fetch",
+  "searchServiceEditorTestFetchRunning": "Reading…",
+  "searchServiceEditorTestFetchFailed": "Fetch failed: {message}",
+  "@searchServiceEditorTestFetchFailed": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "searchServiceEditorTestFetchStats": "{characters} characters · {seconds}s",
+  "@searchServiceEditorTestFetchStats": {
+    "placeholders": {
+      "characters": { "type": "String" },
+      "seconds": { "type": "String" }
     }
   },
   "searchServiceEditorResultOpenTooltip": "Open result",
@@ -2404,6 +2477,8 @@
   "asrServicesLocalSubtitle": "Runs offline on this device after download",
   "asrServicesOpenAiTitle": "OpenAI Realtime",
   "asrServicesOpenAiSubtitle": "Low-latency streaming transcription",
+  "asrServicesGroqSubtitle": "Whisper segmented transcription",
+  "asrServicesMistralSubtitle": "Voxtral segmented transcription",
   "asrServicesDashScopeTitle": "DashScope",
   "asrServicesDashScopeSubtitle": "Qwen real-time transcription",
   "asrServicesVolcengineTitle": "Volcengine",
@@ -2628,23 +2703,27 @@
   "searchProviderDuckDuckGoDescription": "Privacy-focused DuckDuckGo search via DDGS. No API key required; supports region selection.",
   "searchProviderBraveDescription": "Independent search engine by Brave. Privacy-focused with no tracking or profiling.",
   "searchProviderExaDescription": "Neural search with semantic understanding. Great for research and finding specific content.",
+  "searchProviderExaMcpDescription": "Exa search via MCP. An API key is optional for limited free usage.",
   "searchProviderLinkUpDescription": "Search API with sourced answers. Provides both results and AI-generated summaries.",
   "searchProviderMetasoDescription": "Chinese search by Metaso. Optimized for Chinese content with AI capabilities.",
   "searchProviderSearXNGDescription": "Privacy-respecting metasearch engine. Self-hosted instance required; no tracking.",
   "searchProviderTavilyDescription": "AI search API optimized for LLMs. Provides high-quality, relevant results.",
   "searchProviderZhipuDescription": "Chinese AI search by Zhipu AI. Optimized for Chinese content and queries.",
   "searchProviderOllamaDescription": "Ollama web search API. Augments models with up-to-date information.",
+  "searchProviderDeepSeekDescription": "DeepSeek official web search and page fetch APIs. Uses a DeepSeek API key.",
   "searchProviderJinaDescription": "AI search foundation with embeddings, rerankers, web reader, deepsearch, and small language models. Multilingual and multimodal.",
   "searchServiceNameBingLocal": "Bing (Local)",
   "searchServiceNameDuckDuckGo": "DuckDuckGo",
   "searchServiceNameTavily": "Tavily",
   "searchServiceNameExa": "Exa",
+  "searchServiceNameExaMcp": "Exa MCP",
   "searchServiceNameZhipu": "Zhipu AI",
   "searchServiceNameSearXNG": "SearXNG",
   "searchServiceNameLinkUp": "LinkUp",
   "searchServiceNameBrave": "Brave Search",
   "searchServiceNameMetaso": "Metaso",
   "searchServiceNameOllama": "Ollama",
+  "searchServiceNameDeepSeek": "DeepSeek",
   "searchServiceNameJina": "Jina",
   "searchServiceNamePerplexity": "Perplexity",
   "searchProviderPerplexityDescription": "Perplexity Search API. Ranked web results with region and domain filters.",
@@ -3136,7 +3215,9 @@
   "memorySettingsThinkingSubtitle": "Allow the memory model to use reasoning when supported",
   "memorySettingsInjectionSection": "Memory injection",
   "memorySettingsInjectionMaxItemsTitle": "Items injected per type",
-  "memorySettingsInjectionMaxItemsSubtitle": "When a type exceeds this limit, only the newest items are injected. The rest can be fetched with memory_search_profile. A larger number is more complete but uses more tokens. If you customized the rules prompt, update it or restore the default.",
+  "memorySettingsInjectionMaxItemsSubtitle": "This limit applies to types not selected for full injection. When a type exceeds this limit, only the newest items are injected. The rest can be fetched with memory_search_profile. A larger number is more complete but uses more tokens. If you customized the rules prompt, update it or restore the default.",
+  "memorySettingsFullInjectionTypesTitle": "Always inject these types",
+  "memorySettingsFullInjectionTypesSubtitle": "Select one or more types to inject all their active memories visible to the current assistant. These types ignore the item limit and use more context and tokens.",
   "memorySettingsInjectionMaxItemsOption": "{n}",
   "@memorySettingsInjectionMaxItemsOption": {
     "placeholders": {
@@ -3548,6 +3629,14 @@
   "worldBookInjectionPositionTopOfChat": "Top of chat",
   "worldBookInjectionPositionBottomOfChat": "Bottom of chat",
   "worldBookInjectionPositionAtDepth": "At depth",
+  "worldBookImportUnsupportedEntries": "Imported. {count} entries use unsupported SillyTavern features (such as macros, regex, timing, filters, or insertion rules). Their content was kept and they were disabled. Review them before enabling.",
+  "@worldBookImportUnsupportedEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "worldBookInjectionRoleUser": "User",
   "worldBookInjectionRoleAssistant": "Assistant",
   "mcpToolNeedsApproval": "Require approval",
@@ -4505,6 +4594,9 @@
   "workspaceEnvErrorNetwork": "Download failed. Check your connection and try again.",
   "workspaceEnvErrorChecksumMismatch": "The download was corrupted. Try again.",
   "workspaceEnvErrorExtractFailed": "Could not extract the sandbox image.",
+  "workspaceEnvErrorCleanupFailed": "Could not remove old sandbox files. Please try again.",
+  "workspaceEnvCleanupIncomplete": "The sandbox is ready, but some old files could not be removed. They still take up storage space.",
+  "workspaceEnvErrorResetFailed": "Could not finish resetting the sandbox. Please try again.",
   "workspaceEnvErrorPatchFailed": "Could not finish setting up the sandbox.",
   "workspaceEnvErrorCancelled": "Installation was cancelled.",
   "workspaceEnvErrorGeneric": "Something went wrong installing the sandbox.",

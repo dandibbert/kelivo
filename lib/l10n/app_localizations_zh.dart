@@ -1547,6 +1547,57 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupPageFilesLabel => '文件';
 
   @override
+  String get backupPageScopeTitle => '备份与导入内容';
+
+  @override
+  String backupPageScopeSelectedCount(int selected, int total) {
+    return '$selected/$total';
+  }
+
+  @override
+  String get backupPageBackupManagementDescription =>
+      '选择备份和导入的内容，适用于本地、WebDAV 和 S3。导入时保留未选中的内容。技能和工作区包含各自的文件。';
+
+  @override
+  String get backupPageAssistantsLabel => '助手';
+
+  @override
+  String get backupPageProvidersLabel => '供应商';
+
+  @override
+  String get backupPageMcpLabel => 'MCP 服务器';
+
+  @override
+  String get backupPageEnvironmentVariablesLabel => '环境变量';
+
+  @override
+  String get backupPageSkillsLabel => '技能';
+
+  @override
+  String get backupPageWorldBooksLabel => '世界书';
+
+  @override
+  String get backupPageMemoriesLabel => '记忆';
+
+  @override
+  String get backupPageQuickPhrasesLabel => '快捷短语';
+
+  @override
+  String get backupPageInstructionsLabel => '提示词注入';
+
+  @override
+  String get backupPageWorkspacesLabel => '工作区';
+
+  @override
+  String get backupPageSearchServicesLabel => '搜索服务';
+
+  @override
+  String get backupPageSpeechServicesLabel => '语音服务';
+
+  @override
+  String get backupPageSettingsLabel => '其他设置';
+
+  @override
   String get backupPageTestDone => '测试完成';
 
   @override
@@ -1824,7 +1875,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupPageSelectImportModeDescription =>
-      '请选择恢复方式。聊天和文件开关决定本次恢复的组件。';
+      '请选择恢复方式。备份管理中的分类开关同样适用于本次导入。';
 
   @override
   String get backupPageOverwriteMode => '完全覆盖';
@@ -2535,6 +2586,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String chatMessageWidgetWebSearch(String query) {
     return '联网检索: $query';
+  }
+
+  @override
+  String chatMessageWidgetWebFetch(String target) {
+    return '读取网页: $target';
   }
 
   @override
@@ -4488,6 +4544,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchServicesPageAutoTestTitle => '启动时自动测试连接';
 
   @override
+  String get searchServicesPageWebFetchSection => '网页抓取';
+
+  @override
+  String get searchServicesPageWebFetchModeTitle => '抓取方式';
+
+  @override
+  String get searchServicesPageWebFetchFollow => '跟随搜索服务';
+
+  @override
+  String searchServicesPageWebFetchFollowValue(String name) {
+    return '跟随搜索 · $name';
+  }
+
+  @override
+  String searchServicesPageWebFetchFollowSubtitle(String name) {
+    return '当前：$name';
+  }
+
+  @override
+  String get searchServicesPageWebFetchLocal => '本地抓取';
+
+  @override
+  String get searchServicesPageWebFetchLocalSubtitle => '免费，由本机直接请求网页';
+
+  @override
+  String get searchServicesPageWebFetchProviderSubtitle =>
+      '使用该服务商的 API Key 和额度';
+
+  @override
+  String get searchServicesPageWebFetchOff => '关闭';
+
+  @override
+  String get searchServicesPageWebFetchOffSubtitle => '联网时只搜索，不读取网页';
+
+  @override
+  String get searchServicesPageWebFetchFooter =>
+      '开启联网搜索后，模型还可以读取网页全文。搜索服务不支持抓取时会改用本地抓取，本地抓取无法处理需要 JavaScript 渲染或有反爬限制的页面。';
+
+  @override
+  String get searchServicesPageWebFetchSupported => '支持网页抓取';
+
+  @override
   String get searchServicesPageMaxResults => '最大结果数';
 
   @override
@@ -4566,6 +4664,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get searchServicesDialogApiKey => 'API Key';
+
+  @override
+  String get searchServicesDialogApiKeyOptional => 'API Key（可选）';
 
   @override
   String get searchServicesDialogModel => '模型';
@@ -4721,6 +4822,31 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String searchServiceEditorTestFailed(String message) {
     return '搜索失败：$message';
+  }
+
+  @override
+  String get searchServiceEditorTestModeSearch => '搜索';
+
+  @override
+  String get searchServiceEditorTestModeFetch => '抓取';
+
+  @override
+  String get searchServiceEditorTestUrlHint => '输入测试网址';
+
+  @override
+  String get searchServiceEditorTestFetchRun => '运行抓取测试';
+
+  @override
+  String get searchServiceEditorTestFetchRunning => '抓取中…';
+
+  @override
+  String searchServiceEditorTestFetchFailed(String message) {
+    return '抓取失败：$message';
+  }
+
+  @override
+  String searchServiceEditorTestFetchStats(String characters, String seconds) {
+    return '$characters 字符 · $seconds 秒';
   }
 
   @override
@@ -5370,6 +5496,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get asrServicesOpenAiSubtitle => '低延迟流式转写';
 
   @override
+  String get asrServicesGroqSubtitle => 'Whisper 分段云端转写';
+
+  @override
+  String get asrServicesMistralSubtitle => 'Voxtral 分段云端转写';
+
+  @override
   String get asrServicesDashScopeTitle => 'DashScope';
 
   @override
@@ -5879,6 +6011,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchProviderExaDescription => '具备语义理解的神经搜索引擎。适合研究与查找特定内容。';
 
   @override
+  String get searchProviderExaMcpDescription =>
+      '通过 MCP 使用 Exa 搜索。不填 API Key 可在免费限额内使用。';
+
+  @override
   String get searchProviderLinkUpDescription =>
       '提供来源可追溯答案的搜索 API，同时提供搜索结果与 AI 摘要。';
 
@@ -5901,6 +6037,10 @@ class AppLocalizationsZh extends AppLocalizations {
       'Ollama 网络搜索 API。为模型补充最新信息，减少幻觉并提升准确性。';
 
   @override
+  String get searchProviderDeepSeekDescription =>
+      'DeepSeek 官方网页搜索与抓取 API，使用 DeepSeek API Key。';
+
+  @override
   String get searchProviderJinaDescription => '适合开发者和企业用于 AI 搜索应用。支持多语言与多模态。';
 
   @override
@@ -5914,6 +6054,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get searchServiceNameExa => 'Exa';
+
+  @override
+  String get searchServiceNameExaMcp => 'Exa MCP';
 
   @override
   String get searchServiceNameZhipu => '智谱';
@@ -5932,6 +6075,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get searchServiceNameOllama => 'Ollama';
+
+  @override
+  String get searchServiceNameDeepSeek => 'DeepSeek';
 
   @override
   String get searchServiceNameJina => 'Jina';
@@ -7133,7 +7279,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get memorySettingsInjectionMaxItemsSubtitle =>
-      '某一类型的记忆超过该条数时，只注入最近的若干条，其余由模型用 memory_search_profile 按需查询。调大更全面但更费 token。若你改过规则提示词，请一并更新或恢复默认。';
+      '此限制仅适用于未选择全量注入的类型。某一类型的记忆超过该条数时，只注入最近的若干条，其余由模型用 memory_search_profile 按需查询。调大更全面但更费 token。若你改过规则提示词，请一并更新或恢复默认。';
+
+  @override
+  String get memorySettingsFullInjectionTypesTitle => '全量注入类型';
+
+  @override
+  String get memorySettingsFullInjectionTypesSubtitle =>
+      '可多选。选中类型会注入全局及当前助手的全部有效记忆，不受条数限制，会增加上下文和 token 消耗。';
 
   @override
   String memorySettingsInjectionMaxItemsOption(int n) {
@@ -8029,6 +8182,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get worldBookInjectionPositionAtDepth => '指定深度';
+
+  @override
+  String worldBookImportUnsupportedEntries(int count) {
+    return '导入完成。$count 个条目使用了暂不支持的酒馆功能（如宏、正则、时效、筛选或插入规则），已保留内容并停用，请检查后再启用。';
+  }
 
   @override
   String get worldBookInjectionRoleUser => '用户';
@@ -9723,6 +9881,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get workspaceEnvErrorExtractFailed => '无法解压沙箱镜像。';
+
+  @override
+  String get workspaceEnvErrorCleanupFailed => '无法清理旧沙箱文件，请重试。';
+
+  @override
+  String get workspaceEnvCleanupIncomplete => '沙箱已就绪，但部分旧文件未能清理，仍占用存储空间。';
+
+  @override
+  String get workspaceEnvErrorResetFailed => '未能完成沙箱重置，请重试。';
 
   @override
   String get workspaceEnvErrorPatchFailed => '无法完成沙箱配置。';
@@ -14061,6 +14228,57 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupPageFilesLabel => '文件';
 
   @override
+  String get backupPageScopeTitle => '备份与导入内容';
+
+  @override
+  String backupPageScopeSelectedCount(int selected, int total) {
+    return '$selected/$total';
+  }
+
+  @override
+  String get backupPageBackupManagementDescription =>
+      '选择备份和导入的内容，适用于本地、WebDAV 和 S3。导入时保留未选中的内容。技能和工作区包含各自的文件。';
+
+  @override
+  String get backupPageAssistantsLabel => '助手';
+
+  @override
+  String get backupPageProvidersLabel => '供应商';
+
+  @override
+  String get backupPageMcpLabel => 'MCP 服务器';
+
+  @override
+  String get backupPageEnvironmentVariablesLabel => '环境变量';
+
+  @override
+  String get backupPageSkillsLabel => '技能';
+
+  @override
+  String get backupPageWorldBooksLabel => '世界书';
+
+  @override
+  String get backupPageMemoriesLabel => '记忆';
+
+  @override
+  String get backupPageQuickPhrasesLabel => '快捷短语';
+
+  @override
+  String get backupPageInstructionsLabel => '提示词注入';
+
+  @override
+  String get backupPageWorkspacesLabel => '工作区';
+
+  @override
+  String get backupPageSearchServicesLabel => '搜索服务';
+
+  @override
+  String get backupPageSpeechServicesLabel => '语音服务';
+
+  @override
+  String get backupPageSettingsLabel => '其他设置';
+
+  @override
   String get backupPageTestDone => '测试完成';
 
   @override
@@ -14338,7 +14556,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupPageSelectImportModeDescription =>
-      '请选择恢复方式。聊天和文件开关决定本次恢复的组件。';
+      '请选择恢复方式。备份管理中的分类开关同样适用于本次导入。';
 
   @override
   String get backupPageOverwriteMode => '完全覆盖';
@@ -15049,6 +15267,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String chatMessageWidgetWebSearch(String query) {
     return '联网检索: $query';
+  }
+
+  @override
+  String chatMessageWidgetWebFetch(String target) {
+    return '读取网页: $target';
   }
 
   @override
@@ -17002,6 +17225,48 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get searchServicesPageAutoTestTitle => '启动时自动测试连接';
 
   @override
+  String get searchServicesPageWebFetchSection => '网页抓取';
+
+  @override
+  String get searchServicesPageWebFetchModeTitle => '抓取方式';
+
+  @override
+  String get searchServicesPageWebFetchFollow => '跟随搜索服务';
+
+  @override
+  String searchServicesPageWebFetchFollowValue(String name) {
+    return '跟随搜索 · $name';
+  }
+
+  @override
+  String searchServicesPageWebFetchFollowSubtitle(String name) {
+    return '当前：$name';
+  }
+
+  @override
+  String get searchServicesPageWebFetchLocal => '本地抓取';
+
+  @override
+  String get searchServicesPageWebFetchLocalSubtitle => '免费，由本机直接请求网页';
+
+  @override
+  String get searchServicesPageWebFetchProviderSubtitle =>
+      '使用该服务商的 API Key 和额度';
+
+  @override
+  String get searchServicesPageWebFetchOff => '关闭';
+
+  @override
+  String get searchServicesPageWebFetchOffSubtitle => '联网时只搜索，不读取网页';
+
+  @override
+  String get searchServicesPageWebFetchFooter =>
+      '开启联网搜索后，模型还可以读取网页全文。搜索服务不支持抓取时会改用本地抓取，本地抓取无法处理需要 JavaScript 渲染或有反爬限制的页面。';
+
+  @override
+  String get searchServicesPageWebFetchSupported => '支持网页抓取';
+
+  @override
   String get searchServicesPageMaxResults => '最大结果数';
 
   @override
@@ -17080,6 +17345,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get searchServicesDialogApiKey => 'API Key';
+
+  @override
+  String get searchServicesDialogApiKeyOptional => 'API Key（可选）';
 
   @override
   String get searchServicesDialogModel => '模型';
@@ -17235,6 +17503,31 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String searchServiceEditorTestFailed(String message) {
     return '搜索失败：$message';
+  }
+
+  @override
+  String get searchServiceEditorTestModeSearch => '搜索';
+
+  @override
+  String get searchServiceEditorTestModeFetch => '抓取';
+
+  @override
+  String get searchServiceEditorTestUrlHint => '输入测试网址';
+
+  @override
+  String get searchServiceEditorTestFetchRun => '运行抓取测试';
+
+  @override
+  String get searchServiceEditorTestFetchRunning => '抓取中…';
+
+  @override
+  String searchServiceEditorTestFetchFailed(String message) {
+    return '抓取失败：$message';
+  }
+
+  @override
+  String searchServiceEditorTestFetchStats(String characters, String seconds) {
+    return '$characters 字符 · $seconds 秒';
   }
 
   @override
@@ -17884,6 +18177,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get asrServicesOpenAiSubtitle => '低延迟流式转写';
 
   @override
+  String get asrServicesGroqSubtitle => 'Whisper 分段云端转写';
+
+  @override
+  String get asrServicesMistralSubtitle => 'Voxtral 分段云端转写';
+
+  @override
   String get asrServicesDashScopeTitle => 'DashScope';
 
   @override
@@ -18319,6 +18618,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get searchProviderExaDescription => '具备语义理解的神经搜索引擎。适合研究与查找特定内容。';
 
   @override
+  String get searchProviderExaMcpDescription =>
+      '通过 MCP 使用 Exa 搜索。不填 API Key 可在免费限额内使用。';
+
+  @override
   String get searchProviderLinkUpDescription =>
       '提供来源可追溯答案的搜索 API，同时提供搜索结果与 AI 摘要。';
 
@@ -18341,6 +18644,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       'Ollama 网络搜索 API。为模型补充最新信息，减少幻觉并提升准确性。';
 
   @override
+  String get searchProviderDeepSeekDescription =>
+      'DeepSeek 官方网页搜索与抓取 API，使用 DeepSeek API Key。';
+
+  @override
   String get searchProviderJinaDescription => '适合开发者和企业用于 AI 搜索应用。支持多语言与多模态。';
 
   @override
@@ -18354,6 +18661,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get searchServiceNameExa => 'Exa';
+
+  @override
+  String get searchServiceNameExaMcp => 'Exa MCP';
 
   @override
   String get searchServiceNameZhipu => '智谱';
@@ -18372,6 +18682,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get searchServiceNameOllama => 'Ollama';
+
+  @override
+  String get searchServiceNameDeepSeek => 'DeepSeek';
 
   @override
   String get searchServiceNameJina => 'Jina';
@@ -19573,7 +19886,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get memorySettingsInjectionMaxItemsSubtitle =>
-      '某一类型的记忆超过该条数时，只注入最近的若干条，其余由模型用 memory_search_profile 按需查询。调大更全面但更费 token。若你改过规则提示词，请一并更新或恢复默认。';
+      '此限制仅适用于未选择全量注入的类型。某一类型的记忆超过该条数时，只注入最近的若干条，其余由模型用 memory_search_profile 按需查询。调大更全面但更费 token。若你改过规则提示词，请一并更新或恢复默认。';
+
+  @override
+  String get memorySettingsFullInjectionTypesTitle => '全量注入类型';
+
+  @override
+  String get memorySettingsFullInjectionTypesSubtitle =>
+      '可多选。选中类型会注入全局及当前助手的全部有效记忆，不受条数限制，会增加上下文和 token 消耗。';
 
   @override
   String memorySettingsInjectionMaxItemsOption(int n) {
@@ -20469,6 +20789,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get worldBookInjectionPositionAtDepth => '指定深度';
+
+  @override
+  String worldBookImportUnsupportedEntries(int count) {
+    return '导入完成。$count 个条目使用了暂不支持的酒馆功能（如宏、正则、时效、筛选或插入规则），已保留内容并停用，请检查后再启用。';
+  }
 
   @override
   String get worldBookInjectionRoleUser => '用户';
@@ -22163,6 +22488,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get workspaceEnvErrorExtractFailed => '无法解压沙箱镜像。';
+
+  @override
+  String get workspaceEnvErrorCleanupFailed => '无法清理旧沙箱文件，请重试。';
+
+  @override
+  String get workspaceEnvCleanupIncomplete => '沙箱已就绪，但部分旧文件未能清理，仍占用存储空间。';
+
+  @override
+  String get workspaceEnvErrorResetFailed => '未能完成沙箱重置，请重试。';
 
   @override
   String get workspaceEnvErrorPatchFailed => '无法完成沙箱配置。';
@@ -26501,6 +26835,57 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get backupPageFilesLabel => '檔案';
 
   @override
+  String get backupPageScopeTitle => '備份與匯入內容';
+
+  @override
+  String backupPageScopeSelectedCount(int selected, int total) {
+    return '$selected/$total';
+  }
+
+  @override
+  String get backupPageBackupManagementDescription =>
+      '選擇備份和匯入的內容，適用於本機、WebDAV 和 S3。匯入時保留未選取的內容。技能和工作區包含各自的檔案。';
+
+  @override
+  String get backupPageAssistantsLabel => '助手';
+
+  @override
+  String get backupPageProvidersLabel => '供應商';
+
+  @override
+  String get backupPageMcpLabel => 'MCP 伺服器';
+
+  @override
+  String get backupPageEnvironmentVariablesLabel => '環境變數';
+
+  @override
+  String get backupPageSkillsLabel => '技能';
+
+  @override
+  String get backupPageWorldBooksLabel => '世界書';
+
+  @override
+  String get backupPageMemoriesLabel => '記憶';
+
+  @override
+  String get backupPageQuickPhrasesLabel => '快捷短語';
+
+  @override
+  String get backupPageInstructionsLabel => '提示詞注入';
+
+  @override
+  String get backupPageWorkspacesLabel => '工作區';
+
+  @override
+  String get backupPageSearchServicesLabel => '搜尋服務';
+
+  @override
+  String get backupPageSpeechServicesLabel => '語音服務';
+
+  @override
+  String get backupPageSettingsLabel => '其他設定';
+
+  @override
   String get backupPageTestDone => '測試完成';
 
   @override
@@ -26779,7 +27164,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get backupPageSelectImportModeDescription =>
-      '請選擇還原方式。聊天與檔案開關決定本次還原的元件。';
+      '請選擇還原方式。備份管理中的分類開關同樣適用於本次匯入。';
 
   @override
   String get backupPageOverwriteMode => '完全覆蓋';
@@ -27489,6 +27874,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String chatMessageWidgetWebSearch(String query) {
     return '聯網檢索: $query';
+  }
+
+  @override
+  String chatMessageWidgetWebFetch(String target) {
+    return '讀取網頁: $target';
   }
 
   @override
@@ -29441,6 +29831,48 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get searchServicesPageAutoTestTitle => '啟動時自動測試連線';
 
   @override
+  String get searchServicesPageWebFetchSection => '網頁抓取';
+
+  @override
+  String get searchServicesPageWebFetchModeTitle => '抓取方式';
+
+  @override
+  String get searchServicesPageWebFetchFollow => '跟隨搜尋服務';
+
+  @override
+  String searchServicesPageWebFetchFollowValue(String name) {
+    return '跟隨搜尋 · $name';
+  }
+
+  @override
+  String searchServicesPageWebFetchFollowSubtitle(String name) {
+    return '目前：$name';
+  }
+
+  @override
+  String get searchServicesPageWebFetchLocal => '本機抓取';
+
+  @override
+  String get searchServicesPageWebFetchLocalSubtitle => '免費，由本機直接請求網頁';
+
+  @override
+  String get searchServicesPageWebFetchProviderSubtitle =>
+      '使用該服務商的 API Key 與額度';
+
+  @override
+  String get searchServicesPageWebFetchOff => '關閉';
+
+  @override
+  String get searchServicesPageWebFetchOffSubtitle => '連網時只搜尋，不讀取網頁';
+
+  @override
+  String get searchServicesPageWebFetchFooter =>
+      '開啟連網搜尋後，模型還可以讀取網頁全文。搜尋服務不支援抓取時會改用本機抓取，本機抓取無法處理需要 JavaScript 渲染或有反爬限制的頁面。';
+
+  @override
+  String get searchServicesPageWebFetchSupported => '支援網頁抓取';
+
+  @override
   String get searchServicesPageMaxResults => '最大結果數';
 
   @override
@@ -29519,6 +29951,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get searchServicesDialogApiKey => 'API Key';
+
+  @override
+  String get searchServicesDialogApiKeyOptional => 'API Key（選填）';
 
   @override
   String get searchServicesDialogModel => '模型';
@@ -29674,6 +30109,31 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String searchServiceEditorTestFailed(String message) {
     return '搜尋失敗：$message';
+  }
+
+  @override
+  String get searchServiceEditorTestModeSearch => '搜尋';
+
+  @override
+  String get searchServiceEditorTestModeFetch => '抓取';
+
+  @override
+  String get searchServiceEditorTestUrlHint => '輸入測試網址';
+
+  @override
+  String get searchServiceEditorTestFetchRun => '執行抓取測試';
+
+  @override
+  String get searchServiceEditorTestFetchRunning => '抓取中…';
+
+  @override
+  String searchServiceEditorTestFetchFailed(String message) {
+    return '抓取失敗：$message';
+  }
+
+  @override
+  String searchServiceEditorTestFetchStats(String characters, String seconds) {
+    return '$characters 字元 · $seconds 秒';
   }
 
   @override
@@ -30323,6 +30783,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get asrServicesOpenAiSubtitle => '低延遲串流轉寫';
 
   @override
+  String get asrServicesGroqSubtitle => 'Whisper 分段雲端轉寫';
+
+  @override
+  String get asrServicesMistralSubtitle => 'Voxtral 分段雲端轉寫';
+
+  @override
   String get asrServicesDashScopeTitle => 'DashScope';
 
   @override
@@ -30832,6 +31298,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get searchProviderExaDescription => '具備語義理解的神經搜尋引擎。適合研究與查找特定內容。';
 
   @override
+  String get searchProviderExaMcpDescription =>
+      '透過 MCP 使用 Exa 搜尋。不填 API Key 可在免費限額內使用。';
+
+  @override
   String get searchProviderLinkUpDescription =>
       '提供來源可追溯答案的搜尋 API，同時提供搜尋結果與 AI 摘要。';
 
@@ -30854,6 +31324,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
       'Ollama 網路搜尋 API。為模型補充最新資訊，降低幻覺並提升準確性。';
 
   @override
+  String get searchProviderDeepSeekDescription =>
+      'DeepSeek 官方網頁搜尋與擷取 API，使用 DeepSeek API Key。';
+
+  @override
   String get searchProviderJinaDescription =>
       'AI 搜尋基礎設施：提供 Embeddings、重排序、Web Reader、DeepSearch 與小語言模型。支援多語言與多模態。';
 
@@ -30868,6 +31342,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get searchServiceNameExa => 'Exa';
+
+  @override
+  String get searchServiceNameExaMcp => 'Exa MCP';
 
   @override
   String get searchServiceNameZhipu => 'Zhipu（智譜）';
@@ -30886,6 +31363,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get searchServiceNameOllama => 'Ollama';
+
+  @override
+  String get searchServiceNameDeepSeek => 'DeepSeek';
 
   @override
   String get searchServiceNameJina => 'Jina';
@@ -32088,7 +32568,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get memorySettingsInjectionMaxItemsSubtitle =>
-      '某一類型的記憶超過該條數時，只注入最近的若干條，其餘由模型用 memory_search_profile 按需查詢。調大更全面但更費 token。若你改過規則提示詞，請一併更新或恢復預設。';
+      '此限制僅適用於未選擇全量注入的類型。某一類型的記憶超過該條數時，只注入最近的若干條，其餘由模型用 memory_search_profile 按需查詢。調大更全面但更費 token。若你改過規則提示詞，請一併更新或恢復預設。';
+
+  @override
+  String get memorySettingsFullInjectionTypesTitle => '全量注入類型';
+
+  @override
+  String get memorySettingsFullInjectionTypesSubtitle =>
+      '可多選。選中類型會注入全域及目前助手的全部有效記憶，不受條數限制，會增加上下文和 token 消耗。';
 
   @override
   String memorySettingsInjectionMaxItemsOption(int n) {
@@ -32984,6 +33471,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get worldBookInjectionPositionAtDepth => '指定深度';
+
+  @override
+  String worldBookImportUnsupportedEntries(int count) {
+    return '匯入完成。$count 個條目使用了暫不支援的酒館功能（如巨集、正則、時效、篩選或插入規則），已保留內容並停用，請檢查後再啟用。';
+  }
 
   @override
   String get worldBookInjectionRoleUser => '使用者';
@@ -34678,6 +35170,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get workspaceEnvErrorExtractFailed => '無法解壓沙箱映像。';
+
+  @override
+  String get workspaceEnvErrorCleanupFailed => '無法清理舊沙箱檔案，請重試。';
+
+  @override
+  String get workspaceEnvCleanupIncomplete => '沙箱已就緒，但部分舊檔案未能清理，仍佔用儲存空間。';
+
+  @override
+  String get workspaceEnvErrorResetFailed => '未能完成沙箱重設，請重試。';
 
   @override
   String get workspaceEnvErrorPatchFailed => '無法完成沙箱設定。';

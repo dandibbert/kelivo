@@ -170,6 +170,15 @@ class MessageBuilderService {
   final String? Function(ChatMessage message, String kind)?
   providerArtifactLookup;
 
+  String? _providerArtifact(ChatMessage message, String kind) {
+    // Native replay data follows the frozen message, including an explicitly
+    // empty snapshot. A later LRU eviction or stream update must not change it.
+    if (message.hasProviderArtifactSnapshot) {
+      return message.providerArtifactSnapshot[kind];
+    }
+    return providerArtifactLookup?.call(message, kind);
+  }
+
   /// Cache for document text extraction to avoid re-reading files on every message
   /// Keyed by path, validated with (modified + size) to avoid stale reuse.
   final Map<String, _DocTextCacheEntry> _docTextCache =
@@ -343,16 +352,16 @@ class MessageBuilderService {
     for (final m in source) {
       if (includeToolMessages && !preserveToolTurns && m.role == 'assistant') {
         thinkingRecovery.readArtifact(
-          providerArtifactLookup?.call(m, claudeThinkingRecoveryArtifactKind),
+          _providerArtifact(m, claudeThinkingRecoveryArtifactKind),
         );
       }
       if (m.role == 'assistant' &&
           includeToolMessages &&
           responsesScope != null) {
         final history = buildResponsesHistory(
-          payload: providerArtifactLookup?.call(m, responsesTurnArtifactKind),
+          payload: _providerArtifact(m, responsesTurnArtifactKind),
           scope: responsesScope,
-          toolEvents: chatService.getToolEvents(m.id),
+          toolEvents: chatService.getToolEventsForMessage(m),
           content: m.content,
         );
         if (history != null) {
@@ -382,8 +391,8 @@ class MessageBuilderService {
               claudeSource != null &&
               m.providerId == claudeSource.providerId &&
               m.modelId == claudeSource.modelId &&
-              chatService.getToolEvents(m.id).isEmpty
-          ? providerArtifactLookup?.call(m, claudeTurnArtifactKind)
+              chatService.getToolEventsForMessage(m).isEmpty
+          ? _providerArtifact(m, claudeTurnArtifactKind)
           : null;
       String? assistantReasoningContent;
       dynamic reasoningDetails;
@@ -415,7 +424,7 @@ class MessageBuilderService {
           reasoningDetails = null;
         }
       } else if (includeToolMessages && m.role == 'assistant') {
-        final events = chatService.getToolEvents(m.id);
+        final events = chatService.getToolEventsForMessage(m);
         if (events.isNotEmpty) {
           // Tool-call history is only valid once every call has a result.
           final hasPendingToolEvent = events.any((e) => e['content'] == null);
@@ -467,17 +476,14 @@ class MessageBuilderService {
                 'content': '\n\n',
                 'tool_calls': calls,
               };
-              final turn = providerArtifactLookup?.call(
-                m,
-                claudeTurnArtifactKind,
-              );
+              final turn = _providerArtifact(m, claudeTurnArtifactKind);
               if (turn != null && turn.isNotEmpty) {
                 assistantToolMessage[multimodalInternalClaudeTurnKey] = turn;
                 hasClaudeToolTurn = claudeSource != null;
               }
               // Also here: a turn that ran code and then said nothing has no
               // final message below to carry the container.
-              final container = providerArtifactLookup?.call(
+              final container = _providerArtifact(
                 m,
                 claudeContainerArtifactKind,
               );
@@ -537,14 +543,11 @@ class MessageBuilderService {
         if (plainClaudeTurn?.isNotEmpty == true) {
           message[multimodalInternalClaudeTurnKey] = plainClaudeTurn;
         }
-        final container = providerArtifactLookup?.call(
-          m,
-          claudeContainerArtifactKind,
-        );
+        final container = _providerArtifact(m, claudeContainerArtifactKind);
         if (container != null && container.isNotEmpty) {
           message[multimodalInternalClaudeContainerKey] = container;
         }
-        final signature = providerArtifactLookup?.call(
+        final signature = _providerArtifact(
           m,
           geminiThoughtSignatureArtifactKind,
         );
@@ -1755,6 +1758,8 @@ class MessageBuilderService {
       assistantId: assistant.id,
       lang: lang,
       maxItems: maxItems,
+      fullInjectionTypes:
+          resolvedSettings?.memoryFullInjectionTypes ?? const {},
     );
   }
 
@@ -2440,34 +2445,37 @@ class MessageBuilderService {
         );
       }
 
-      // AT_DEPTH: insert at depth from end (depth=1 means before last message).
+      // AT_DEPTH: depth=0 appends; depth=1 inserts before the last message.
       final atDepthInjections = byPosition[WorldBookInjectionPosition.atDepth];
       if (atDepthInjections != null && atDepthInjections.isNotEmpty) {
         final byDepth = <int, List<WorldBookEntry>>{};
         for (final e in atDepthInjections) {
-          final depth = (e.injectDepth <= 0 ? 1 : e.injectDepth)
-              .clamp(1, 200)
-              .toInt();
+          final depth = e.injectDepth.clamp(0, 200);
           byDepth.putIfAbsent(depth, () => <WorldBookEntry>[]).add(e);
         }
 
         final depths = byDepth.keys.toList(growable: false)
           ..sort((a, b) => b.compareTo(a));
+        final originalLength = apiMessages.length;
+        final historyStart = apiMessages
+            .takeWhile((message) => message['role'] == 'system')
+            .length;
+        var insertedCount = 0;
 
         for (final depth in depths) {
           final injections = byDepth[depth] ?? const <WorldBookEntry>[];
-          var insertIndex = (apiMessages.length - depth).clamp(
-            0,
-            apiMessages.length,
-          );
+          // Anchor to the original history so multiple oversized depths keep
+          // their order after clamping to the start of the chat.
+          var insertIndex =
+              (originalLength - depth).clamp(historyStart, originalLength) +
+              insertedCount;
           insertIndex = findSafeInsertIndex(apiMessages, insertIndex);
-          apiMessages.insertAll(
-            insertIndex,
-            createMergedInjectionMessages(
-              injections,
-              position: WorldBookInjectionPosition.atDepth,
-            ),
+          final messages = createMergedInjectionMessages(
+            injections,
+            position: WorldBookInjectionPosition.atDepth,
           );
+          apiMessages.insertAll(insertIndex, messages);
+          insertedCount += messages.length;
         }
       }
     } catch (_) {}
@@ -2531,10 +2539,9 @@ class MessageBuilderService {
   /// Convert local Markdown image links to inline base64 for model context.
   Future<void> inlineLocalImages(List<Map<String, dynamic>> apiMessages) async {
     for (int i = 0; i < apiMessages.length; i++) {
-      // view_image snapshots are resolved from successful result metadata at
-      // the provider boundary. Error text can contain untrusted image links.
-      if (apiMessages[i]['role'] == 'tool' &&
-          apiMessages[i]['name'] == 'view_image') {
+      // Typed tool images are resolved from result metadata at the provider
+      // boundary. Keep their Markdown intact; tool text never authorizes reads.
+      if (apiMessages[i]['role'] == 'tool') {
         continue;
       }
       final s = (apiMessages[i]['content'] ?? '').toString();

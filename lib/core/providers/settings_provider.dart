@@ -12,6 +12,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:path/path.dart' as p;
 import '../services/search/search_service.dart';
+import '../services/search/web_fetch_service.dart';
 import '../services/tts/network_tts.dart';
 import '../services/tts/tts_text_selection.dart';
 import '../services/asr/asr_service_options.dart';
@@ -31,6 +32,7 @@ import '../../utils/app_directories.dart';
 import '../../utils/sandbox_path_resolver.dart';
 import '../../utils/avatar_cache.dart';
 import '../models/assistant.dart';
+import '../models/memory_entry.dart';
 import '../models/model_spec.dart';
 import '../models/reasoning_request.dart';
 import '../services/model_spec/model_spec_resolver.dart';
@@ -181,6 +183,8 @@ class SettingsProvider extends ChangeNotifier {
   static const int maxMemoryMigrationBatchSize = 24;
   static const String _memoryInjectionMaxItemsKey =
       'memory_injection_max_items_v1';
+  static const String _memoryFullInjectionTypesKey =
+      'memory_full_injection_types_v1';
   static const int defaultMemoryInjectionMaxItems = 10;
   static const int minMemoryInjectionMaxItems = 1;
   static const int maxMemoryInjectionMaxItems = 100;
@@ -387,6 +391,7 @@ class SettingsProvider extends ChangeNotifier {
   static const String _searchEnabledKey = 'search_enabled_v1';
   static const String _searchAutoTestOnLaunchKey =
       'search_auto_test_on_launch_v1';
+  static const String _webFetchModeKey = 'search_web_fetch_v1';
   static const String _webDavConfigKey = 'webdav_config_v1';
   static const String _s3ConfigKey = 's3_config_v1';
   // Global network proxy
@@ -616,6 +621,9 @@ class SettingsProvider extends ChangeNotifier {
   bool get searchEnabled => _searchEnabled;
   bool _searchAutoTestOnLaunch = false;
   bool get searchAutoTestOnLaunch => _searchAutoTestOnLaunch;
+  // follow | local | off | a search service id (see WebFetchMode)
+  String _webFetchMode = WebFetchMode.follow;
+  String get webFetchMode => _webFetchMode;
   // Ephemeral connection test results: serviceId -> connected (true), failed (false), or null (not tested)
   final Map<String, bool?> _searchConnection = <String, bool?>{};
   Map<String, bool?> get searchConnection =>
@@ -644,16 +652,18 @@ class SettingsProvider extends ChangeNotifier {
   int _appLaunchCount = 0;
   int get appLaunchCount => _appLaunchCount;
 
-  SettingsProvider(this._preferences) {
+  SettingsProvider(this._preferences, {this.onProviderModelsRetired}) {
     ProviderOAuthService.instance.bind(this);
     _appLocaleTag = _readAppLocaleTag(_preferences);
     _loaded = _load();
   }
 
   SettingsProvider._withoutLoad(this._preferences)
-    : _loaded = Future<void>.value();
+    : onProviderModelsRetired = null,
+      _loaded = Future<void>.value();
 
   final BusinessPreferences _preferences;
+  final Future<void> Function(String providerKey)? onProviderModelsRetired;
   late final Future<void> _loaded;
   Future<void> get loaded => _loaded;
 
@@ -963,6 +973,13 @@ class SettingsProvider extends ChangeNotifier {
         (prefs.getInt(_memoryInjectionMaxItemsKey) ??
                 defaultMemoryInjectionMaxItems)
             .clamp(minMemoryInjectionMaxItems, maxMemoryInjectionMaxItems);
+    final fullInjectionTypes =
+        prefs.getStringList(_memoryFullInjectionTypesKey) ?? const <String>[];
+    _memoryFullInjectionTypes = Set<MemoryType>.unmodifiable(
+      MemoryType.values.where(
+        (type) => fullInjectionTypes.contains(MemoryEntry.typeToString(type)),
+      ),
+    );
 
     // display settings
     _showUserAvatar = prefs.getBool(_displayShowUserAvatarKey) ?? true;
@@ -1319,6 +1336,7 @@ class SettingsProvider extends ChangeNotifier {
     _searchEnabled = prefs.getBool(_searchEnabledKey) ?? false;
     _searchAutoTestOnLaunch =
         prefs.getBool(_searchAutoTestOnLaunchKey) ?? false;
+    _webFetchMode = prefs.getString(_webFetchModeKey) ?? WebFetchMode.follow;
 
     // load global proxy
     _globalProxyEnabled = prefs.getBool(_globalProxyEnabledKey) ?? false;
@@ -1461,6 +1479,23 @@ class SettingsProvider extends ChangeNotifier {
         (key, config) => MapEntry(key, config.toJson()),
       );
       await prefs.setString(_providerConfigsKey, jsonEncode(seededConfigs));
+    }
+
+    final kelivo = _providerConfigs['KelivoIN'];
+    final kelivoHost = Uri.tryParse(kelivo?.baseUrl ?? '')?.host.toLowerCase();
+    if (kelivo != null &&
+        (kelivoHost == 'pollinations.ai' ||
+            (kelivoHost?.endsWith('.pollinations.ai') ?? false))) {
+      // The retired service cannot be used anymore. Drop its saved credentials,
+      // models and selections before installing the current built-in provider.
+      await onProviderModelsRetired?.call('KelivoIN');
+      await removeProviderConfig('KelivoIN');
+      await setProviderConfig(
+        'KelivoIN',
+        ProviderConfig.defaultsFor(
+          'KelivoIN',
+        ).copyWith(enabled: kelivo.enabled),
+      );
     }
 
     // kick off a one-time connectivity test for services (exclude local Bing)
@@ -4171,6 +4206,9 @@ Requirements:
   String _memoryMigratePromptEn = MemoryPrompts.migrateEn;
   int _memoryMigrationBatchSize = defaultMemoryMigrationBatchSize;
   int _memoryInjectionMaxItems = defaultMemoryInjectionMaxItems;
+  Set<MemoryType> _memoryFullInjectionTypes = const {};
+
+  Set<MemoryType> get memoryFullInjectionTypes => _memoryFullInjectionTypes;
 
   String get memoryRulesPromptZh => _memoryRulesPromptZh;
   String get memoryRulesPromptEn => _memoryRulesPromptEn;
@@ -4433,6 +4471,19 @@ Requirements:
     _memoryInjectionMaxItems = next;
     notifyListeners();
     await _preferences.setInt(_memoryInjectionMaxItemsKey, next);
+  }
+
+  Future<void> setMemoryFullInjectionTypes(Set<MemoryType> types) async {
+    final next = Set<MemoryType>.unmodifiable(
+      MemoryType.values.where(types.contains),
+    );
+    if (setEquals(_memoryFullInjectionTypes, next)) return;
+    _memoryFullInjectionTypes = next;
+    notifyListeners();
+    await _preferences.setStringList(
+      _memoryFullInjectionTypesKey,
+      next.map(MemoryEntry.typeToString).toList(),
+    );
   }
 
   Future<void> resetMemoryRulesPromptZh() async =>
@@ -5579,6 +5630,12 @@ Requirements:
 
   Future<void> setSearchServices(List<SearchServiceOptions> services) async {
     _searchServices = List.from(services);
+    final nextFetchMode = WebFetchService.effectiveMode(
+      _webFetchMode,
+      _searchServices,
+    );
+    final resetFetchMode = _webFetchMode != nextFetchMode;
+    _webFetchMode = nextFetchMode;
     if (_searchServiceSelected >= _searchServices.length) {
       _searchServiceSelected = _searchServices.isNotEmpty
           ? _searchServices.length - 1
@@ -5591,6 +5648,7 @@ Requirements:
       jsonEncode(_searchServices.map((e) => e.toJson()).toList()),
     );
     await prefs.setInt(_searchSelectedKey, _searchServiceSelected);
+    if (resetFetchMode) await prefs.setString(_webFetchModeKey, _webFetchMode);
   }
 
   Future<void> setSearchCommonOptions(SearchCommonOptions options) async {
@@ -5624,6 +5682,13 @@ Requirements:
     await prefs.setBool(_searchAutoTestOnLaunchKey, enabled);
   }
 
+  Future<void> setWebFetchMode(String mode) async {
+    _webFetchMode = WebFetchService.effectiveMode(mode, _searchServices);
+    notifyListeners();
+    final prefs = _preferences;
+    await prefs.setString(_webFetchModeKey, _webFetchMode);
+  }
+
   // Combined update for settings
   Future<void> updateSettings(SettingsProvider newSettings) async {
     if (!listEquals(_searchServices, newSettings._searchServices)) {
@@ -5641,6 +5706,9 @@ Requirements:
     if (_searchAutoTestOnLaunch != newSettings._searchAutoTestOnLaunch) {
       await setSearchAutoTestOnLaunch(newSettings._searchAutoTestOnLaunch);
     }
+    if (_webFetchMode != newSettings._webFetchMode) {
+      await setWebFetchMode(newSettings._webFetchMode);
+    }
   }
 
   SettingsProvider copyWith({
@@ -5649,6 +5717,7 @@ Requirements:
     int? searchServiceSelected,
     bool? searchEnabled,
     bool? searchAutoTestOnLaunch,
+    String? webFetchMode,
   }) {
     final copy = SettingsProvider._withoutLoad(_preferences);
     copy._searchServices = searchServices ?? _searchServices;
@@ -5658,6 +5727,7 @@ Requirements:
     copy._searchEnabled = searchEnabled ?? _searchEnabled;
     copy._searchAutoTestOnLaunch =
         searchAutoTestOnLaunch ?? _searchAutoTestOnLaunch;
+    copy._webFetchMode = webFetchMode ?? _webFetchMode;
     copy._ttsServices = _ttsServices;
     copy._selectedTtsServiceId = _selectedTtsServiceId;
     copy._ttsAutoPlayAssistantReplies = _ttsAutoPlayAssistantReplies;
@@ -5738,6 +5808,7 @@ Requirements:
     copy._memoryMigratePromptEn = _memoryMigratePromptEn;
     copy._memoryMigrationBatchSize = _memoryMigrationBatchSize;
     copy._memoryInjectionMaxItems = _memoryInjectionMaxItems;
+    copy._memoryFullInjectionTypes = _memoryFullInjectionTypes;
     copy._showUserAvatar = _showUserAvatar;
     copy._showModelIcon = _showModelIcon;
     copy._showModelNameTimestamp = _showModelNameTimestamp;
@@ -6049,8 +6120,6 @@ enum ProviderKind { openai, google, claude }
 enum ChatMessageBackgroundStyle { defaultStyle, frosted, solid }
 
 class ProviderConfig {
-  static const _kelivoInPublicApiKey = 'kelivo';
-
   final String id;
   final bool enabled;
   final String name;
@@ -6058,6 +6127,7 @@ class ProviderConfig {
   final OAuthProvider? oauthProvider;
   final ProviderOAuthCredentials? oauthCredentials;
   final DateTime? oauthModelsSyncedAt;
+  final String? oauthModelsClientVersion;
   bool get isOAuth => oauthProvider != null;
   final String baseUrl;
   final ProviderKind?
@@ -6152,6 +6222,7 @@ class ProviderConfig {
     this.oauthProvider,
     this.oauthCredentials,
     this.oauthModelsSyncedAt,
+    this.oauthModelsClientVersion,
     required this.baseUrl,
     this.providerType,
     this.chatPath,
@@ -6205,6 +6276,7 @@ class ProviderConfig {
     OAuthProvider? oauthProvider,
     Object? oauthCredentials = _sentinel,
     DateTime? oauthModelsSyncedAt,
+    Object? oauthModelsClientVersion = _sentinel,
     String? baseUrl,
     ProviderKind? providerType,
     String? chatPath,
@@ -6245,6 +6317,9 @@ class ProviderConfig {
         ? this.oauthCredentials
         : oauthCredentials as ProviderOAuthCredentials?,
     oauthModelsSyncedAt: oauthModelsSyncedAt ?? this.oauthModelsSyncedAt,
+    oauthModelsClientVersion: identical(oauthModelsClientVersion, _sentinel)
+        ? this.oauthModelsClientVersion
+        : oauthModelsClientVersion as String?,
     baseUrl: baseUrl ?? this.baseUrl,
     providerType: providerType ?? this.providerType,
     chatPath: chatPath ?? this.chatPath,
@@ -6294,6 +6369,8 @@ class ProviderConfig {
       'oauthCredentials': oauthCredentials!.toJson(),
     if (oauthModelsSyncedAt != null)
       'oauthModelsSyncedAt': oauthModelsSyncedAt!.toIso8601String(),
+    if (oauthModelsClientVersion != null)
+      'oauthModelsClientVersion': oauthModelsClientVersion,
     'baseUrl': baseUrl,
     'providerType': providerType?.name,
     'chatPath': chatPath,
@@ -6332,7 +6409,7 @@ class ProviderConfig {
     id: json['id'] as String? ?? (json['name'] as String? ?? ''),
     enabled: json['enabled'] as bool? ?? true,
     name: json['name'] as String? ?? '',
-    apiKey: _apiKeyFromJson(json),
+    apiKey: json['apiKey'] as String? ?? '',
     oauthProvider: json['oauthProvider'] == null
         ? null
         : OAuthProvider.values.byName(json['oauthProvider'] as String),
@@ -6344,6 +6421,7 @@ class ProviderConfig {
     oauthModelsSyncedAt: DateTime.tryParse(
       json['oauthModelsSyncedAt'] as String? ?? '',
     ),
+    oauthModelsClientVersion: json['oauthModelsClientVersion'] as String?,
     baseUrl: json['baseUrl'] as String? ?? '',
     providerType: json['providerType'] != null
         ? ProviderKind.values.firstWhere(
@@ -6403,13 +6481,6 @@ class ProviderConfig {
     ),
   );
 
-  static String _apiKeyFromJson(Map<String, dynamic> json) {
-    final stored = json['apiKey'] as String? ?? '';
-    if (stored.isNotEmpty) return stored;
-    final id = json['id'] as String? ?? json['name'] as String? ?? '';
-    return id.trim().toLowerCase() == 'kelivoin' ? _kelivoInPublicApiKey : '';
-  }
-
   static List<Map<String, String>> _customRequestRowsFromJson(
     Object? raw, {
     required String keyName,
@@ -6446,7 +6517,7 @@ class ProviderConfig {
   static String _defaultBase(String key) {
     final k = key.toLowerCase();
     if (k.contains('tensdaq')) return 'https://tensdaq-api.x-aio.com/v1';
-    if (k.contains('kelivoin')) return 'https://text.pollinations.ai/openai';
+    if (k.contains('kelivoin')) return 'https://api.psycheas.top/v1';
     if (k.contains('openrouter')) return 'https://openrouter.ai/api/v1';
     if (k.contains('vercel')) return 'https://ai-gateway.vercel.sh/v1';
     if (k.contains('aihubmix')) return 'https://aihubmix.com/v1';
@@ -6554,76 +6625,39 @@ class ProviderConfig {
             id: key,
             enabled: defaultEnabled(key),
             name: displayName ?? key,
-            apiKey: _kelivoInPublicApiKey,
-            baseUrl: _defaultBase(key),
-            providerType: ProviderKind.openai,
-            chatPath:
-                null, // keep empty in UI; code uses default '/chat/completions'
-            useResponseApi: false,
-            models: const [
-              // 'openai-fast',
-              'mistral',
-              'qwen-coder',
-            ],
-            modelOverrides: const {
-              // 'openai-fast': {
-              //   'type': 'chat',
-              //   'input': ['text'],
-              //   'output': ['text'],
-              //   'abilities': ['tool'],
-              // },
-              'mistral': {
-                'type': 'chat',
-                'input': ['text'],
-                'output': ['text'],
-                'abilities': ['tool'],
-              },
-              'qwen-coder': {
-                'type': 'chat',
-                'input': ['text'],
-                'output': ['text'],
-                'abilities': ['tool'],
-              },
-            },
-            proxyEnabled: false,
-            proxyHost: '',
-            proxyPort: '8080',
-            proxyUsername: '',
-            proxyPassword: '',
-            multiKeyEnabled: false,
-            apiKeys: const [],
-            keyManagement: const KeyManagementConfig(),
-            aihubmixAppCodeEnabled: false,
-            balanceEnabled: false,
-            balanceApiPath: _defaultBalanceApiPath(key),
-            balanceResultPath: _defaultBalanceResultPath(key),
-            claudePromptCachingEnabled: false,
-          );
-        }
-        // Special-case SiliconFlow: prefill two partnered models
-        if (lowerKey.contains('silicon')) {
-          return ProviderConfig(
-            id: key,
-            enabled: defaultEnabled(key),
-            name: displayName ?? key,
             apiKey: '',
             baseUrl: _defaultBase(key),
             providerType: ProviderKind.openai,
             chatPath: '/chat/completions',
             useResponseApi: false,
-            models: const ['THUDM/GLM-4-9B-0414', 'Qwen/Qwen3-8B'],
+            models: const [
+              'Qwen/Qwen3-8B',
+              'Qwen/Qwen3.5-4B',
+              'THUDM/GLM-4-9B-0414',
+              'auto',
+            ],
             modelOverrides: const {
+              'Qwen/Qwen3-8B': {
+                'type': 'chat',
+                'input': ['text'],
+                'output': ['text'],
+                'abilities': ['tool', 'reasoning'],
+              },
+              'Qwen/Qwen3.5-4B': {
+                'abilities': ['tool', 'reasoning'],
+              },
               'THUDM/GLM-4-9B-0414': {
                 'type': 'chat',
                 'input': ['text'],
                 'output': ['text'],
                 'abilities': ['tool'],
               },
-              'Qwen/Qwen3-8B': {
+              'auto': {
                 'type': 'chat',
                 'input': ['text'],
                 'output': ['text'],
                 'abilities': ['tool', 'reasoning'],
+                'reasoning': {'dialect': 'openaiReasoningEffort'},
               },
             },
             proxyEnabled: false,
@@ -6650,7 +6684,7 @@ class ProviderConfig {
           baseUrl: _defaultBase(key),
           providerType: ProviderKind.openai,
           chatPath: '/chat/completions',
-          useResponseApi: false,
+          useResponseApi: lowerKey == 'marucode',
           models: const [],
           modelOverrides: const {},
           proxyEnabled: false,
@@ -6662,7 +6696,7 @@ class ProviderConfig {
           apiKeys: const [],
           keyManagement: const KeyManagementConfig(),
           aihubmixAppCodeEnabled: lowerKey.contains('aihubmix'),
-          balanceEnabled: false,
+          balanceEnabled: lowerKey == 'marucode',
           balanceApiPath: _defaultBalanceApiPath(key),
           balanceResultPath: _defaultBalanceResultPath(key),
           claudePromptCachingEnabled: false,
@@ -6672,6 +6706,7 @@ class ProviderConfig {
 
   static String _defaultBalanceApiPath(String key) {
     final k = key.toLowerCase();
+    if (k == 'marucode') return '/usage';
     if (k.contains('aihubmix')) return '/user/balance';
     if (k.contains('deepseek')) return '/user/balance';
     if (k.contains('openrouter')) return '/credits';
@@ -6684,6 +6719,7 @@ class ProviderConfig {
 
   static String _defaultBalanceResultPath(String key) {
     final k = key.toLowerCase();
+    if (k == 'marucode') return 'remaining';
     if (k.contains('aihubmix')) return 'balance_infos[0].total_balance';
     if (k.contains('deepseek')) return 'balance_infos[0].total_balance';
     if (k.contains('openrouter')) {

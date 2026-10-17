@@ -742,7 +742,7 @@ class HomePageController extends ChangeNotifier {
             imagePaths: imagePaths,
           ),
       providerArtifactLookup: (message, kind) =>
-          _chatService.getProviderArtifact(message.id, kind),
+          _chatService.getProviderArtifactForMessage(message, kind),
     );
     _messageBuilderService.ocrTextWrapper = _ocrService.wrapOcrBlock;
     _generationController = GenerationController(
@@ -1116,11 +1116,12 @@ class HomePageController extends ChangeNotifier {
           // Assistant restore and window load are independent; the message
           // list already tolerates a one-frame missing-assistant fallback.
           final restoreAssistant = Future<void>(() async {
-            if ((recent.assistantId ?? '').isNotEmpty) {
+            final assistant = assistantProvider.resolveConversationAssistant(
+              recent.assistantId,
+            );
+            if (assistant != null) {
               try {
-                await assistantProvider.setCurrentAssistant(
-                  recent.assistantId!,
-                );
+                await assistantProvider.setCurrentAssistant(assistant.id);
               } catch (_) {}
             }
           });
@@ -2210,8 +2211,9 @@ class HomePageController extends ChangeNotifier {
         : _chatService.getConversation(input.draftSubmission!.conversationId);
     if (conversation == null) return null;
     final assistants = _context.read<AssistantProvider>();
-    final assistant = assistants.getById(conversation.assistantId ?? '');
-    if (conversation.assistantId != null && assistant == null) return null;
+    final assistant = assistants.resolveConversationAssistant(
+      conversation.assistantId,
+    );
     final parts = await MessageGenerationService.buildPersistedUserMessageParts(
       input,
       assistant: assistant,
@@ -2463,7 +2465,7 @@ class HomePageController extends ChangeNotifier {
 
   /// True when a selected group may have multiple versions.
   ///
-  /// Uses the loaded collapsed window + [ChatService.getMessagesForGroups]
+  /// Uses the loaded collapsed window + [ChatController.groupedMessages]
   /// (filled by visible-group preload). Never walks full conversation order /
   /// [getMessagesRange] just to render the delete action bar. When group
   /// preload is incomplete / unknown — including selected ids outside the
@@ -2475,7 +2477,9 @@ class HomePageController extends ChangeNotifier {
     final groupIds = _selectedSelectionGroupIds();
     if (groupIds.isEmpty) return false;
 
-    final loaded = _chatService.getMessagesForGroups(conversation.id, groupIds);
+    final loaded = [
+      for (final group in groupIds) ...?_chatController.groupedMessages[group],
+    ];
     final counts = <String, int>{};
     for (final message in loaded) {
       final groupId = message.groupId ?? message.id;
@@ -3610,7 +3614,8 @@ class HomePageController extends ChangeNotifier {
   void _restoreAssistantMessageUiState(ChatMessage message) {
     _streamController.restoreMessageUiState(
       message,
-      getToolEventsFromDb: (id) => _chatService.getToolEvents(id),
+      getToolEventsFromDb: (id) =>
+          _chatService.getToolEventsForMessage(message),
     );
   }
 

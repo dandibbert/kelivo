@@ -3058,6 +3058,102 @@ abstract class AppLocalizations {
   /// **'Files'**
   String get backupPageFilesLabel;
 
+  /// No description provided for @backupPageScopeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup and import content'**
+  String get backupPageScopeTitle;
+
+  /// No description provided for @backupPageScopeSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{selected}/{total}'**
+  String backupPageScopeSelectedCount(int selected, int total);
+
+  /// No description provided for @backupPageBackupManagementDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what to back up and import. Applies to local, WebDAV and S3 backups. Unselected content stays unchanged on import. Skills and workspaces include their own files.'**
+  String get backupPageBackupManagementDescription;
+
+  /// No description provided for @backupPageAssistantsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistants'**
+  String get backupPageAssistantsLabel;
+
+  /// No description provided for @backupPageProvidersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers'**
+  String get backupPageProvidersLabel;
+
+  /// No description provided for @backupPageMcpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'MCP servers'**
+  String get backupPageMcpLabel;
+
+  /// No description provided for @backupPageEnvironmentVariablesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment variables'**
+  String get backupPageEnvironmentVariablesLabel;
+
+  /// No description provided for @backupPageSkillsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get backupPageSkillsLabel;
+
+  /// No description provided for @backupPageWorldBooksLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'World books'**
+  String get backupPageWorldBooksLabel;
+
+  /// No description provided for @backupPageMemoriesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Memories'**
+  String get backupPageMemoriesLabel;
+
+  /// No description provided for @backupPageQuickPhrasesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick phrases'**
+  String get backupPageQuickPhrasesLabel;
+
+  /// No description provided for @backupPageInstructionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt injections'**
+  String get backupPageInstructionsLabel;
+
+  /// No description provided for @backupPageWorkspacesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get backupPageWorkspacesLabel;
+
+  /// No description provided for @backupPageSearchServicesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search services'**
+  String get backupPageSearchServicesLabel;
+
+  /// No description provided for @backupPageSpeechServicesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech services'**
+  String get backupPageSpeechServicesLabel;
+
+  /// No description provided for @backupPageSettingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Other settings'**
+  String get backupPageSettingsLabel;
+
   /// No description provided for @backupPageTestDone.
   ///
   /// In en, this message translates to:
@@ -3553,7 +3649,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupPageSelectImportModeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Choose a restore mode. The chat and file switches determine which components are included.'**
+  /// **'Choose a restore mode. The switches in Backup Management apply to this import.'**
   String get backupPageSelectImportModeDescription;
 
   /// No description provided for @backupPageOverwriteMode.
@@ -4899,6 +4995,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Web Search: {query}'**
   String chatMessageWidgetWebSearch(String query);
+
+  /// No description provided for @chatMessageWidgetWebFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Read page: {target}'**
+  String chatMessageWidgetWebFetch(String target);
 
   /// No description provided for @chatMessageWidgetBuiltinSearch.
   ///
@@ -8545,6 +8647,78 @@ abstract class AppLocalizations {
   /// **'Auto-test connections on launch'**
   String get searchServicesPageAutoTestTitle;
 
+  /// No description provided for @searchServicesPageWebFetchSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Web page reading'**
+  String get searchServicesPageWebFetchSection;
+
+  /// No description provided for @searchServicesPageWebFetchModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read pages with'**
+  String get searchServicesPageWebFetchModeTitle;
+
+  /// No description provided for @searchServicesPageWebFetchFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow search service'**
+  String get searchServicesPageWebFetchFollow;
+
+  /// No description provided for @searchServicesPageWebFetchFollowValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow search · {name}'**
+  String searchServicesPageWebFetchFollowValue(String name);
+
+  /// No description provided for @searchServicesPageWebFetchFollowSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently {name}'**
+  String searchServicesPageWebFetchFollowSubtitle(String name);
+
+  /// No description provided for @searchServicesPageWebFetchLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get searchServicesPageWebFetchLocal;
+
+  /// No description provided for @searchServicesPageWebFetchLocalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free. This device requests the page directly.'**
+  String get searchServicesPageWebFetchLocalSubtitle;
+
+  /// No description provided for @searchServicesPageWebFetchProviderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses this service\'s API key and quota'**
+  String get searchServicesPageWebFetchProviderSubtitle;
+
+  /// No description provided for @searchServicesPageWebFetchOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get searchServicesPageWebFetchOff;
+
+  /// No description provided for @searchServicesPageWebFetchOffSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search only, without reading pages'**
+  String get searchServicesPageWebFetchOffSubtitle;
+
+  /// No description provided for @searchServicesPageWebFetchFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'With web search on, the model can also read full pages. When the search service can\'t read pages, local reading is used, which can\'t handle pages that need JavaScript or block bots.'**
+  String get searchServicesPageWebFetchFooter;
+
+  /// No description provided for @searchServicesPageWebFetchSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Can read web pages'**
+  String get searchServicesPageWebFetchSupported;
+
   /// No description provided for @searchServicesPageMaxResults.
   ///
   /// In en, this message translates to:
@@ -8700,6 +8874,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'API Key'**
   String get searchServicesDialogApiKey;
+
+  /// No description provided for @searchServicesDialogApiKeyOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key (optional)'**
+  String get searchServicesDialogApiKeyOptional;
 
   /// No description provided for @searchServicesDialogModel.
   ///
@@ -8982,6 +9162,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search failed: {message}'**
   String searchServiceEditorTestFailed(String message);
+
+  /// No description provided for @searchServiceEditorTestModeSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchServiceEditorTestModeSearch;
+
+  /// No description provided for @searchServiceEditorTestModeFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Read page'**
+  String get searchServiceEditorTestModeFetch;
+
+  /// No description provided for @searchServiceEditorTestUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a URL'**
+  String get searchServiceEditorTestUrlHint;
+
+  /// No description provided for @searchServiceEditorTestFetchRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run test fetch'**
+  String get searchServiceEditorTestFetchRun;
+
+  /// No description provided for @searchServiceEditorTestFetchRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading…'**
+  String get searchServiceEditorTestFetchRunning;
+
+  /// No description provided for @searchServiceEditorTestFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch failed: {message}'**
+  String searchServiceEditorTestFetchFailed(String message);
+
+  /// No description provided for @searchServiceEditorTestFetchStats.
+  ///
+  /// In en, this message translates to:
+  /// **'{characters} characters · {seconds}s'**
+  String searchServiceEditorTestFetchStats(String characters, String seconds);
 
   /// No description provided for @searchServiceEditorResultOpenTooltip.
   ///
@@ -10213,6 +10435,18 @@ abstract class AppLocalizations {
   /// **'Low-latency streaming transcription'**
   String get asrServicesOpenAiSubtitle;
 
+  /// No description provided for @asrServicesGroqSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Whisper segmented transcription'**
+  String get asrServicesGroqSubtitle;
+
+  /// No description provided for @asrServicesMistralSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voxtral segmented transcription'**
+  String get asrServicesMistralSubtitle;
+
   /// No description provided for @asrServicesDashScopeTitle.
   ///
   /// In en, this message translates to:
@@ -11179,6 +11413,12 @@ abstract class AppLocalizations {
   /// **'Neural search with semantic understanding. Great for research and finding specific content.'**
   String get searchProviderExaDescription;
 
+  /// No description provided for @searchProviderExaMcpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Exa search via MCP. An API key is optional for limited free usage.'**
+  String get searchProviderExaMcpDescription;
+
   /// No description provided for @searchProviderLinkUpDescription.
   ///
   /// In en, this message translates to:
@@ -11215,6 +11455,12 @@ abstract class AppLocalizations {
   /// **'Ollama web search API. Augments models with up-to-date information.'**
   String get searchProviderOllamaDescription;
 
+  /// No description provided for @searchProviderDeepSeekDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'DeepSeek official web search and page fetch APIs. Uses a DeepSeek API key.'**
+  String get searchProviderDeepSeekDescription;
+
   /// No description provided for @searchProviderJinaDescription.
   ///
   /// In en, this message translates to:
@@ -11244,6 +11490,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exa'**
   String get searchServiceNameExa;
+
+  /// No description provided for @searchServiceNameExaMcp.
+  ///
+  /// In en, this message translates to:
+  /// **'Exa MCP'**
+  String get searchServiceNameExaMcp;
 
   /// No description provided for @searchServiceNameZhipu.
   ///
@@ -11280,6 +11532,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ollama'**
   String get searchServiceNameOllama;
+
+  /// No description provided for @searchServiceNameDeepSeek.
+  ///
+  /// In en, this message translates to:
+  /// **'DeepSeek'**
+  String get searchServiceNameDeepSeek;
 
   /// No description provided for @searchServiceNameJina.
   ///
@@ -13534,8 +13792,20 @@ abstract class AppLocalizations {
   /// No description provided for @memorySettingsInjectionMaxItemsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'When a type exceeds this limit, only the newest items are injected. The rest can be fetched with memory_search_profile. A larger number is more complete but uses more tokens. If you customized the rules prompt, update it or restore the default.'**
+  /// **'This limit applies to types not selected for full injection. When a type exceeds this limit, only the newest items are injected. The rest can be fetched with memory_search_profile. A larger number is more complete but uses more tokens. If you customized the rules prompt, update it or restore the default.'**
   String get memorySettingsInjectionMaxItemsSubtitle;
+
+  /// No description provided for @memorySettingsFullInjectionTypesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Always inject these types'**
+  String get memorySettingsFullInjectionTypesTitle;
+
+  /// No description provided for @memorySettingsFullInjectionTypesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one or more types to inject all their active memories visible to the current assistant. These types ignore the item limit and use more context and tokens.'**
+  String get memorySettingsFullInjectionTypesSubtitle;
 
   /// No description provided for @memorySettingsInjectionMaxItemsOption.
   ///
@@ -15210,6 +15480,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'At depth'**
   String get worldBookInjectionPositionAtDepth;
+
+  /// No description provided for @worldBookImportUnsupportedEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported. {count} entries use unsupported SillyTavern features (such as macros, regex, timing, filters, or insertion rules). Their content was kept and they were disabled. Review them before enabling.'**
+  String worldBookImportUnsupportedEntries(int count);
 
   /// No description provided for @worldBookInjectionRoleUser.
   ///
@@ -18222,6 +18498,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not extract the sandbox image.'**
   String get workspaceEnvErrorExtractFailed;
+
+  /// No description provided for @workspaceEnvErrorCleanupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not remove old sandbox files. Please try again.'**
+  String get workspaceEnvErrorCleanupFailed;
+
+  /// No description provided for @workspaceEnvCleanupIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'The sandbox is ready, but some old files could not be removed. They still take up storage space.'**
+  String get workspaceEnvCleanupIncomplete;
+
+  /// No description provided for @workspaceEnvErrorResetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not finish resetting the sandbox. Please try again.'**
+  String get workspaceEnvErrorResetFailed;
 
   /// No description provided for @workspaceEnvErrorPatchFailed.
   ///

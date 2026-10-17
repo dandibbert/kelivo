@@ -1241,7 +1241,7 @@ class McpProvider extends ChangeNotifier {
           !_authorizationIsCurrent(server, state, generation)) {
         return false;
       }
-      return session.wait(_connect(server.id, retryUnauthorized: false));
+      return await session.wait(_connect(server.id, retryUnauthorized: false));
     } on McpOAuthCancelled {
       if (_authorizationIsCurrent(server, state, generation)) {
         state.status = McpStatus.needsAuthorization;
@@ -1571,7 +1571,9 @@ class McpProvider extends ChangeNotifier {
         if (!supportsStdio || runtime is! WorkspaceStdioRuntime) {
           throw StateError('Workspace environment is not ready');
         }
-        final config = await environment!.loadExecutionConfig();
+        final config = await environment!.loadExecutionConfig(
+          overrides: server.env,
+        );
         final mounts = await _stdioWorkspaceMounts(server, state);
         final cwd =
             server.workingDirectory ??
@@ -1581,7 +1583,7 @@ class McpProvider extends ChangeNotifier {
           command: server.command ?? '',
           cwd: cwd,
           mounts: mounts,
-          environment: {...config.variables, ...server.env},
+          environment: config.variables,
           timeout: _requestTimeout,
           isCancelled: () =>
               _disposed || state.generation != generation || !supportsStdio,
@@ -1592,7 +1594,7 @@ class McpProvider extends ChangeNotifier {
           arguments: server.args,
           cwd: cwd,
           mounts: mounts,
-          environment: {...config.variables, ...server.env},
+          environment: config.variables,
           startupTimeout: _requestTimeout,
           isCancelled: () => _disposed || state.generation != generation,
         );
@@ -1673,7 +1675,7 @@ class McpProvider extends ChangeNotifier {
           if (await _refreshOAuthAfterUnauthorized(server, state)) {
             final latest = getById(id);
             if (latest == null || state.generation != generation) return false;
-            return _performConnect(
+            return await _performConnect(
               id,
               latest,
               state,

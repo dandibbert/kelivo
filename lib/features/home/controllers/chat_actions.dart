@@ -1194,7 +1194,11 @@ class ChatActions {
     } catch (e) {
       return ChatActionResult.error(e.toString());
     }
-    final assistant = assistantOverride ?? assistantProvider.currentAssistant;
+    final assistant =
+        assistantOverride ??
+        assistantProvider.resolveConversationAssistant(
+          conversation.assistantId,
+        );
     final assistantId = assistant?.id;
     final modelConfig =
         modelOverride ??
@@ -1572,7 +1576,11 @@ class ChatActions {
     } catch (e) {
       return ChatActionResult.error(e.toString());
     }
-    final assistant = assistantOverride ?? assistantProvider.currentAssistant;
+    final assistant =
+        assistantOverride ??
+        assistantProvider.resolveConversationAssistant(
+          conversation.assistantId,
+        );
 
     await cancelStreaming(conversation);
 
@@ -1843,7 +1851,9 @@ class ChatActions {
     } catch (e) {
       return ChatActionResult.error(e.toString());
     }
-    final assistant = assistantProvider.currentAssistant;
+    final assistant = assistantProvider.resolveConversationAssistant(
+      conversation.assistantId,
+    );
 
     final visibleIndex = _messages.indexWhere(
       (candidate) => candidate.id == message.id,
@@ -1879,7 +1889,7 @@ class ChatActions {
     final resumedParts = StreamChunkHandler(
       seed: completeMessages[contextIndex].parts,
     );
-    for (final event in chatService.getToolEvents(message.id)) {
+    for (final event in chatService.getToolEventsForMessage(message)) {
       final id = (event['id'] ?? '').toString();
       if (id.isEmpty || event['content'] == null) continue;
       resumedParts.handle(
@@ -2142,15 +2152,15 @@ class ChatActions {
   Future<void> _executeGeneration(stream_ctrl.GenerationContext ctx) async {
     final state = stream_ctrl.StreamingState(
       ctx,
-      responsesTurnPrefix: chatService.getProviderArtifact(
-        ctx.assistantMessage.id,
+      responsesTurnPrefix: chatService.getProviderArtifactForMessage(
+        ctx.assistantMessage,
         responsesTurnArtifactKind,
       ),
       claudeTurnPrefix:
           ctx.providerKey == ctx.assistantMessage.providerId &&
               ctx.modelId == ctx.assistantMessage.modelId
-          ? chatService.getProviderArtifact(
-              ctx.assistantMessage.id,
+          ? chatService.getProviderArtifactForMessage(
+              ctx.assistantMessage,
               claudeTurnArtifactKind,
             )
           : null,
@@ -2168,7 +2178,7 @@ class ChatActions {
     streamController.markStreamingStarted(state.messageId);
     _activeAssistantMessages.put(state.ctx.assistantMessage);
     _streamingToolEvents[state.messageId] = chatService
-        .getToolEvents(state.messageId)
+        .getToolEventsForMessage(ctx.assistantMessage)
         .map((event) => Map<String, dynamic>.from(event))
         .toList();
     _checkpointWriters[state.messageId] =

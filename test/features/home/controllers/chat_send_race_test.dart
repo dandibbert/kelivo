@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import '../../../support/business_test_harness.dart';
 import '../../../support/gated_xfile.dart';
 import 'package:Kelivo/core/database/chat_database_repository.dart';
+import 'package:Kelivo/core/database/business_preferences.dart';
 import 'package:Kelivo/core/models/chat_input_data.dart';
 import 'package:Kelivo/core/models/chat_message.dart';
 import 'package:Kelivo/core/models/composer_draft.dart';
@@ -32,7 +33,9 @@ import 'package:Kelivo/features/home/controllers/home_page_controller.dart';
 import 'package:Kelivo/features/home/controllers/chat_actions.dart';
 import 'package:Kelivo/features/home/controllers/scroll_controller.dart';
 import 'package:Kelivo/features/home/services/ask_user_interaction_service.dart';
+import 'package:Kelivo/features/home/utils/model_display_helper.dart';
 import 'package:Kelivo/features/home/widgets/chat_input_bar.dart';
+import 'package:Kelivo/features/search/services/global_session_search_service.dart';
 import 'package:Kelivo/l10n/app_localizations.dart';
 import 'package:Kelivo/icons/lucide_adapter.dart';
 
@@ -338,6 +341,8 @@ void main() {
     WidgetTester tester, {
     bool withSuggestions = false,
     bool withComposer = false,
+    List<dynamic>? storedAssistants,
+    BusinessPreferences? assistantPreferences,
   }) async {
     HomePageController? controller;
     late Zone sendZone;
@@ -367,14 +372,27 @@ void main() {
         await settings.resetSuggestionModel();
       }
 
-      final assistantPrefs = createBusinessTestPreferences();
+      final assistantPrefs =
+          assistantPreferences ?? createBusinessTestPreferences();
       await assistantPrefs.load();
+      if (storedAssistants != null) {
+        await assistantPrefs.setString(
+          'assistants_v1',
+          jsonEncode(storedAssistants),
+        );
+        await assistantPrefs.setString(
+          'current_assistant_id_v1',
+          (storedAssistants.first as Map)['id'] as String,
+        );
+      }
       assistantProvider = AssistantProvider(preferences: assistantPrefs);
       await assistantProvider.loaded;
-      final assistantId = await assistantProvider.addAssistant(
-        name: 'Test Assistant',
-      );
-      await assistantProvider.setCurrentAssistant(assistantId);
+      if (storedAssistants == null && assistantPreferences == null) {
+        final assistantId = await assistantProvider.addAssistant(
+          name: 'Test Assistant',
+        );
+        await assistantProvider.setCurrentAssistant(assistantId);
+      }
     });
     await tester.pumpWidget(
       MultiProvider(
@@ -783,301 +801,329 @@ void main() {
     );
   }
 
-  testWidgets('Claude recovered native history retains both signed responses', (
-    tester,
-  ) async {
-    final controller = await pumpHarness(tester);
-    await tester.runAsync(() async {
-      final config = await configureNative(claude: true, stream: false);
-      final convo = await openConversation(controller);
-      const arguments = {
-        'questions': [
-          {'id': 'q1', 'question': 'Which option?'},
-        ],
-      };
-      const oldBlocks = [
-        {'type': 'thinking', 'thinking': '', 'signature': 'opaque-old'},
-        {'type': 'text', 'text': 'Before asking. '},
-        {
-          'type': 'tool_use',
-          'id': 'old-ask',
-          'name': AskUserToolNames.askUser,
-          'input': arguments,
-        },
-      ];
-      const freshBlocks = [
-        {'type': 'thinking', 'thinking': '', 'signature': 'opaque-fresh'},
-        {'type': 'text', 'text': 'Answer'},
-      ];
+  Future<void> evictConversationMessages(String conversationId) async {
+    final pressure = await service.createConversation(
+      title: 'Cache pressure',
+      activate: false,
+    );
+    for (var i = 0; i < 12; i++) {
       await service.addMessage(
-        conversationId: convo.id,
+        conversationId: pressure.id,
         role: 'user',
-        content: 'Ask me',
+        content: '$i${'x' * (512 * 1024)}',
       );
-      final reply = await service.addMessage(
-        conversationId: convo.id,
-        role: 'assistant',
-        providerId: config.id,
-        modelId: 'claude-sonnet-4-6',
-        parts: [
-          const TextPart('Before asking. '),
-          ToolCallPart(
-            jsonEncode({
+    }
+    expect(service.getMessages(conversationId), isEmpty);
+  }
+
+  for (final evicted in [false, true]) {
+    testWidgets(
+      'Claude recovered native history retains both signed responses: evicted=$evicted',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          final config = await configureNative(claude: true, stream: false);
+          final convo = await openConversation(controller);
+          const arguments = {
+            'questions': [
+              {'id': 'q1', 'question': 'Which option?'},
+            ],
+          };
+          const oldBlocks = [
+            {'type': 'thinking', 'thinking': '', 'signature': 'opaque-old'},
+            {'type': 'text', 'text': 'Before asking. '},
+            {
+              'type': 'tool_use',
               'id': 'old-ask',
               'name': AskUserToolNames.askUser,
-              'arguments': arguments,
-              'content': null,
+              'input': arguments,
+            },
+          ];
+          const freshBlocks = [
+            {'type': 'thinking', 'thinking': '', 'signature': 'opaque-fresh'},
+            {'type': 'text', 'text': 'Answer'},
+          ];
+          await service.addMessage(
+            conversationId: convo.id,
+            role: 'user',
+            content: 'Ask me',
+          );
+          final reply = await service.addMessage(
+            conversationId: convo.id,
+            role: 'assistant',
+            providerId: config.id,
+            modelId: 'claude-sonnet-4-6',
+            parts: [
+              const TextPart('Before asking. '),
+              ToolCallPart(
+                jsonEncode({
+                  'id': 'old-ask',
+                  'name': AskUserToolNames.askUser,
+                  'arguments': arguments,
+                  'content': null,
+                }),
+              ),
+            ],
+          );
+          await service.setProviderArtifact(
+            reply.id,
+            claudeTurnArtifactKind,
+            encodeClaudeTurn([oldBlocks]),
+          );
+          final requests = <Map<String, dynamic>>[];
+          apiOverride = (request, body) async {
+            requests.add(body);
+            request.response.headers.contentType = ContentType.json;
+            request.response.write(
+              jsonEncode({'content': freshBlocks, 'stop_reason': 'end_turn'}),
+            );
+            await request.response.close();
+          };
+          await controller.chatController.setCurrentConversationAndLoad(convo);
+          if (evicted) await evictConversationMessages(convo.id);
+          await controller.submitRecoveredAskUserAnswer(
+            reply,
+            const ToolUIPart(
+              id: 'old-ask',
+              toolName: AskUserToolNames.askUser,
+              arguments: arguments,
+              loading: true,
+            ),
+            const AskUserResult.answer({
+              'q1': AskUserAnswerValue.single(value: 'approved', custom: true),
             }),
-          ),
-        ],
-      );
-      await service.setProviderArtifact(
-        reply.id,
-        claudeTurnArtifactKind,
-        encodeClaudeTurn([oldBlocks]),
-      );
-      final requests = <Map<String, dynamic>>[];
-      apiOverride = (request, body) async {
-        requests.add(body);
-        request.response.headers.contentType = ContentType.json;
-        request.response.write(
-          jsonEncode({'content': freshBlocks, 'stop_reason': 'end_turn'}),
-        );
-        await request.response.close();
-      };
-      await controller.chatController.setCurrentConversationAndLoad(convo);
-      await controller.submitRecoveredAskUserAnswer(
-        reply,
-        const ToolUIPart(
-          id: 'old-ask',
-          toolName: AskUserToolNames.askUser,
-          arguments: arguments,
-          loading: true,
-        ),
-        const AskUserResult.answer({
-          'q1': AskUserAnswerValue.single(value: 'approved', custom: true),
-        }),
-      );
-      await waitFor(
-        () => !controller.chatController.isConversationLoading(convo.id),
-        'Claude recovery finish',
-      );
-      expect(
-        decodeClaudeTurn(
-          service.getProviderArtifact(reply.id, claudeTurnArtifactKind),
-        ),
-        [oldBlocks, freshBlocks],
-      );
-      await controller.sendMessage(ChatInputData(text: 'Next'));
-      await waitFor(
-        () => !controller.chatController.isConversationLoading(convo.id),
-        'Claude next finish',
-      );
-      expect(requests, hasLength(2));
-      final messages = requests.last['messages'] as List;
-      final assistants = messages
-          .where((m) => m['role'] == 'assistant')
-          .toList();
-      expect(assistants.map((m) => m['content']), [oldBlocks, freshBlocks]);
-      final results = messages.where(
-        (m) => m['role'] == 'user' && m['content'] is List,
-      );
-      expect(jsonEncode(results.toList()), contains('approved'));
-    });
-    expect(tester.takeException(), isNull);
-  });
+          );
+          await waitFor(
+            () => !controller.chatController.isConversationLoading(convo.id),
+            'Claude recovery finish',
+          );
+          expect(
+            decodeClaudeTurn(
+              service.getProviderArtifact(reply.id, claudeTurnArtifactKind),
+            ),
+            [oldBlocks, freshBlocks],
+          );
+          await controller.sendMessage(ChatInputData(text: 'Next'));
+          await waitFor(
+            () => !controller.chatController.isConversationLoading(convo.id),
+            'Claude next finish',
+          );
+          expect(requests, hasLength(2));
+          final messages = requests.last['messages'] as List;
+          final assistants = messages
+              .where((m) => m['role'] == 'assistant')
+              .toList();
+          expect(assistants.map((m) => m['content']), [oldBlocks, freshBlocks]);
+          final results = messages.where(
+            (m) => m['role'] == 'user' && m['content'] is List,
+          );
+          expect(jsonEncode(results.toList()), contains('approved'));
+        });
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   for (final stream in [false, true]) {
     for (final temporary in [false, true]) {
       for (final preamble in ['', 'Before asking. ']) {
-        testWidgets(
-          'native Responses recovery keeps all rounds: stream=$stream, temporary=$temporary, preamble="$preamble"',
-          (tester) async {
-            final controller = await pumpHarness(tester);
-            await tester.runAsync(() async {
-              final config = await configureNative(
-                claude: false,
-                stream: stream,
-              );
-              final convo = temporary
-                  ? await service.createDraftConversation(
-                      title: 'Recovery',
-                      temporary: true,
-                    )
-                  : await service.createConversation(title: 'Recovery');
-              const arguments = {
-                'questions': [
-                  {'id': 'q1', 'question': 'Which option?'},
-                ],
-              };
-              Map<String, dynamic> call(String id) => {
-                'type': 'function_call',
-                'id': 'fc-$id',
-                'call_id': id,
-                'name': AskUserToolNames.askUser,
-                'arguments': jsonEncode(arguments),
-              };
-              final oldOutput = [
-                _nativeReasoning('old'),
-                if (preamble.isNotEmpty) _nativeText(preamble),
-                call('old-ask'),
-              ];
-              await service.addMessage(
-                conversationId: convo.id,
-                role: 'user',
-                content: 'Ask me',
-              );
-              final reply = await service.addMessage(
-                conversationId: convo.id,
-                role: 'assistant',
-                providerId: config.id,
-                modelId: 'gpt-5.4',
-                parts: [
-                  if (preamble.isNotEmpty) TextPart(preamble),
-                  ToolCallPart(
-                    jsonEncode({
-                      'id': 'old-ask',
-                      'name': AskUserToolNames.askUser,
-                      'arguments': arguments,
-                      'content': null,
-                    }),
-                  ),
-                  const AssistantRoundEndPart(),
-                ],
-              );
-              await service.setProviderArtifact(
-                reply.id,
-                responsesTurnArtifactKind,
-                ResponsesTurnRecorder(
-                  responsesReplayScope(config, 'gpt-5.4'),
-                ).record(oldOutput, [
-                  emitToolCall(
-                    id: 'old-ask',
-                    name: AskUserToolNames.askUser,
-                    arguments: arguments,
-                  ),
-                ]).payload,
-              );
-              final requests = <Map<String, dynamic>>[];
-              final middle = [
-                _nativeReasoning('middle'),
-                _nativeText('During recovery. '),
-                call('live-ask'),
-              ];
-              final finalOutput = [
-                _nativeReasoning('final'),
-                _nativeText('Answer'),
-              ];
-              apiOverride = (request, body) async {
-                requests.add(body);
-                await _writeResponses(
-                  request,
-                  body,
-                  requests.length == 1 ? middle : finalOutput,
+        for (final evicted in [false, if (!temporary) true]) {
+          testWidgets(
+            'native Responses recovery keeps all rounds: stream=$stream, temporary=$temporary, evicted=$evicted, preamble="$preamble"',
+            (tester) async {
+              final controller = await pumpHarness(tester);
+              await tester.runAsync(() async {
+                final config = await configureNative(
+                  claude: false,
+                  stream: stream,
                 );
-              };
-              await controller.chatController.setCurrentConversationAndLoad(
-                convo,
-              );
-              final resumed = controller.submitRecoveredAskUserAnswer(
-                reply,
-                const ToolUIPart(
-                  id: 'old-ask',
-                  toolName: AskUserToolNames.askUser,
-                  arguments: arguments,
-                  loading: true,
-                ),
-                const AskUserResult.answer({
-                  'q1': AskUserAnswerValue.single(
-                    value: 'original answer',
+                final convo = temporary
+                    ? await service.createDraftConversation(
+                        title: 'Recovery',
+                        temporary: true,
+                      )
+                    : await service.createConversation(title: 'Recovery');
+                const arguments = {
+                  'questions': [
+                    {'id': 'q1', 'question': 'Which option?'},
+                  ],
+                };
+                Map<String, dynamic> call(String id) => {
+                  'type': 'function_call',
+                  'id': 'fc-$id',
+                  'call_id': id,
+                  'name': AskUserToolNames.askUser,
+                  'arguments': jsonEncode(arguments),
+                };
+                final oldOutput = [
+                  _nativeReasoning('old'),
+                  if (preamble.isNotEmpty) _nativeText(preamble),
+                  call('old-ask'),
+                ];
+                await service.addMessage(
+                  conversationId: convo.id,
+                  role: 'user',
+                  content: 'Ask me',
+                );
+                final reply = await service.addMessage(
+                  conversationId: convo.id,
+                  role: 'assistant',
+                  providerId: config.id,
+                  modelId: 'gpt-5.4',
+                  parts: [
+                    if (preamble.isNotEmpty) TextPart(preamble),
+                    ToolCallPart(
+                      jsonEncode({
+                        'id': 'old-ask',
+                        'name': AskUserToolNames.askUser,
+                        'arguments': arguments,
+                        'content': null,
+                      }),
+                    ),
+                    const AssistantRoundEndPart(),
+                  ],
+                );
+                await service.setProviderArtifact(
+                  reply.id,
+                  responsesTurnArtifactKind,
+                  ResponsesTurnRecorder(
+                    responsesReplayScope(config, 'gpt-5.4'),
+                  ).record(oldOutput, [
+                    emitToolCall(
+                      id: 'old-ask',
+                      name: AskUserToolNames.askUser,
+                      arguments: arguments,
+                    ),
+                  ]).payload,
+                );
+                final requests = <Map<String, dynamic>>[];
+                final middle = [
+                  _nativeReasoning('middle'),
+                  _nativeText('During recovery. '),
+                  call('live-ask'),
+                ];
+                final finalOutput = [
+                  _nativeReasoning('final'),
+                  _nativeText('Answer'),
+                ];
+                apiOverride = (request, body) async {
+                  requests.add(body);
+                  await _writeResponses(
+                    request,
+                    body,
+                    requests.length == 1 ? middle : finalOutput,
+                  );
+                };
+                await controller.chatController.setCurrentConversationAndLoad(
+                  convo,
+                );
+                if (evicted) await evictConversationMessages(convo.id);
+                final resumed = controller.submitRecoveredAskUserAnswer(
+                  reply,
+                  const ToolUIPart(
+                    id: 'old-ask',
+                    toolName: AskUserToolNames.askUser,
+                    arguments: arguments,
+                    loading: true,
+                  ),
+                  const AskUserResult.answer({
+                    'q1': AskUserAnswerValue.single(
+                      value: 'original answer',
+                      custom: true,
+                    ),
+                  }),
+                );
+                await waitFor(
+                  () => questions.pendingRequests.containsKey('live-ask'),
+                  'second ask',
+                );
+                questions.answer('live-ask', {
+                  'q1': const AskUserAnswerValue.single(
+                    value: 'follow-up answer',
                     custom: true,
                   ),
-                }),
-              );
-              await waitFor(
-                () => questions.pendingRequests.containsKey('live-ask'),
-                'second ask',
-              );
-              questions.answer('live-ask', {
-                'q1': const AskUserAnswerValue.single(
-                  value: 'follow-up answer',
-                  custom: true,
-                ),
-              });
-              await resumed;
-              await waitFor(
-                () =>
-                    !controller.chatController.isConversationLoading(convo.id),
-                'recovery finish',
-              );
-              expect(requests, hasLength(2));
-              final firstInput = requests.first['input'] as List;
-              expect(
-                firstInput.where(
-                  (m) =>
-                      m['type'] != null && m['type'] != 'function_call_output',
-                ),
-                oldOutput,
-              );
-              final artifact = service.getProviderArtifact(
-                reply.id,
-                responsesTurnArtifactKind,
-              )!;
-              final rounds = (jsonDecode(artifact) as Map)['rounds'] as List;
-              expect(rounds.map((round) => round['output']), [
-                oldOutput,
-                middle,
-                finalOutput,
-              ]);
-              if (!temporary) {
-                expect(
-                  (await repository.getProviderArtifactsForMessages([
-                    reply.id,
-                  ], responsesTurnArtifactKind))[reply.id],
-                  artifact,
+                });
+                await resumed;
+                await waitFor(
+                  () => !controller.chatController.isConversationLoading(
+                    convo.id,
+                  ),
+                  'recovery finish',
                 );
-              }
-              await controller.sendMessage(ChatInputData(text: 'Next'));
-              await waitFor(
-                () =>
-                    !controller.chatController.isConversationLoading(convo.id),
-                'next finish',
-              );
-              expect(requests, hasLength(3));
-              final next = requests.last['input'] as List;
-              expect(
-                next
-                    .where((m) => m['type'] == 'reasoning')
-                    .map((m) => m['encrypted_content']),
-                ['opaque-old', 'opaque-middle', 'opaque-final'],
-              );
-              expect(
-                next
-                    .where((m) => m['type'] == 'function_call')
-                    .map((m) => m['call_id']),
-                ['old-ask', 'live-ask'],
-              );
-              final answers = next
-                  .where((m) => m['type'] == 'function_call_output')
-                  .toList();
-              expect(answers.map((m) => m['call_id']), ['old-ask', 'live-ask']);
-              expect(answers.first['output'], contains('original answer'));
-              expect(answers.last['output'], contains('follow-up answer'));
-              final latest = (await service.loadMessages(convo.id)).last;
-              expect(
-                (jsonDecode(
-                      service.getProviderArtifact(
-                        latest.id,
-                        responsesTurnArtifactKind,
-                      )!,
-                    )
-                    as Map)['rounds'],
-                hasLength(1),
-              );
-            });
-            expect(tester.takeException(), isNull);
-          },
-        );
+                expect(requests, hasLength(2));
+                final firstInput = requests.first['input'] as List;
+                expect(
+                  firstInput.where(
+                    (m) =>
+                        m['type'] != null &&
+                        m['type'] != 'function_call_output',
+                  ),
+                  oldOutput,
+                );
+                final artifact = service.getProviderArtifact(
+                  reply.id,
+                  responsesTurnArtifactKind,
+                )!;
+                final rounds = (jsonDecode(artifact) as Map)['rounds'] as List;
+                expect(rounds.map((round) => round['output']), [
+                  oldOutput,
+                  middle,
+                  finalOutput,
+                ]);
+                if (!temporary) {
+                  expect(
+                    (await repository.getProviderArtifactsForMessages([
+                      reply.id,
+                    ], responsesTurnArtifactKind))[reply.id],
+                    artifact,
+                  );
+                }
+                await controller.sendMessage(ChatInputData(text: 'Next'));
+                await waitFor(
+                  () => !controller.chatController.isConversationLoading(
+                    convo.id,
+                  ),
+                  'next finish',
+                );
+                expect(requests, hasLength(3));
+                final next = requests.last['input'] as List;
+                expect(
+                  next
+                      .where((m) => m['type'] == 'reasoning')
+                      .map((m) => m['encrypted_content']),
+                  ['opaque-old', 'opaque-middle', 'opaque-final'],
+                );
+                expect(
+                  next
+                      .where((m) => m['type'] == 'function_call')
+                      .map((m) => m['call_id']),
+                  ['old-ask', 'live-ask'],
+                );
+                final answers = next
+                    .where((m) => m['type'] == 'function_call_output')
+                    .toList();
+                expect(answers.map((m) => m['call_id']), [
+                  'old-ask',
+                  'live-ask',
+                ]);
+                expect(answers.first['output'], contains('original answer'));
+                expect(answers.last['output'], contains('follow-up answer'));
+                final latest = (await service.loadMessages(convo.id)).last;
+                expect(
+                  (jsonDecode(
+                        service.getProviderArtifact(
+                          latest.id,
+                          responsesTurnArtifactKind,
+                        )!,
+                      )
+                      as Map)['rounds'],
+                  hasLength(1),
+                );
+              });
+              expect(tester.takeException(), isNull);
+            },
+          );
+        }
       }
     }
   }
@@ -1160,6 +1206,264 @@ void main() {
       });
       expect(tester.takeException(), isNull);
     });
+  }
+
+  testWidgets('orphaned assistant history still accepts a composer send', (
+    tester,
+  ) async {
+    // The assistant JSON is a real old writer's output. Only the topic's
+    // ownership is stale, as older deletion/import paths could leave it;
+    // this regression must not depend on malformed assistant fields.
+    final fixtures =
+        jsonDecode(
+              File(
+                'test/fixtures/assistants/historical_writers.json',
+              ).readAsStringSync(),
+            )
+            as List;
+    final fixture = fixtures.firstWhere(
+      (value) => ((value as Map)['writers'] as List).any(
+        (writer) => ((writer as Map)['refs'] as List).contains('v1.3.0'),
+      ),
+    );
+    final storedAssistants = (fixture as Map)['assistants'] as List;
+    final originalIds = storedAssistants
+        .map((value) => (value as Map)['id'] as String)
+        .toList();
+    final controller = await pumpHarness(
+      tester,
+      storedAssistants: storedAssistants,
+    );
+    await tester.runAsync(() async {
+      await settings.disableTitleGeneration();
+      await settings.setNewChatOnLaunch(false);
+      final displayedAssistant = assistantProvider.currentAssistant!;
+      await assistantProvider.updateAssistant(
+        displayedAssistant.copyWith(
+          chatModelProvider: 'SiliconFlow',
+          chatModelId: 'assistant-model',
+        ),
+      );
+      final conversation = await service.createConversation(
+        title: 'Existing topic',
+        assistantId: 'missing-assistant',
+      );
+      final original = await service.addMessage(
+        conversationId: conversation.id,
+        role: 'user',
+        content: 'preserved history',
+      );
+      expect(
+        await GlobalSessionSearchService.search(
+          chatService: service,
+          query: 'preserved history',
+        ),
+        hasLength(1),
+      );
+      await controller.initChat();
+      expect(controller.currentConversation!.id, conversation.id);
+      // Startup used to install the topic's missing owner as the selection,
+      // while currentAssistant silently displayed the first valid assistant.
+      // That leaked the invalid ID into every subsequent new conversation.
+      expect(assistantProvider.currentAssistantId, displayedAssistant.id);
+      final firstNewConversation = await controller.debugViewModel
+          .createNewConversation();
+      expect(firstNewConversation!.assistantId, displayedAssistant.id);
+      await controller.debugViewModel.switchConversation(conversation.id);
+      final drafts = service.composerDrafts!;
+      await drafts.load(conversation.id, assistantId: conversation.assistantId);
+      const input = ComposerDraftInput(text: 'continue this topic');
+      final submission = await drafts.beginSubmission(conversation.id, input);
+      final result = await controller.sendMessage(
+        input.toInput(submission: submission),
+      );
+      expect(result, ChatInputSubmissionResult.sent);
+      await waitFor(() => streamRequestCount == 1, 'orphaned topic request');
+      await waitFor(
+        () => !controller.chatController.isConversationLoading(conversation.id),
+        'orphaned topic reply',
+      );
+      expect(streamRequests.single['model'], 'assistant-model');
+      expect(assistantProvider.currentAssistantId, displayedAssistant.id);
+      expect(
+        assistantProvider.assistants.map((assistant) => assistant.id),
+        originalIds,
+      );
+      final messages = await service.loadMessages(conversation.id);
+      expect(messages.first.id, original.id);
+      expect(messages.first.content, 'preserved history');
+      expect(messages.last.content, 'ok');
+      expect(
+        (await repository.getMessage(original.id))!.content,
+        'preserved history',
+      );
+      expect(
+        service.getConversation(conversation.id)!.assistantId,
+        'missing-assistant',
+      );
+      expect(drafts.peek(conversation.id)!.pending, isNull);
+
+      expect(
+        await controller.debugViewModel.regenerateAtMessage(messages.last),
+        isTrue,
+      );
+      await waitFor(
+        () => streamRequestCount == 2,
+        'orphaned topic regeneration',
+      );
+      await waitFor(
+        () => !controller.chatController.isConversationLoading(conversation.id),
+        'regenerated reply',
+      );
+      expect(streamRequests.last['model'], 'assistant-model');
+
+      final otherId = await assistantProvider.addAssistant(name: 'Other');
+      await assistantProvider.setCurrentAssistant(otherId);
+      await controller.debugViewModel.createNewConversation();
+      await controller.debugViewModel.switchConversation(conversation.id);
+      expect(assistantProvider.currentAssistantId, displayedAssistant.id);
+      expect(controller.messages.first.id, original.id);
+      final newConversation = await controller.debugViewModel
+          .createNewConversation();
+      expect(newConversation!.assistantId, displayedAssistant.id);
+
+      await assistantProvider.setCurrentAssistant(otherId);
+      final prepared = await controller.debugViewModel
+          .prepareConversationSwitch(conversation.id);
+      expect(assistantProvider.currentAssistantId, otherId);
+      controller.debugViewModel.commitConversationSwitch(prepared!);
+      await waitFor(
+        () => assistantProvider.currentAssistantId == displayedAssistant.id,
+        'assistant selection after opening a search result',
+      );
+      expect(controller.messages.first.id, original.id);
+      expect(assistantProvider.assistants.map((assistant) => assistant.id), [
+        ...originalIds,
+        otherId,
+      ]);
+    });
+    await tester.pumpWidget(const SizedBox());
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final newChatOnLaunch in [false, true]) {
+    testWidgets(
+      'recovered model survives reorder and restart: newChat=$newChatOnLaunch',
+      (tester) async {
+        final business = (await tester.runAsync(
+          () => createBusinessTestHarness(
+            initial: {
+              'assistants_v1': jsonEncode(const [
+                {
+                  'id': 'recovery-a',
+                  'name': 'A',
+                  'chatModelProvider': 'SiliconFlow',
+                  'chatModelId': 'model-a',
+                },
+                {
+                  'id': 'recovery-b',
+                  'name': 'B',
+                  'chatModelProvider': 'SiliconFlow',
+                  'chatModelId': 'model-b',
+                },
+              ]),
+              'current_assistant_id_v1': 'recovery-a',
+            },
+          ),
+        ))!;
+        var controller = await pumpHarness(
+          tester,
+          assistantPreferences: business.preferences,
+        );
+        late Conversation conversation;
+        await tester.runAsync(() async {
+          await settings.disableTitleGeneration();
+          conversation = await service.createConversation(
+            title: 'Recovered topic',
+            assistantId: 'missing-assistant',
+          );
+          await controller.debugViewModel.switchConversation(conversation.id);
+          await assistantProvider.reorderAssistants(1, 0);
+          expect(assistantProvider.currentAssistantId, 'recovery-a');
+          final display = getModelDisplayInfo(
+            settings,
+            conversation: controller.currentConversation,
+            assistant: assistantProvider.currentAssistant,
+          );
+          expect(display.modelDisplay, 'model-a');
+          expect(
+            await controller.sendMessage(ChatInputData(text: 'after reorder')),
+            ChatInputSubmissionResult.sent,
+          );
+          await waitFor(
+            () =>
+                streamRequestCount == 1 &&
+                !controller.chatController.isConversationLoading(
+                  conversation.id,
+                ),
+            'reply after reorder',
+          );
+          expect(streamRequests.single['model'], display.modelId);
+        });
+        await tester.pumpWidget(const SizedBox());
+        controller = await pumpHarness(
+          tester,
+          assistantPreferences: BusinessPreferences(business.repository),
+        );
+        await tester.runAsync(() async {
+          await settings.disableTitleGeneration();
+          await settings.setNewChatOnLaunch(newChatOnLaunch);
+          await controller.initChat();
+          expect(assistantProvider.assistants.first.id, 'recovery-b');
+          expect(assistantProvider.currentAssistantId, 'recovery-a');
+          if (newChatOnLaunch) {
+            expect(controller.currentConversation!.assistantId, 'recovery-a');
+            await controller.debugViewModel.switchConversation(conversation.id);
+          } else {
+            expect(controller.currentConversation!.id, conversation.id);
+          }
+          final display = getModelDisplayInfo(
+            settings,
+            conversation: controller.currentConversation,
+            assistant: assistantProvider.currentAssistant,
+          );
+          expect(display.modelDisplay, 'model-a');
+          expect(
+            await controller.sendMessage(ChatInputData(text: 'after restart')),
+            ChatInputSubmissionResult.sent,
+          );
+          await waitFor(
+            () =>
+                streamRequestCount == 2 &&
+                !controller.chatController.isConversationLoading(
+                  conversation.id,
+                ),
+            'reply after restart',
+          );
+          expect(streamRequests.last['model'], display.modelId);
+          final messages = await service.loadMessages(conversation.id);
+          expect(
+            await controller.debugViewModel.regenerateAtMessage(messages.last),
+            isTrue,
+          );
+          await waitFor(
+            () =>
+                streamRequestCount == 3 &&
+                !controller.chatController.isConversationLoading(
+                  conversation.id,
+                ),
+            'regeneration after restart',
+          );
+          expect(streamRequests.last['model'], display.modelId);
+          expect(
+            service.getConversation(conversation.id)!.assistantId,
+            'missing-assistant',
+          );
+        });
+        await tester.pumpWidget(const SizedBox());
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   testWidgets('concurrent sends persist a single user/assistant pair', (

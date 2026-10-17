@@ -499,6 +499,32 @@
   "backupPagePath": "路径",
   "backupPageChatsLabel": "聊天记录",
   "backupPageFilesLabel": "文件",
+  "backupPageScopeTitle": "备份与导入内容",
+  "backupPageScopeSelectedCount": "{selected}/{total}",
+  "@backupPageScopeSelectedCount": {
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "backupPageBackupManagementDescription": "选择备份和导入的内容，适用于本地、WebDAV 和 S3。导入时保留未选中的内容。技能和工作区包含各自的文件。",
+  "backupPageAssistantsLabel": "助手",
+  "backupPageProvidersLabel": "供应商",
+  "backupPageMcpLabel": "MCP 服务器",
+  "backupPageEnvironmentVariablesLabel": "环境变量",
+  "backupPageSkillsLabel": "技能",
+  "backupPageWorldBooksLabel": "世界书",
+  "backupPageMemoriesLabel": "记忆",
+  "backupPageQuickPhrasesLabel": "快捷短语",
+  "backupPageInstructionsLabel": "提示词注入",
+  "backupPageWorkspacesLabel": "工作区",
+  "backupPageSearchServicesLabel": "搜索服务",
+  "backupPageSpeechServicesLabel": "语音服务",
+  "backupPageSettingsLabel": "其他设置",
   "backupPageTestDone": "测试完成",
   "backupPageTestConnection": "测试连接",
   "backupPageRestartRequired": "需要重启应用",
@@ -602,7 +628,7 @@
   "backupPageOK": "好的",
   "backupPageCancel": "取消",
   "backupPageSelectImportMode": "选择导入模式",
-  "backupPageSelectImportModeDescription": "请选择恢复方式。聊天和文件开关决定本次恢复的组件。",
+  "backupPageSelectImportModeDescription": "请选择恢复方式。备份管理中的分类开关同样适用于本次导入。",
   "backupPageOverwriteMode": "完全覆盖",
   "backupPageOverwriteModeDescription": "替换所选内容，保留未选内容及其他本机设置。替换聊天时，也会清除本机未发送的草稿。",
   "backupPageMergeMode": "合并",
@@ -908,6 +934,12 @@
   "chatMessageWidgetBuiltinSearchHideNote": "隐藏内置搜索工具卡片",
   "chatMessageWidgetDeepThinking": "深度思考",
   "chatMessageWidgetWebSearch": "联网检索: {query}",
+  "chatMessageWidgetWebFetch": "读取网页: {target}",
+  "@chatMessageWidgetWebFetch": {
+    "placeholders": {
+      "target": { "type": "String" }
+    }
+  },
   "chatMessageWidgetBuiltinSearch": "模型内置搜索",
   "chatMessageWidgetReadClipboard": "读取剪切板",
   "chatMessageWidgetWriteClipboard": "写入剪切板",
@@ -1572,6 +1604,28 @@
   "searchServicesPageSearchProviders": "搜索提供商",
   "searchServicesPageGeneralOptions": "通用选项",
   "searchServicesPageAutoTestTitle": "启动时自动测试连接",
+  "searchServicesPageWebFetchSection": "网页抓取",
+  "searchServicesPageWebFetchModeTitle": "抓取方式",
+  "searchServicesPageWebFetchFollow": "跟随搜索服务",
+  "searchServicesPageWebFetchFollowValue": "跟随搜索 · {name}",
+  "@searchServicesPageWebFetchFollowValue": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "searchServicesPageWebFetchFollowSubtitle": "当前：{name}",
+  "@searchServicesPageWebFetchFollowSubtitle": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "searchServicesPageWebFetchLocal": "本地抓取",
+  "searchServicesPageWebFetchLocalSubtitle": "免费，由本机直接请求网页",
+  "searchServicesPageWebFetchProviderSubtitle": "使用该服务商的 API Key 和额度",
+  "searchServicesPageWebFetchOff": "关闭",
+  "searchServicesPageWebFetchOffSubtitle": "联网时只搜索，不读取网页",
+  "searchServicesPageWebFetchFooter": "开启联网搜索后，模型还可以读取网页全文。搜索服务不支持抓取时会改用本地抓取，本地抓取无法处理需要 JavaScript 渲染或有反爬限制的页面。",
+  "searchServicesPageWebFetchSupported": "支持网页抓取",
   "searchServicesPageMaxResults": "最大结果数",
   "searchServicesPageTimeoutSeconds": "超时时间（秒）",
   "searchServicesPageAtLeastOneServiceRequired": "至少需要一个搜索服务",
@@ -1598,6 +1652,7 @@
   "searchServicesAddDialogApiKeyRequired": "API Key 必填",
   "searchServicesFieldCustomUrlOptional": "自定义 URL（可选）",
   "searchServicesDialogApiKey": "API Key",
+  "searchServicesDialogApiKeyOptional": "API Key（可选）",
   "searchServicesDialogModel": "模型",
   "searchServicesDialogSystemPrompt": "系统提示词",
   "searchServicesAddDialogInstanceUrl": "实例 URL",
@@ -1671,6 +1726,24 @@
   "@searchServiceEditorTestFailed": {
     "placeholders": {
       "message": { "type": "String" }
+    }
+  },
+  "searchServiceEditorTestModeSearch": "搜索",
+  "searchServiceEditorTestModeFetch": "抓取",
+  "searchServiceEditorTestUrlHint": "输入测试网址",
+  "searchServiceEditorTestFetchRun": "运行抓取测试",
+  "searchServiceEditorTestFetchRunning": "抓取中…",
+  "searchServiceEditorTestFetchFailed": "抓取失败：{message}",
+  "@searchServiceEditorTestFetchFailed": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "searchServiceEditorTestFetchStats": "{characters} 字符 · {seconds} 秒",
+  "@searchServiceEditorTestFetchStats": {
+    "placeholders": {
+      "characters": { "type": "String" },
+      "seconds": { "type": "String" }
     }
   },
   "searchServiceEditorResultOpenTooltip": "打开结果",
@@ -1903,6 +1976,8 @@
   "asrServicesLocalSubtitle": "下载后在设备上离线运行",
   "asrServicesOpenAiTitle": "OpenAI Realtime",
   "asrServicesOpenAiSubtitle": "低延迟流式转写",
+  "asrServicesGroqSubtitle": "Whisper 分段云端转写",
+  "asrServicesMistralSubtitle": "Voxtral 分段云端转写",
   "asrServicesDashScopeTitle": "DashScope",
   "asrServicesDashScopeSubtitle": "Qwen 实时转写",
   "asrServicesVolcengineTitle": "火山引擎",
@@ -2091,6 +2166,7 @@
   "searchProviderDuckDuckGoDescription": "基于 DDGS 的 DuckDuckGo 隐私搜索，无需 API 密钥，支持设置地区。",
   "searchProviderBraveDescription": "Brave 独立搜索引擎。注重隐私，无跟踪或画像。",
   "searchProviderExaDescription": "具备语义理解的神经搜索引擎。适合研究与查找特定内容。",
+  "searchProviderExaMcpDescription": "通过 MCP 使用 Exa 搜索。不填 API Key 可在免费限额内使用。",
   "searchProviderLinkUpDescription": "提供来源可追溯答案的搜索 API，同时提供搜索结果与 AI 摘要。",
   "modelFetchInvertTooltip": "反选",
   "modelDetailSheetSaveFailedMessage": "保存失败，请重试",
@@ -2099,17 +2175,20 @@
   "searchProviderTavilyDescription": "为大型语言模型（LLMs）优化的 AI 搜索 API，提供高质量、相关的搜索结果。",
   "searchProviderZhipuDescription": "智谱 AI 旗下中文 AI 搜索服务，针对中文内容与查询进行了优化。",
   "searchProviderOllamaDescription": "Ollama 网络搜索 API。为模型补充最新信息，减少幻觉并提升准确性。",
+  "searchProviderDeepSeekDescription": "DeepSeek 官方网页搜索与抓取 API，使用 DeepSeek API Key。",
   "searchProviderJinaDescription": "适合开发者和企业用于 AI 搜索应用。支持多语言与多模态。",
   "searchServiceNameBingLocal": "Bing（Local）",
   "searchServiceNameDuckDuckGo": "DuckDuckGo",
   "searchServiceNameTavily": "Tavily",
   "searchServiceNameExa": "Exa",
+  "searchServiceNameExaMcp": "Exa MCP",
   "searchServiceNameZhipu": "智谱",
   "searchServiceNameSearXNG": "SearXNG",
   "searchServiceNameLinkUp": "LinkUp",
   "searchServiceNameBrave": "Brave",
   "searchServiceNameMetaso": "秘塔",
   "searchServiceNameOllama": "Ollama",
+  "searchServiceNameDeepSeek": "DeepSeek",
   "searchServiceNameJina": "Jina",
   "searchServiceNamePerplexity": "Perplexity",
   "searchProviderPerplexityDescription": "Perplexity 搜索 API。提供排序的网页结果，支持区域与域名过滤。",
@@ -2586,7 +2665,9 @@
   "memorySettingsThinkingSubtitle": "在模型支持时允许记忆模型使用推理",
   "memorySettingsInjectionSection": "记忆注入",
   "memorySettingsInjectionMaxItemsTitle": "每类注入条数",
-  "memorySettingsInjectionMaxItemsSubtitle": "某一类型的记忆超过该条数时，只注入最近的若干条，其余由模型用 memory_search_profile 按需查询。调大更全面但更费 token。若你改过规则提示词，请一并更新或恢复默认。",
+  "memorySettingsInjectionMaxItemsSubtitle": "此限制仅适用于未选择全量注入的类型。某一类型的记忆超过该条数时，只注入最近的若干条，其余由模型用 memory_search_profile 按需查询。调大更全面但更费 token。若你改过规则提示词，请一并更新或恢复默认。",
+  "memorySettingsFullInjectionTypesTitle": "全量注入类型",
+  "memorySettingsFullInjectionTypesSubtitle": "可多选。选中类型会注入全局及当前助手的全部有效记忆，不受条数限制，会增加上下文和 token 消耗。",
   "memorySettingsInjectionMaxItemsOption": "{n}",
   "@memorySettingsInjectionMaxItemsOption": {
     "placeholders": {
@@ -2991,6 +3072,7 @@
   "worldBookInjectionPositionTopOfChat": "对话顶部",
   "worldBookInjectionPositionBottomOfChat": "对话底部",
   "worldBookInjectionPositionAtDepth": "指定深度",
+  "worldBookImportUnsupportedEntries": "导入完成。{count} 个条目使用了暂不支持的酒馆功能（如宏、正则、时效、筛选或插入规则），已保留内容并停用，请检查后再启用。",
   "worldBookInjectionRoleUser": "用户",
   "worldBookInjectionRoleAssistant": "助手",
   "mcpToolNeedsApproval": "需要审批",
@@ -3562,6 +3644,9 @@
   "workspaceEnvErrorNetwork": "下载失败，请检查网络后重试。",
   "workspaceEnvErrorChecksumMismatch": "下载文件已损坏，请重试。",
   "workspaceEnvErrorExtractFailed": "无法解压沙箱镜像。",
+  "workspaceEnvErrorCleanupFailed": "无法清理旧沙箱文件，请重试。",
+  "workspaceEnvCleanupIncomplete": "沙箱已就绪，但部分旧文件未能清理，仍占用存储空间。",
+  "workspaceEnvErrorResetFailed": "未能完成沙箱重置，请重试。",
   "workspaceEnvErrorPatchFailed": "无法完成沙箱配置。",
   "workspaceEnvErrorCancelled": "安装已取消。",
   "workspaceEnvErrorGeneric": "安装沙箱时出错。",

@@ -1605,6 +1605,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupPageFilesLabel => 'Files';
 
   @override
+  String get backupPageScopeTitle => 'Backup and import content';
+
+  @override
+  String backupPageScopeSelectedCount(int selected, int total) {
+    return '$selected/$total';
+  }
+
+  @override
+  String get backupPageBackupManagementDescription =>
+      'Choose what to back up and import. Applies to local, WebDAV and S3 backups. Unselected content stays unchanged on import. Skills and workspaces include their own files.';
+
+  @override
+  String get backupPageAssistantsLabel => 'Assistants';
+
+  @override
+  String get backupPageProvidersLabel => 'Providers';
+
+  @override
+  String get backupPageMcpLabel => 'MCP servers';
+
+  @override
+  String get backupPageEnvironmentVariablesLabel => 'Environment variables';
+
+  @override
+  String get backupPageSkillsLabel => 'Skills';
+
+  @override
+  String get backupPageWorldBooksLabel => 'World books';
+
+  @override
+  String get backupPageMemoriesLabel => 'Memories';
+
+  @override
+  String get backupPageQuickPhrasesLabel => 'Quick phrases';
+
+  @override
+  String get backupPageInstructionsLabel => 'Prompt injections';
+
+  @override
+  String get backupPageWorkspacesLabel => 'Workspaces';
+
+  @override
+  String get backupPageSearchServicesLabel => 'Search services';
+
+  @override
+  String get backupPageSpeechServicesLabel => 'Speech services';
+
+  @override
+  String get backupPageSettingsLabel => 'Other settings';
+
+  @override
   String get backupPageTestDone => 'Test done';
 
   @override
@@ -1896,7 +1947,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupPageSelectImportModeDescription =>
-      'Choose a restore mode. The chat and file switches determine which components are included.';
+      'Choose a restore mode. The switches in Backup Management apply to this import.';
 
   @override
   String get backupPageOverwriteMode => 'Complete Overwrite';
@@ -2627,6 +2678,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String chatMessageWidgetWebSearch(String query) {
     return 'Web Search: $query';
+  }
+
+  @override
+  String chatMessageWidgetWebFetch(String target) {
+    return 'Read page: $target';
   }
 
   @override
@@ -4643,6 +4699,50 @@ class AppLocalizationsEn extends AppLocalizations {
       'Auto-test connections on launch';
 
   @override
+  String get searchServicesPageWebFetchSection => 'Web page reading';
+
+  @override
+  String get searchServicesPageWebFetchModeTitle => 'Read pages with';
+
+  @override
+  String get searchServicesPageWebFetchFollow => 'Follow search service';
+
+  @override
+  String searchServicesPageWebFetchFollowValue(String name) {
+    return 'Follow search · $name';
+  }
+
+  @override
+  String searchServicesPageWebFetchFollowSubtitle(String name) {
+    return 'Currently $name';
+  }
+
+  @override
+  String get searchServicesPageWebFetchLocal => 'Local';
+
+  @override
+  String get searchServicesPageWebFetchLocalSubtitle =>
+      'Free. This device requests the page directly.';
+
+  @override
+  String get searchServicesPageWebFetchProviderSubtitle =>
+      'Uses this service\'s API key and quota';
+
+  @override
+  String get searchServicesPageWebFetchOff => 'Off';
+
+  @override
+  String get searchServicesPageWebFetchOffSubtitle =>
+      'Search only, without reading pages';
+
+  @override
+  String get searchServicesPageWebFetchFooter =>
+      'With web search on, the model can also read full pages. When the search service can\'t read pages, local reading is used, which can\'t handle pages that need JavaScript or block bots.';
+
+  @override
+  String get searchServicesPageWebFetchSupported => 'Can read web pages';
+
+  @override
   String get searchServicesPageMaxResults => 'Max Results';
 
   @override
@@ -4722,6 +4822,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchServicesDialogApiKey => 'API Key';
+
+  @override
+  String get searchServicesDialogApiKeyOptional => 'API Key (optional)';
 
   @override
   String get searchServicesDialogModel => 'Model';
@@ -4884,6 +4987,31 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String searchServiceEditorTestFailed(String message) {
     return 'Search failed: $message';
+  }
+
+  @override
+  String get searchServiceEditorTestModeSearch => 'Search';
+
+  @override
+  String get searchServiceEditorTestModeFetch => 'Read page';
+
+  @override
+  String get searchServiceEditorTestUrlHint => 'Enter a URL';
+
+  @override
+  String get searchServiceEditorTestFetchRun => 'Run test fetch';
+
+  @override
+  String get searchServiceEditorTestFetchRunning => 'Reading…';
+
+  @override
+  String searchServiceEditorTestFetchFailed(String message) {
+    return 'Fetch failed: $message';
+  }
+
+  @override
+  String searchServiceEditorTestFetchStats(String characters, String seconds) {
+    return '$characters characters · ${seconds}s';
   }
 
   @override
@@ -5593,6 +5721,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get asrServicesOpenAiSubtitle => 'Low-latency streaming transcription';
 
   @override
+  String get asrServicesGroqSubtitle => 'Whisper segmented transcription';
+
+  @override
+  String get asrServicesMistralSubtitle => 'Voxtral segmented transcription';
+
+  @override
   String get asrServicesDashScopeTitle => 'DashScope';
 
   @override
@@ -6121,6 +6255,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Neural search with semantic understanding. Great for research and finding specific content.';
 
   @override
+  String get searchProviderExaMcpDescription =>
+      'Exa search via MCP. An API key is optional for limited free usage.';
+
+  @override
   String get searchProviderLinkUpDescription =>
       'Search API with sourced answers. Provides both results and AI-generated summaries.';
 
@@ -6145,6 +6283,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Ollama web search API. Augments models with up-to-date information.';
 
   @override
+  String get searchProviderDeepSeekDescription =>
+      'DeepSeek official web search and page fetch APIs. Uses a DeepSeek API key.';
+
+  @override
   String get searchProviderJinaDescription =>
       'AI search foundation with embeddings, rerankers, web reader, deepsearch, and small language models. Multilingual and multimodal.';
 
@@ -6159,6 +6301,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchServiceNameExa => 'Exa';
+
+  @override
+  String get searchServiceNameExaMcp => 'Exa MCP';
 
   @override
   String get searchServiceNameZhipu => 'Zhipu AI';
@@ -6177,6 +6322,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchServiceNameOllama => 'Ollama';
+
+  @override
+  String get searchServiceNameDeepSeek => 'DeepSeek';
 
   @override
   String get searchServiceNameJina => 'Jina';
@@ -7421,7 +7569,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get memorySettingsInjectionMaxItemsSubtitle =>
-      'When a type exceeds this limit, only the newest items are injected. The rest can be fetched with memory_search_profile. A larger number is more complete but uses more tokens. If you customized the rules prompt, update it or restore the default.';
+      'This limit applies to types not selected for full injection. When a type exceeds this limit, only the newest items are injected. The rest can be fetched with memory_search_profile. A larger number is more complete but uses more tokens. If you customized the rules prompt, update it or restore the default.';
+
+  @override
+  String get memorySettingsFullInjectionTypesTitle =>
+      'Always inject these types';
+
+  @override
+  String get memorySettingsFullInjectionTypesSubtitle =>
+      'Select one or more types to inject all their active memories visible to the current assistant. These types ignore the item limit and use more context and tokens.';
 
   @override
   String memorySettingsInjectionMaxItemsOption(int n) {
@@ -8376,6 +8532,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get worldBookInjectionPositionAtDepth => 'At depth';
+
+  @override
+  String worldBookImportUnsupportedEntries(int count) {
+    return 'Imported. $count entries use unsupported SillyTavern features (such as macros, regex, timing, filters, or insertion rules). Their content was kept and they were disabled. Review them before enabling.';
+  }
 
   @override
   String get worldBookInjectionRoleUser => 'User';
@@ -10161,6 +10322,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get workspaceEnvErrorExtractFailed =>
       'Could not extract the sandbox image.';
+
+  @override
+  String get workspaceEnvErrorCleanupFailed =>
+      'Could not remove old sandbox files. Please try again.';
+
+  @override
+  String get workspaceEnvCleanupIncomplete =>
+      'The sandbox is ready, but some old files could not be removed. They still take up storage space.';
+
+  @override
+  String get workspaceEnvErrorResetFailed =>
+      'Could not finish resetting the sandbox. Please try again.';
 
   @override
   String get workspaceEnvErrorPatchFailed =>

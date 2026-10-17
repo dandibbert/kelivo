@@ -330,9 +330,9 @@ class HomeViewModel extends ChangeNotifier {
       final convo = _chatService.getConversation(conversationId);
       if (convo == null) return;
       final assistantProvider = _contextProvider.read<AssistantProvider>();
-      final assistant = convo.assistantId != null
-          ? assistantProvider.getById(convo.assistantId!)
-          : assistantProvider.currentAssistant;
+      final assistant = assistantProvider.resolveConversationAssistant(
+        convo.assistantId,
+      );
       if (assistant == null || !assistant.enableMemory) return;
       if (!assistant.autoOrganizeMemory) return;
       final pipeline = _contextProvider.read<MemoryPipelineService>();
@@ -488,15 +488,9 @@ class HomeViewModel extends ChangeNotifier {
 
     _chatActions.onScheduleImageSanitize = onScheduleImageSanitize;
 
-    final sourceAssistant = _contextProvider.read<AssistantProvider>().getById(
-      conversation.assistantId ?? '',
-    );
-    if (input.draftSubmission != null &&
-        conversation.assistantId != null &&
-        sourceAssistant == null) {
-      onWarning?.call('no_model');
-      return false;
-    }
+    final sourceAssistant = _contextProvider
+        .read<AssistantProvider>()
+        .resolveConversationAssistant(conversation.assistantId);
     await _clearSuggestionsFor(conversation.id);
 
     onHapticFeedback?.call();
@@ -600,13 +594,9 @@ class HomeViewModel extends ChangeNotifier {
     _chatActions.onScheduleImageSanitize = onScheduleImageSanitize;
 
     onHapticFeedback?.call();
-    final assistant = _contextProvider.read<AssistantProvider>().getById(
-      conversation.assistantId ?? '',
-    );
-    if (conversation.assistantId != null && assistant == null) {
-      onWarning?.call('no_model');
-      return false;
-    }
+    final assistant = _contextProvider
+        .read<AssistantProvider>()
+        .resolveConversationAssistant(conversation.assistantId);
     await _clearSuggestionsFor(conversation.id);
 
     final result = await _chatActions.regenerateAtMessage(
@@ -1074,12 +1064,14 @@ class HomeViewModel extends ChangeNotifier {
     AssistantProvider assistantProvider,
     String? convoAssistantId,
   ) {
-    if (convoAssistantId == null ||
-        assistantProvider.currentAssistantId == convoAssistantId ||
-        assistantProvider.getById(convoAssistantId) == null) {
+    final assistant = assistantProvider.resolveConversationAssistant(
+      convoAssistantId,
+    );
+    if (assistant == null ||
+        assistantProvider.currentAssistantId == assistant.id) {
       return null;
     }
-    return assistantProvider.setCurrentAssistant(convoAssistantId);
+    return assistantProvider.setCurrentAssistant(assistant.id);
   }
 
   /// Returns this request's new or reused entry even if navigation changes
@@ -1272,9 +1264,7 @@ class HomeViewModel extends ChangeNotifier {
     final locale = Localizations.localeOf(_contextProvider).toLanguageTag();
     final settings = _contextProvider.read<SettingsProvider>();
     final ap = _contextProvider.read<AssistantProvider>();
-    final assistant = convo.assistantId != null
-        ? ap.getById(convo.assistantId!)
-        : ap.currentAssistant;
+    final assistant = ap.resolveConversationAssistant(convo.assistantId);
 
     // Get messages and collapse to selected versions
     final allMsgs = await _chatController
@@ -1525,12 +1515,16 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   void _restoreMessageUiState() {
+    _streamController.pruneOffWindowState({
+      ..._chatActions.activeStreamingMessageIds,
+      for (final message in messages) message.id,
+    });
     for (int i = 0; i < messages.length; i++) {
       final m = messages[i];
       if (m.role == 'assistant') {
         _streamController.restoreMessageUiState(
           m,
-          getToolEventsFromDb: (id) => _chatService.getToolEvents(id),
+          getToolEventsFromDb: (id) => _chatService.getToolEventsForMessage(m),
         );
 
         final cleanedContent = _chatService.migrateLegacyGeminiThoughtSignature(
@@ -1646,9 +1640,9 @@ class HomeViewModel extends ChangeNotifier {
     final assistantProvider = _contextProvider.read<AssistantProvider>();
 
     // Get assistant for this conversation
-    final assistant = convo.assistantId != null
-        ? assistantProvider.getById(convo.assistantId!)
-        : assistantProvider.currentAssistant;
+    final assistant = assistantProvider.resolveConversationAssistant(
+      convo.assistantId,
+    );
     final chatModel = resolveChatModel(
       settings,
       conversation: convo,
@@ -1724,9 +1718,9 @@ class HomeViewModel extends ChangeNotifier {
     final assistantProvider = _contextProvider.read<AssistantProvider>();
 
     // Get assistant for this conversation
-    final assistant = convo.assistantId != null
-        ? assistantProvider.getById(convo.assistantId!)
-        : assistantProvider.currentAssistant;
+    final assistant = assistantProvider.resolveConversationAssistant(
+      convo.assistantId,
+    );
 
     final reasoning = settings.summaryGenerationReasoningFor(assistant);
 
@@ -1912,9 +1906,9 @@ class HomeViewModel extends ChangeNotifier {
 
     // Read context-dependent inputs before the async gap below.
     final assistantProvider = _contextProvider.read<AssistantProvider>();
-    final assistant = convo.assistantId != null
-        ? assistantProvider.getById(convo.assistantId!)
-        : assistantProvider.currentAssistant;
+    final assistant = assistantProvider.resolveConversationAssistant(
+      convo.assistantId,
+    );
     final chatModel = resolveChatModel(
       settings,
       conversation: convo,
