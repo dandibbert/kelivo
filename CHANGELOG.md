@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.3] - 2026-10-22
+
+### Fixed
+- `kelivo://v1/send` and `compose` with `target=new` now always start a fresh conversation. Previously a second link for the same assistant was appended to the previous conversation, because the conversation stayed registered as that assistant's reusable unsent chat after an external send.
+
+### Changed
+- Bump version to 1.3.3+82.
+
 ## [1.3.2] - 2026-10-17
 
 ### Added
