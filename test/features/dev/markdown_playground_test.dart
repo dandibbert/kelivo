@@ -189,6 +189,15 @@ void main() {
         );
         await tester.pumpAndSettle();
         final entry = find.text('Markdown Playground');
+        if (!desktop) {
+          // The mobile About page is a lazily built ListView; the entry sits
+          // below the deep-link section and may not be built yet.
+          await tester.scrollUntilVisible(
+            entry,
+            300,
+            scrollable: find.byType(Scrollable).first,
+          );
+        }
         await tester.ensureVisible(entry);
         await tester.tap(entry);
         await tester.pumpAndSettle();
