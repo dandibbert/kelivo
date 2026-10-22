@@ -1263,7 +1263,19 @@ class HomePageController extends ChangeNotifier {
     final submission = input.draftSubmission;
     final drafts = _composerDrafts;
     if (submission == null || drafts == null) {
-      return _sendComposerMessage(input);
+      final conversationId = currentConversation?.id;
+      final result = await _sendComposerMessage(input);
+      // No composer submission will retire the conversation's "new chat" slot.
+      if (drafts != null &&
+          conversationId != null &&
+          result != ChatInputSubmissionResult.rejected) {
+        try {
+          await drafts.releaseNewEntry(conversationId);
+        } catch (_) {
+          // The message is already sent; a stale slot is retried on next send.
+        }
+      }
+      return result;
     }
     try {
       final prepared = await drafts.prepareSubmissionInput(input);

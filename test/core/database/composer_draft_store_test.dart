@@ -169,6 +169,30 @@ void main() {
       expect(store.draftIds, isEmpty);
     },
   );
+  test('releasing a new entry stops reuse, also after reopen', () async {
+    store.registerNewEntry(
+      Conversation(id: 'used', title: 'Used', assistantId: 'assistant'),
+    );
+    store.registerNewEntry(
+      Conversation(id: 'other', title: 'Other', assistantId: 'second'),
+    );
+    await store.flush();
+    expect(store.newEntry('assistant')?.id, 'used');
+
+    await store.releaseNewEntry('used');
+    expect(store.isNewEntry('used'), isFalse);
+    expect(store.newEntry('assistant'), isNull);
+    // Unrelated assistants keep their slot.
+    expect(store.newEntry('second')?.id, 'other');
+
+    await reopen();
+    expect(store.newEntry('assistant'), isNull);
+    expect(store.newEntry('second')?.id, 'other');
+
+    // Releasing something that is not an entry is a no-op.
+    await store.releaseNewEntry('unknown');
+  });
+
   test('new entry persists configuration without any text', () async {
     store.registerNewEntry(
       Conversation(

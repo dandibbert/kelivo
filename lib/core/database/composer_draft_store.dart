@@ -215,6 +215,23 @@ class ComposerDraftStore extends ChangeNotifier {
   static String entryId(String? assistantId) => assistantId ?? '__default__';
   Conversation? newEntry(String? assistantId) => _entries[entryId(assistantId)];
   bool isNewEntry(String id) => _entries.values.any((entry) => entry.id == id);
+
+  /// Stops offering [conversationId] as an assistant's reusable unsent chat.
+  ///
+  /// A composer submission does this itself when it commits. Messages sent
+  /// without one (external links) must call it, or the next "new chat" for the
+  /// same assistant would be appended to this conversation instead.
+  Future<void> releaseNewEntry(String conversationId) {
+    if (!isNewEntry(conversationId)) return Future.value();
+    return _serialize(() async {
+      await _db.customStatement(
+        'DELETE FROM extension_entity_rows WHERE kind = ? AND owner_id = ?',
+        [entryKind, conversationId],
+      );
+      _entries.removeWhere((_, entry) => entry.id == conversationId);
+    });
+  }
+
   void registerNewEntry(Conversation conversation) {
     _entries.removeWhere((_, entry) => entry.id == conversation.id);
     _entries[entryId(conversation.assistantId)] = conversation.copyWith();
