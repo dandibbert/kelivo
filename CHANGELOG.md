@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.4] - 2026-10-23
+
+### Changed
+- Rebase onto upstream Kelivo (Markstream message renderer, storage and backup recovery fixes, Exa / DeepSeek search, Groq / Mistral transcription, and more) and keep the iOS `kelivo://v1` deep links.
+- Bump version to 1.3.4+83.
+
+### Fixed
+- The About page test no longer assumes the debug Markdown Playground row is already built; the URL generator button made the page longer.
+
 ## [1.3.3] - 2026-10-22
 
 ### Fixed
