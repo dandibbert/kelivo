@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.5] - 2026-10-24
+
+### Changed
+- Rebase onto upstream Kelivo: integrated browser and browser agent tools, password-encrypted backups, grouped MCP management, iOS native selection menus, world book entry copy and batch transfer, Windows restore recovery, and more. The iOS `kelivo://v1` deep links are kept.
+- Bump version to 1.3.5+84.
+
 ## [1.3.4] - 2026-10-23
 
 ### Changed
