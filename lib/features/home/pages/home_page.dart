@@ -1,3 +1,4 @@
+import '../../browser/browser_navigation.dart';
 import 'package:Kelivo/shared/text_input/message_editing_controller.dart';
 import '../../../core/services/chat/chat_service.dart';
 import 'dart:async';
@@ -1744,6 +1745,7 @@ class _HomePageState extends State<HomePage>
       showProducedFiles: settings.showProducedFiles,
       showToolResultSummary: settings.showToolResultSummary,
       hideToolResultImages: settings.hideToolResultImages,
+      showBrowserPageCards: settings.showBrowserPageCards,
       collapsedCodeLines: settings.autoCollapseCodeBlock
           ? settings.autoCollapseCodeBlockLines
           : null,
@@ -1874,6 +1876,14 @@ class _HomePageState extends State<HomePage>
             context,
             anchorKey: _inputBarKey,
             assistantId: a.id,
+            supportsModelTools:
+                chatModel.providerKey != null &&
+                chatModel.modelId != null &&
+                _controller.isToolModel(
+                  chatModel.providerKey!,
+                  chatModel.modelId!,
+                ),
+            conversationId: _controller.currentConversation?.id,
           );
         } else {
           _controller.dismissKeyboard();
@@ -1924,6 +1934,11 @@ class _HomePageState extends State<HomePage>
       onPickCamera: _controller.onPickCamera,
       onPickPhotos: _controller.onPickPhotos,
       onUploadFiles: _controller.onPickFiles,
+      onOpenBrowser: () => openBrowserPage(
+        context,
+        conversationId: _controller.currentConversation?.id,
+        assistantId: context.read<AssistantProvider>().currentAssistantId,
+      ),
       onToggleLearningMode: _openInstructionInjectionPopover,
       onOpenWorldBook: _openWorldBookPopover,
       onLongPressLearning: _showLearningPromptSheet,

@@ -39,6 +39,7 @@ import 'restore_workspace_lock.dart';
 import 'restore_business_lease.dart';
 import 'temporary_restore_file.dart';
 import 'backup_cancel_token.dart';
+import 'backup_encryption.dart';
 import 'backup_isolate_runner.dart';
 import 'backup_task_progress.dart';
 import 'streaming_zip_entry.dart';
@@ -634,23 +635,51 @@ class DataSync {
 
   Future<File> prepareBackupFile(
     WebDavConfig cfg, {
+    String? password,
     BackupProgressSink? onProgress,
     BackupCancelToken? cancelToken,
-  }) async => (await _prepareBackupArchive(
-    chatService: chatService,
-    includeChats: cfg.scope.includes(BackupCategory.chats),
-    includeFiles: cfg.scope.assetRoots.isNotEmpty,
-    scope: cfg.scope,
-    exportSettings: () =>
-        exportBusinessSettingsFrom(businessRepository, scope: cfg.scope),
-    snapshotDatabase: (destination) => chatService.createBackupDatabaseSnapshot(
-      destination,
+  }) async {
+    if (password != null && password.isEmpty) {
+      throw ArgumentError('backup_password_empty');
+    }
+    final archive = await _prepareBackupArchive(
+      chatService: chatService,
+      includeChats: cfg.scope.includes(BackupCategory.chats),
+      includeFiles: cfg.scope.assetRoots.isNotEmpty,
+      scope: cfg.scope,
+      exportSettings: () =>
+          exportBusinessSettingsFrom(businessRepository, scope: cfg.scope),
+      snapshotDatabase: (destination) =>
+          chatService.createBackupDatabaseSnapshot(
+            destination,
+            onProgress: onProgress,
+            cancelToken: cancelToken,
+          ),
       onProgress: onProgress,
       cancelToken: cancelToken,
-    ),
-    onProgress: onProgress,
-    cancelToken: cancelToken,
-  )).file;
+    );
+    if (password == null) return archive.file;
+    final encrypted = File(
+      p.setExtension(archive.file.path, '.${BackupEncryption.extension}'),
+    );
+    try {
+      await BackupEncryption.encryptFile(
+        source: archive.file,
+        destination: encrypted,
+        password: password,
+        onProgress: onProgress,
+        cancelToken: cancelToken,
+      );
+      await archive.file.delete();
+      return takePreparedBackupFile(encrypted, cancelToken);
+    } catch (error) {
+      await deleteTempDirectoryWhenIsolateSafe(
+        archive.file.parent,
+        error: error,
+      );
+      rethrow;
+    }
+  }
 
   /// Packs the live database for the local copy store.
   ///
@@ -1080,7 +1109,9 @@ class DataSync {
       await for (final ent in tmp.list(followLinks: false)) {
         if (_isLiveTempPath(ent.path)) continue;
         final name = p.basename(ent.path);
-        if (ent is Directory && name.startsWith('kelivo_backup_')) {
+        if (ent is Directory &&
+            (name.startsWith('kelivo_backup_') ||
+                name.startsWith('kelivo_decrypted_'))) {
           if (await isStale(ent, name)) await _deleteDirectoryQuietly(ent);
         } else if (ent is File &&
             ((name.startsWith('kelivo_backup_') && name.endsWith('.zip')) ||
@@ -1239,6 +1270,9 @@ class DataSync {
       entries[_manifestEntryName] = writer.addFile(
         manifestFile,
         _manifestEntryName,
+        // Packing progress counts the source files measured before writing.
+        // Generated metadata must not exceed that total.
+        reportProgress: false,
       );
       writer.closeSync();
       return entries;
@@ -1640,11 +1674,13 @@ class DataSync {
 
   Future<void> backupToWebDav(
     WebDavConfig cfg, {
+    String? password,
     BackupProgressSink? onProgress,
     BackupCancelToken? cancelToken,
   }) async {
     final file = await prepareBackupFile(
       cfg,
+      password: password,
       onProgress: onProgress,
       cancelToken: cancelToken,
     );
@@ -1658,7 +1694,9 @@ class DataSync {
       // Use a streamed request so we don't load the entire file into RAM.
       final req = http.StreamedRequest('PUT', target);
       req.headers.addAll({
-        'content-type': 'application/zip',
+        'content-type': password == null
+            ? 'application/zip'
+            : 'application/octet-stream',
         'content-length': fileLen.toString(),
         ..._authHeaders(cfg),
         ..._extraHeaders(cfg),
@@ -1810,7 +1848,7 @@ class DataSync {
       // If mtime is null, try to extract from filename (format: kelivo_backup_2025-01-19T12-34-56.123456.zip)
       if (mtime == null) {
         final match = RegExp(
-          r'kelivo_backup_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d+)\.zip',
+          r'kelivo_backup_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d+)\.(?:zip|kbackup)',
         ).firstMatch(name);
         if (match != null) {
           try {
@@ -1948,7 +1986,9 @@ class DataSync {
     required ForwardCompatibilityPrompt? prompt,
     required bool allowUnverifiedForwardCompatible,
   }) async {
-    if (prompt == null) return allowUnverifiedForwardCompatible;
+    if (prompt == null || allowUnverifiedForwardCompatible) {
+      return allowUnverifiedForwardCompatible;
+    }
     final compatibility = await inspectBackupCompatibility(file);
     // No manifest or no SQLite payload: nothing to ask about, and the restore
     // itself will report any real problem.
@@ -1971,6 +2011,7 @@ class DataSync {
     BackupCancelToken? cancelToken,
     bool allowUnverifiedForwardCompatible = false,
     ForwardCompatibilityPrompt? onForwardCompatibility,
+    BackupPasswordPrompt? onPassword,
   }) async {
     // Stream the download to a file instead of buffering in memory.
     final client = http.Client();
@@ -2012,20 +2053,16 @@ class DataSync {
         }
         rethrow;
       }
-      // Only now does the archive exist locally, so this is the earliest the
-      // question can be put to the user.
-      final allowUnverified = await _askForwardCompatibility(
-        file,
-        prompt: onForwardCompatibility,
-        allowUnverifiedForwardCompatible: allowUnverifiedForwardCompatible,
-      );
-      await _restoreFromBackupFile(
+      await restoreFromLocalFile(
         file,
         cfg,
         mode: mode,
         onProgress: onProgress,
         cancelToken: cancelToken,
-        allowUnverifiedForwardCompatible: allowUnverified,
+        allowUnverifiedForwardCompatible: allowUnverifiedForwardCompatible,
+        onForwardCompatibility: onForwardCompatibility,
+        onPassword: onPassword,
+        requireEncrypted: item.href.path.toLowerCase().endsWith('.kbackup'),
       );
     } catch (error) {
       if (error is BackupCancelledException ||
@@ -2054,10 +2091,15 @@ class DataSync {
 
   Future<File> exportToFile(
     WebDavConfig cfg, {
+    String? password,
     BackupProgressSink? onProgress,
     BackupCancelToken? cancelToken,
-  }) =>
-      prepareBackupFile(cfg, onProgress: onProgress, cancelToken: cancelToken);
+  }) => prepareBackupFile(
+    cfg,
+    password: password,
+    onProgress: onProgress,
+    cancelToken: cancelToken,
+  );
 
   @visibleForTesting
   static void verifyPackedBackupSync({
@@ -2089,23 +2131,81 @@ class DataSync {
     BackupCancelToken? cancelToken,
     bool allowUnverifiedForwardCompatible = false,
     ForwardCompatibilityPrompt? onForwardCompatibility,
+    BackupPasswordPrompt? onPassword,
+    bool requireEncrypted = false,
   }) async {
     if (!await file.exists()) throw Exception('备份文件不存在');
-    // Usually already answered by the caller, which had the file all along;
-    // the prompt is here for S3, which downloads through this entry point.
-    final allowUnverified = await _askForwardCompatibility(
-      file,
-      prompt: onForwardCompatibility,
-      allowUnverifiedForwardCompatible: allowUnverifiedForwardCompatible,
-    );
-    await _restoreFromBackupFile(
-      file,
-      cfg,
-      mode: mode,
-      onProgress: onProgress,
-      cancelToken: cancelToken,
-      allowUnverifiedForwardCompatible: allowUnverified,
-    );
+    Directory? decryptedDirectory;
+    Object? failure;
+    try {
+      var readable = file;
+      final encrypted = await BackupEncryption.isEncrypted(file);
+      if (!encrypted &&
+          (requireEncrypted ||
+              p.extension(file.path).toLowerCase() == '.kbackup')) {
+        throw const FormatException('backup_encryption_header');
+      }
+      if (encrypted) {
+        if (onPassword == null) {
+          throw const FormatException('backup_password_required');
+        }
+        final tmp = await _ensureTempDir();
+        await _cleanupPreviousBackupTempFiles(tmp);
+        decryptedDirectory = await tmp.createTemp('kelivo_decrypted_');
+        registerLiveTempPath(decryptedDirectory.path);
+        readable = File(p.join(decryptedDirectory.path, 'backup.zip'));
+        var retry = false;
+        while (true) {
+          if (cancelToken?.isCancelled == true) {
+            throw const BackupCancelledException();
+          }
+          final password = await onPassword(retry: retry);
+          if (password == null || cancelToken?.isCancelled == true) {
+            throw const BackupCancelledException();
+          }
+          if (password.isEmpty) {
+            retry = true;
+            continue;
+          }
+          try {
+            await BackupEncryption.decryptFile(
+              source: file,
+              destination: readable,
+              password: password,
+              onProgress: onProgress,
+              cancelToken: cancelToken,
+            );
+            break;
+          } on BackupDecryptionException {
+            retry = true;
+          }
+        }
+      }
+      // Both compatibility checks and restore see only authenticated plaintext.
+      final allowUnverified = await _askForwardCompatibility(
+        readable,
+        prompt: onForwardCompatibility,
+        allowUnverifiedForwardCompatible: allowUnverifiedForwardCompatible,
+      );
+      await _restoreFromBackupFile(
+        readable,
+        cfg,
+        mode: mode,
+        onProgress: onProgress,
+        cancelToken: cancelToken,
+        allowUnverifiedForwardCompatible: allowUnverified,
+      );
+    } catch (error) {
+      failure = error;
+      rethrow;
+    } finally {
+      if (decryptedDirectory != null) {
+        await deleteTempDirectoryWhenIsolateSafe(
+          decryptedDirectory,
+          error: failure,
+        );
+      }
+    }
   }
 
   // ===== Internal helpers =====
@@ -3149,7 +3249,9 @@ class DataSync {
     File file,
   ) async {
     try {
-      if (!await file.exists()) return null;
+      if (!await file.exists() || await BackupEncryption.isEncrypted(file)) {
+        return null;
+      }
       final inputStream = InputFileStream(file.path);
       Map<String, dynamic>? manifest;
       try {
@@ -3803,7 +3905,11 @@ class _StreamingZipWriter {
   final List<_StreamingZipEntry> _entries = <_StreamingZipEntry>[];
   bool _closed = false;
 
-  _BackupEntryMetadata addFile(File file, String entryName) {
+  _BackupEntryMetadata addFile(
+    File file,
+    String entryName, {
+    bool reportProgress = true,
+  }) {
     if (_closed) {
       throw StateError('Cannot add files after the ZIP writer is closed.');
     }
@@ -3833,7 +3939,11 @@ class _StreamingZipWriter {
       usesZip64: usesZip64Entry,
     );
 
-    final written = _writeDeflatedFile(file, entryName);
+    final written = _writeDeflatedFile(
+      file,
+      entryName,
+      reportProgress: reportProgress,
+    );
     _writeDataDescriptor(written, usesZip64: usesZip64Entry);
 
     _entries.add(
@@ -3900,7 +4010,11 @@ class _StreamingZipWriter {
     }
   }
 
-  _StreamingZipWrittenFile _writeDeflatedFile(File file, String entryName) {
+  _StreamingZipWrittenFile _writeDeflatedFile(
+    File file,
+    String entryName, {
+    required bool reportProgress,
+  }) {
     final compressedSink = _CountingOutputSink(_output);
     final inputSink = ZLibCodec(
       level: ZLibOption.defaultLevel,
@@ -3922,7 +4036,11 @@ class _StreamingZipWriter {
         uncompressedSize += read;
         hashSink.add(chunk);
         inputSink.add(chunk);
-        meter?.add(read, detail: entryName);
+        if (reportProgress) {
+          meter?.add(read, detail: entryName);
+        } else {
+          meter?.ctx?.throwIfCancelled();
+        }
       }
       hashSink.close();
       inputSink.close();

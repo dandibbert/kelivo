@@ -1,4 +1,5 @@
  import Flutter
+ import flutter_inappwebview_ios
  import UIKit
  import AuthenticationServices
  import UserNotifications
@@ -8,16 +9,20 @@
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
-  private let fileSaveHandler = NativeFileSaveHandler()
-  private let backgroundGenerationHandler = MobileBackgroundHandler()
-  private let oauthHandler = IosOAuthHandler()
-  private let deviceLocalToolsHandler = DeviceLocalToolsHandler()
-  private let iosTranslationHandler = IosTranslationHandler()
-  private let scheduledTaskNotifications = ScheduledTaskNotifications()
-  private let incomingShareHandler = IosIncomingShareHandler()
-  private var deepLinkChannel: FlutterMethodChannel?
-  private var deepLinkDartReady = false
-  private var pendingInitialDeepLink: String?
+   private let fileSaveHandler = NativeFileSaveHandler()
+   private let backgroundGenerationHandler = MobileBackgroundHandler()
+   private let oauthHandler = IosOAuthHandler()
+   private let deviceLocalToolsHandler = DeviceLocalToolsHandler()
+   private let iosTranslationHandler = IosTranslationHandler()
+   private let scheduledTaskNotifications = ScheduledTaskNotifications()
+   private let incomingShareHandler = IosIncomingShareHandler()
+   private let browserViewportInsets = BrowserViewportInsetsBridge()
+   private let browserScroll = BrowserScrollBridge()
+   // The presenter is only constructed on iOS 26 and later.
+   private var iosSelectionMenuHandler: AnyObject?
+   private var deepLinkChannel: FlutterMethodChannel?
+   private var deepLinkDartReady = false
+   private var pendingInitialDeepLink: String?
 
   override func application(
     _ application: UIApplication,
@@ -27,10 +32,35 @@
       pendingInitialDeepLink = launchURL.absoluteString
     }
     GeneratedPluginRegistrant.register(with: self)
+    if let registrar = registrar(forPlugin: "BrowserGlass") {
+      registrar.register(
+        BrowserGlassViewFactory(messenger: registrar.messenger()),
+        withId: "app.browser_glass"
+      )
+    }
     // FlutterAppDelegate forwards foreground presentation and cold/warm taps
     // to flutter_local_notifications. Assigning a delegate requests no access.
     UNUserNotificationCenter.current().delegate = self
     if let controller = window?.rootViewController as? FlutterViewController {
+      let selectionMenuChannel = FlutterMethodChannel(name: "app.ios_selection_menu", binaryMessenger: controller.binaryMessenger)
+      if #available(iOS 26.0, *) {
+        let handler = IosSelectionMenuHandler(view: controller.view, channel: selectionMenuChannel)
+        iosSelectionMenuHandler = handler
+        selectionMenuChannel.setMethodCallHandler { [weak handler] call, result in
+          guard let handler else { result(false); return }
+          handler.handle(call, result: result)
+        }
+      } else {
+        selectionMenuChannel.setMethodCallHandler { call, result in
+          result(call.method == "isAvailable" ? false : FlutterMethodNotImplemented)
+        }
+      }
+      browserViewportInsets.register(messenger: controller.binaryMessenger, window: window) {
+        ($0 as? InAppWebView)?.browserNativeViewId
+      }
+      browserScroll.register(messenger: controller.binaryMessenger, window: window) {
+        ($0 as? InAppWebView)?.browserNativeViewId
+      }
       incomingShareHandler.register(messenger: controller.binaryMessenger)
       let deepLinkChannel = FlutterMethodChannel(name: "app.deep_link", binaryMessenger: controller.binaryMessenger)
       self.deepLinkChannel = deepLinkChannel
@@ -174,6 +204,8 @@
   }
 
   override func applicationWillTerminate(_ application: UIApplication) {
+    browserViewportInsets.dispose()
+    browserScroll.dispose()
     backgroundGenerationHandler.prepareForTermination()
     super.applicationWillTerminate(application)
   }
