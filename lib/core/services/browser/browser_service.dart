@@ -93,7 +93,7 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
   bool _disposed = false;
   bool _initialized = false;
   int _controlEpoch = 0;
-  Completer<void> _controlCancelled = Completer<void>();
+  Completer<String> _controlCancelled = Completer<String>();
   String? _activeTabId;
   String? _selectedSessionId;
   final Map<String, String> _lastTabBySession = {};
@@ -555,7 +555,7 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
     requireTab(id);
     if (_navigationRevisions[id] != revision) return;
     if (!created) {
-      await engine.navigate(url).timeout(const Duration(seconds: 30));
+      await _runEngineOperation(id, () => engine.navigate(url));
     }
   }
 
@@ -630,6 +630,52 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
   /// A separate cache budget bounds their count; navigation/close discards the
   /// old image without imposing a limit on saved tabs.
   Uint8List? previewForTab(String id) => _tabPreviews[id];
+
+  /// Freeze a small preview while this tool still owns the page. Historical
+  /// cards persist these pixels rather than following the tab's mutable cache.
+  /// No renderer is created/resumed here, and slow captures never fail a tool.
+  Future<Uint8List?> captureToolPreview(String id) async {
+    _checkAction(id);
+    final tab = requireTab(id);
+    final engine = _engines[id];
+    final epoch = _previewEpochs[id] ?? 0;
+    bool current() =>
+        !_disposed &&
+        _previewForeground &&
+        identical(_engines[id], engine) &&
+        (_previewEpochs[id] ?? 0) == epoch;
+    if (engine == null ||
+        !current() ||
+        tab.isLoading ||
+        tab.error != null ||
+        (tab.url == 'about:blank' && !tab.hasContent)) {
+      return null;
+    }
+    const budget = Duration(milliseconds: 500);
+    final elapsed = Stopwatch()..start();
+    try {
+      // A capture started before this action cannot stand in for its result.
+      // Wait for it to release the encoder, without allowing concurrent work.
+      if (_previewFlights[id] case final pending?) {
+        await pending.future.timeout(budget);
+      }
+      if (!current() || _nativePreviewFlights.containsKey(id)) return null;
+      final remaining = budget - elapsed.elapsed;
+      if (remaining <= Duration.zero) return null;
+      _checkAction(id);
+      _chatPreviewTimers.remove(id)?.cancel();
+      _chatPreviewTimes[id] = DateTime.now();
+      final bytes = await _startPreviewCapture(
+        tab,
+        engine,
+        allowLoading: false,
+      ).timeout(remaining);
+      _checkAction(id);
+      return current() ? bytes : null;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// A visible chat card requests snapshots of an already-existing renderer.
   /// This never creates, selects, resizes or resumes a WebView. Updates are
@@ -758,7 +804,7 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
     return _startPreviewCapture(tab, _engines[id]!, allowLoading: fresh);
   }
 
-  Future<void> _startPreviewCapture(
+  Future<Uint8List?> _startPreviewCapture(
     BrowserTab tab,
     BrowserEngine engine, {
     required bool allowLoading,
@@ -766,7 +812,7 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
   }) {
     final id = tab.id;
     final epoch = _previewEpochs[id] ?? 0;
-    late final Future<void> future;
+    late final Future<Uint8List?> future;
     future =
         _capturePreview(
           tab,
@@ -790,7 +836,7 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
     return future;
   }
 
-  Future<void> _capturePreview(
+  Future<Uint8List?> _capturePreview(
     BrowserTab before,
     BrowserEngine engine,
     int epoch, {
@@ -805,7 +851,7 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
         try {
           await pending.future.timeout(const Duration(seconds: 2));
         } on TimeoutException {
-          return;
+          return null;
         } catch (_) {
           // Its failure does not prevent a new snapshot of the current page.
         }
@@ -817,7 +863,7 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
                       !_previewWatchers.containsKey(before.id)
                 : !_canPreview(activeTab, allowLoading: allowLoading) ||
                       activeTabId != before.id)) {
-          return;
+          return null;
         }
       }
       final future = Future<Uint8List?>.sync(engine.thumbnail);
@@ -842,10 +888,12 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
           current.error != null ||
           (_previewEpochs[before.id] ?? 0) != epoch ||
           !identical(_engines[before.id], engine)) {
-        return;
+        return null;
       }
-      _tabPreviews.remove(before.id);
-      _tabPreviews[before.id] = bytes;
+      final previous = _tabPreviews.remove(before.id);
+      // Identical pixels retain their identity so immutable tool previews can
+      // reuse the same saved file instead of writing duplicates after clicks.
+      _tabPreviews[before.id] = listEquals(previous, bytes) ? previous! : bytes;
       while (_tabPreviews.length > maxCachedPreviews) {
         final oldest = _tabPreviews.keys.firstWhere(
           (id) => id != _activeTabId && id != before.id,
@@ -857,9 +905,11 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
         _previewCompletedEpochs[before.id] = epoch;
       }
       _notify();
+      return _tabPreviews[before.id];
     } catch (_) {
       // A hidden/terminated native view may not produce a snapshot. Keep its
       // previous valid last-view image and never fail navigation for a preview.
+      return null;
     }
   }
 
@@ -872,18 +922,35 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<T> _call<T>(
     String id,
-    Future<T> Function(BrowserEngine) action,
-  ) async {
+    Future<T> Function(BrowserEngine) action, {
+    bool pauseOnTimeout = true,
+  }) async {
     _checkAction(id);
     final engine = await _engine(id);
     _checkAction(id);
     requireTab(id);
+    return _runEngineOperation(
+      id,
+      () => action(engine),
+      pauseOnTimeout: pauseOnTimeout,
+    );
+  }
+
+  Future<T> _runEngineOperation<T>(
+    String id,
+    Future<T> Function() action, {
+    bool pauseOnTimeout = true,
+  }) async {
     final T result;
     try {
-      result = await action(engine).timeout(const Duration(seconds: 30));
+      result = await action().timeout(const Duration(seconds: 30));
     } on TimeoutException {
-      if (Zone.current[_actionKey] != null) {
+      if (pauseOnTimeout && Zone.current[_actionKey] != null) {
+        // A late result from a cancelled action must not replace a newer
+        // takeover, resume or permission change with a timeout pause.
+        _checkAction(id);
         _pauseAgentActions(BrowserAgentPauseReason.timeout);
+        throw StateError(_agentTimeoutError);
       }
       rethrow;
     }
@@ -895,7 +962,14 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
     required String tabId,
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    await _call(tabId, (engine) => engine.waitForLoad(timeout));
+    // Waiting observes a navigation already accepted by the engine. A slow
+    // load can still be inspected or retried; it is not a human takeover or
+    // an unfinished native command whose outcome is unknown.
+    await _call(
+      tabId,
+      (engine) => engine.waitForLoad(timeout),
+      pauseOnTimeout: false,
+    );
   }
 
   Future<BrowserEngine> _engine(String id, {VoidCallback? onCreated}) {
@@ -1331,7 +1405,13 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
     await initialize();
     if (!_settings.agentEnabled) throw StateError('browser_agent_disabled');
     if (_clearingWebsiteData) throw StateError('browser_clearing_website_data');
-    if (_agentPaused) throw StateError('browser_human_control');
+    if (_agentPaused) {
+      throw StateError(
+        _agentPauseReason == BrowserAgentPauseReason.timeout
+            ? _agentTimeoutError
+            : 'browser_human_control',
+      );
+    }
     if (sessionId.isEmpty) {
       throw ArgumentError('Browser actions require a session');
     }
@@ -1359,10 +1439,7 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
         try {
           final value = await Future.any<T>([
             running,
-            controlCancelled.then<T>(
-              (_) =>
-                  throw StateError('browser_action_cancelled_outcome_unknown'),
-            ),
+            controlCancelled.then<T>((error) => throw StateError(error)),
             sessionCancelled.then<T>(
               (_) =>
                   throw StateError('browser_action_cancelled_outcome_unknown'),
@@ -1409,6 +1486,9 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
     final guard = Zone.current[_actionKey] as _BrowserAction?;
     if (guard == null) return;
     guard.cancellation?.throwIfCancelled();
+    if (_agentPaused && _agentPauseReason == BrowserAgentPauseReason.timeout) {
+      throw StateError(_agentTimeoutError);
+    }
     if (!_settings.agentEnabled ||
         _agentPaused ||
         guard.epoch != _controlEpoch ||
@@ -1433,6 +1513,8 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
+  static const _agentTimeoutError = 'browser_action_timeout_outcome_unknown';
+
   void _pauseAgentActions(
     BrowserAgentPauseReason reason, {
     String? sessionId,
@@ -1443,13 +1525,19 @@ class BrowserService extends ChangeNotifier with WidgetsBindingObserver {
     _pausedAgentSessionId =
         sessionId ?? _agentSessionId ?? activeTab?.ownerSessionId;
     _pausedAgentTabId = tabId ?? _agentTabId ?? _activeTabId;
-    _invalidateAgentActions();
+    _invalidateAgentActions(
+      error: reason == BrowserAgentPauseReason.timeout
+          ? _agentTimeoutError
+          : 'browser_action_cancelled_outcome_unknown',
+    );
   }
 
-  void _invalidateAgentActions() {
+  void _invalidateAgentActions({
+    String error = 'browser_action_cancelled_outcome_unknown',
+  }) {
     _controlEpoch++;
-    _controlCancelled.complete();
-    _controlCancelled = Completer<void>();
+    _controlCancelled.complete(error);
+    _controlCancelled = Completer<String>();
     for (final engine in _engines.values) {
       unawaited(engine.stop().catchError((Object _) {}));
     }

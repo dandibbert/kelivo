@@ -1,3 +1,4 @@
+import 'package:Kelivo/core/models/tool_permission_mode.dart';
 import '../models/composer_draft.dart';
 import 'composer_draft_store.dart';
 import 'dart:convert';
@@ -1727,7 +1728,8 @@ class ChatDatabaseRepository {
               EXISTS (
                 SELECT 1 FROM message_part_rows p
                 WHERE p.revision_id = m.id
-                  AND p.kind IN ('image', 'file')
+                  AND (p.kind IN ('image', 'file')
+                    OR (p.kind = 'tool_call' AND p.payload LIKE '%"previewImage"%'))
               ) OR
               EXISTS (
                 SELECT 1 FROM message_asset_rows a WHERE a.revision_id = m.id
@@ -3971,7 +3973,7 @@ class ChatDatabaseRepository {
             SELECT 1
             FROM asset_reference_dirty_rows d
             JOIN message_part_rows p ON p.revision_id = d.revision_id
-            WHERE p.kind IN ('text', 'image', 'file')
+            WHERE p.kind IN ('text', 'image', 'file', 'tool_call')
               AND (
                 instr(p.payload, c.path_form) > 0
                 OR instr(p.payload, c.alt_form) > 0
@@ -4000,7 +4002,7 @@ class ChatDatabaseRepository {
             AND NOT EXISTS (
               SELECT 1 FROM asset_reference_dirty_rows d
               JOIN message_part_rows p ON p.revision_id = d.revision_id
-              WHERE p.kind IN ('text', 'image', 'file')
+              WHERE p.kind IN ('text', 'image', 'file', 'tool_call')
                 AND (
                   instr(p.payload, ?) > 0 OR instr(p.payload, ?) > 0
                   OR instr(p.payload, ?) > 0 OR instr(p.payload, ?) > 0
@@ -4046,7 +4048,7 @@ class ChatDatabaseRepository {
               AND NOT EXISTS (
                 SELECT 1 FROM asset_reference_dirty_rows d
                 JOIN message_part_rows p ON p.revision_id = d.revision_id
-                WHERE p.kind IN ('text', 'image', 'file')
+                WHERE p.kind IN ('text', 'image', 'file', 'tool_call')
                   AND (
                     instr(p.payload, ?) > 0 OR instr(p.payload, ?) > 0
                     OR instr(p.payload, ?) > 0 OR instr(p.payload, ?) > 0
@@ -4326,14 +4328,19 @@ class ChatDatabaseRepository {
   /// in one transaction. [updatedAt] is bumped only when the map changes.
   Future<void> updateConversationExtras(
     String conversationId,
-    Map<String, dynamic> Function(Map<String, dynamic> current) update,
-  ) {
+    Map<String, dynamic> Function(Map<String, dynamic> current) update, {
+    Conversation? expectedOwner,
+  }) {
     return _db.transaction(() async {
       final row = await (_db.select(
         _db.conversationRows,
       )..where((t) => t.id.equals(conversationId))).getSingleOrNull();
       if (row == null) {
         throw StateError('conversation_not_found');
+      }
+      if (expectedOwner != null &&
+          row.assistantId != expectedOwner.assistantId) {
+        throw StateError('context_changed');
       }
       final current = _decodeExtrasJson(row.extrasJson);
       final next = update(Map<String, dynamic>.from(current));
@@ -4383,6 +4390,7 @@ class ChatDatabaseRepository {
       );
       final duplicatedAt = DateTime.now();
       final duplicate = source.copyWith(
+        extras: ToolPermissionMode.withoutGrant(source.extras),
         id: targetId,
         createdAt: duplicatedAt,
         updatedAt: duplicatedAt,
@@ -4482,7 +4490,8 @@ class ChatDatabaseRepository {
       'SELECT revision_id FROM message_asset_rows WHERE conversation_id = ? '
       'UNION '
       'SELECT revision_id FROM message_part_rows '
-      "WHERE conversation_id = ? AND kind IN ('image', 'file');",
+      "WHERE conversation_id = ? AND (kind IN ('image', 'file') "
+      "OR (kind = 'tool_call' AND payload LIKE '%\"previewImage\"%'));",
       [targetConversationId, targetConversationId],
     );
   }
@@ -4593,7 +4602,7 @@ class ChatDatabaseRepository {
                 messageIds: [
                   for (final message in kept) messageIdMap[message.id]!,
                 ],
-                extras: source.extras,
+                extras: ToolPermissionMode.withoutGrant(source.extras),
               ),
             ),
           );
@@ -4631,6 +4640,10 @@ class ChatDatabaseRepository {
                 ..limit(1))
               .getSingleOrNull();
       if (activeRun != null) return false;
+      await updateConversationExtras(
+        conversationId,
+        ToolPermissionMode.withoutGrant,
+      );
       await (_db.delete(_db.messagePromptRows)..where(
             (row) =>
                 row.conversationId.equals(conversationId) &
@@ -4942,9 +4955,6 @@ class ChatDatabaseRepository {
     ChatMessage message, {
     List<Map<String, dynamic>>? toolEvents,
   }) async {
-    if (_messageHasAttachmentParts(message)) {
-      await markMessageAssetReferencesDirty(message.id);
-    }
     // A mid-stream reasoning pause is not a reasoning removal: the checkpoint
     // snapshot still carries the pre-allocated reasoningStartAt timestamp, so
     // keep the persisted reasoning part until a timestamp-free message proves
@@ -4966,6 +4976,12 @@ class ChatDatabaseRepository {
       message = message.copyWith(reasoningText: effectiveReasoningText);
     }
     final parts = _partsForPersistence(message, toolEvents);
+    if (_messageHasAttachmentParts(message) ||
+        parts.whereType<ToolCallPart>().any(
+          (part) => part.browserPreviewImage != null,
+        )) {
+      await markMessageAssetReferencesDirty(message.id);
+    }
     await (_db.delete(_db.messagePartRows)..where(
           (row) =>
               row.revisionId.equals(message.id) &
@@ -6010,7 +6026,8 @@ class ChatDatabaseRepository {
     await _db.customStatement(
       'INSERT OR IGNORE INTO asset_reference_dirty_rows(revision_id) '
       'SELECT DISTINCT revision_id FROM main.message_part_rows '
-      "WHERE conversation_id = ? AND kind IN ('image', 'file');",
+      "WHERE conversation_id = ? AND (kind IN ('image', 'file') "
+      "OR (kind = 'tool_call' AND payload LIKE '%\"previewImage\"%'));",
       [targetId],
     );
   }
@@ -7259,6 +7276,7 @@ class ChatDatabaseRepository {
       (part) =>
           part is ImagePart ||
           part is FilePart ||
+          (part is ToolCallPart && part.browserPreviewImage != null) ||
           (part is MalformedPart && part.isAttachmentKind),
     );
   }

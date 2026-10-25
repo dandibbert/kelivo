@@ -16,6 +16,7 @@ class BrowserToolsService {
     : browser = browser ?? BrowserService.instance;
 
   final BrowserService browser;
+  static final _savedPreviews = Expando<String>();
   static const toolName = 'browser';
   static const actions = [
     'open',
@@ -59,6 +60,11 @@ class BrowserToolsService {
           'consent. Only act within the user request. Ask the user to take over '
           'for login, CAPTCHA, cross-origin frames or trusted native input. '
           'Human takeover pauses all agent actions until the user resumes. '
+          'A page-load timeout does not pause control: inspect the current page '
+          'with snapshot or extract before deciding whether to wait or navigate. '
+          'browser_action_timeout_outcome_unknown means a native operation '
+          'timed out and control is paused; ask the user to check the page '
+          'and allow continuation. This is not human takeover. '
           'Never retry a mutation with outcome_unknown without observing first. '
           'Screenshots cost image tokens; request them only for visual work.',
       'parameters': {
@@ -260,8 +266,10 @@ class BrowserToolsService {
 
   Future<ClientToolResult> handle(
     String conversationId,
-    Map<String, dynamic> arguments,
-  ) async {
+    Map<String, dynamic> arguments, {
+    bool capturePreview = true,
+    bool temporary = false,
+  }) async {
     final action = arguments['action']?.toString() ?? '';
     try {
       if (conversationId.trim().isEmpty) {
@@ -273,7 +281,8 @@ class BrowserToolsService {
         sessionId: conversationId,
         label: action,
         tabId: args['tab_id'] as String?,
-        action: () => _execute(conversationId, action, args),
+        action: () =>
+            _execute(conversationId, action, args, capturePreview, temporary),
       );
     } catch (error) {
       return ClientToolResult(
@@ -293,6 +302,8 @@ class BrowserToolsService {
     String sessionId,
     String action,
     Map<String, dynamic> args,
+    bool capturePreview,
+    bool temporary,
   ) async {
     ToolCallCancellation.current?.throwIfCancelled();
     if (action == 'list_tabs') {
@@ -390,7 +401,10 @@ class BrowserToolsService {
             tabId: tabId,
           ),
         );
-        final saved = await McpImageSnapshot.saveBytes(bytes);
+        final saved = await McpImageSnapshot.saveBytes(
+          bytes,
+          deduplicate: !temporary,
+        );
         if (saved == null) {
           data['screenshot_error'] = 'Could not save screenshot.';
         } else {
@@ -404,14 +418,40 @@ class BrowserToolsService {
         }
       }
     }
-    return _result(sessionId, action, {
-      'tab_id': tab.id,
-      'url': tab.url,
-      'title': tab.title,
-      'can_go_back': tab.canGoBack,
-      'can_go_forward': tab.canGoForward,
-      ...data,
-    }, images: images);
+    // Explicit screenshots remain owned even when cards are hidden. Temporary
+    // chats do not create extra persistent UI previews or share saved assets.
+    String? preview = images.firstOrNull;
+    if (capturePreview && !temporary && preview == null) {
+      // Even a read/wait may follow asynchronous DOM changes at the same URL.
+      // Only this capture can represent the page at this step's completion.
+      final bytes = await browser.captureToolPreview(tabId);
+      if (bytes != null) {
+        preview = _savedPreviews[bytes];
+        if (preview == null ||
+            await McpImageSnapshot.reuseLocalFile(preview) == null) {
+          final saved = await McpImageSnapshot.saveBytes(
+            bytes,
+            deduplicate: true,
+          );
+          preview = saved?.uri;
+          _savedPreviews[bytes] = preview;
+        }
+      }
+    }
+    return _result(
+      sessionId,
+      action,
+      {
+        'tab_id': tab.id,
+        'url': tab.url,
+        'title': tab.title,
+        'can_go_back': tab.canGoBack,
+        'can_go_forward': tab.canGoForward,
+        ...data,
+      },
+      images: images,
+      preview: preview,
+    );
   }
 
   Future<Map<String, dynamic>> _dom(
@@ -467,6 +507,7 @@ class BrowserToolsService {
     String action,
     Map<String, dynamic> data, {
     List<String> images = const [],
+    String? preview,
   }) {
     final text = jsonEncode({
       'ok': true,
@@ -488,6 +529,7 @@ class BrowserToolsService {
           'status': 'ok',
           'sessionId': sessionId,
           'tabId': data['tab_id'],
+          if (preview != null) 'previewImage': preview,
         },
         kMcpResultMetadataKey: mcpResultMetadata(images),
       },

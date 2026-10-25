@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../utils/mcp_structured_image.dart';
 
 /// Read-only presentation of an existing tool result; never runs browser work.
 class BrowserToolAction {
@@ -14,12 +15,20 @@ class BrowserToolAction {
     Map<String, dynamic>? metadata,
     this.loading = false,
   }) : result = _result(content),
-       browserMetadata = _map(metadata?['browser']);
+       browserMetadata = _map(metadata?['browser']),
+       _images = mcpResultImageUris(readMcpResultMetadata(metadata));
 
   final String id;
   final Map<String, dynamic> arguments;
   final bool loading;
   final Map<String, dynamic> result, browserMetadata;
+  final List<String> _images;
+
+  /// This action's immutable image only, never another action's current tab.
+  String? get previewImage {
+    final preview = _string(browserMetadata['previewImage']);
+    return preview.isNotEmpty ? preview : _images.firstOrNull;
+  }
 
   static Map<String, dynamic> _map(Object? value) => value is Map
       ? {
@@ -184,6 +193,9 @@ String browserErrorSummary(AppLocalizations l, String error) {
     return l.browserErrNotVisible;
   }
   if (error.contains('element_not_found')) return l.browserErrNotFound;
+  if (error.contains('browser_action_timeout_outcome_unknown')) {
+    return l.browserErrActionTimeout;
+  }
   if (error.toLowerCase().contains('timeout')) return l.browserErrTimeout;
   if (error.contains('browser_human_control')) return l.browserErrHumanControl;
   if (error.contains('browser_tab_closed') ||

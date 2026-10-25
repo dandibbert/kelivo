@@ -3792,7 +3792,6 @@
   "worldBookInjectionRoleAssistant": "Assistant",
   "mcpToolNeedsApproval": "Require approval",
   "toolApprovalPending": "Waiting for approval",
-  "toolApprovalApprove": "Approve",
   "toolApprovalDeny": "Deny",
   "toolApprovalDenyTitle": "Deny tool call",
   "toolApprovalDenyHint": "Reason (optional)",
@@ -4567,7 +4566,6 @@
   "workspaceToolUpdated": "updated",
   "workspaceToolTruncated": "truncated",
   "workspaceToolImageTag": "image",
-  "workspaceToolAllowAll": "Allow all this session",
   "workspaceToolStdout": "stdout",
   "workspaceToolStderr": "stderr",
   "workspaceToolOpenFullOutput": "Open full output",
@@ -4778,7 +4776,7 @@
       }
     }
   },
-  "workspaceEnvNativeShellApproval": "The shell tool needs approval unless this session allows all tools.",
+  "workspaceEnvNativeShellApproval": "The shell tool needs approval in Ask for approval mode.",
   "workspaceEnvDownloadProgress": "{downloaded} / {total} MB ({percent}%)",
   "@workspaceEnvDownloadProgress": {
     "placeholders": {
@@ -4892,8 +4890,6 @@
   "workspaceEntryOpenSystemTerminal": "Open in system terminal",
   "workspaceEntryReveal": "Reveal in file manager",
   "workspaceEntrySessionSkills": "Skills",
-  "workspaceEntryAllowAll": "Allow all this session",
-  "workspaceEntryAllowAllSubtitle": "Shell commands in this conversation will run without approval.",
   "workspaceEntryEnvironment": "Environment",
   "workspaceEntryManage": "Manage workspaces",
   "workspaceEntryCreate": "Create new workspace…",
@@ -5198,7 +5194,7 @@
       }
     }
   },
-  "workspaceEnvNativeUnsandboxed": "Commands run on this computer, not in a sandbox, and need approval unless this session allows all tools.",
+  "workspaceEnvNativeUnsandboxed": "Commands run on this computer without a sandbox and need approval unless this chat has full access.",
   "workspaceEnvRootfsTitle": "/",
   "workspaceEnvBrowserUnavailable": "The sandbox file system is not available.",
   "workspaceEnvMirrorNameOfficial": "Official",
@@ -6211,6 +6207,7 @@
   "browserAgentWorking": "AI is working",
   "browserTakeOver": "Take over",
   "browserAgentPaused": "AI actions paused",
+  "browserAgentTimedOut": "Operation timed out; AI paused",
   "browserAllowAgent": "Allow to continue",
   "browserAgentDescription": "Send a task in chat to let AI use the browser. Allowing it to continue only removes the pause; it does not send a message or start a task.",
   "browserOpenExternal": "Open in default browser",
@@ -6389,6 +6386,7 @@
   "browserErrNotVisible": "Element hidden or covered",
   "browserErrNotFound": "Element not found",
   "browserErrTimeout": "Page load timed out",
+  "browserErrActionTimeout": "Operation timed out; outcome unknown. Check the page before allowing AI to continue.",
   "browserErrHumanControl": "You're controlling the browser",
   "browserErrTabClosed": "Tab was closed",
   "browserErrGeneric": "Action failed",
@@ -6417,5 +6415,37 @@
   "browserLiveViewLimit": "All browser resources are in use. Try again when a task finishes, or close an unused page.",
   "browserAskAiInOwnerConversation": "Ask AI in the owning chat",
   "displaySettingsPageShowBrowserPageCardsTitle": "Show webpage cards",
-  "browserObserverHint": "AI is using this page. Select Take over to interact."
+  "browserObserverHint": "AI is using this page. Select Take over to interact.",
+  "toolPermissionTitle": "Permissions",
+  "toolPermissionRequestApproval": "Ask for approval",
+  "toolPermissionFullAccess": "Full access",
+  "toolPermissionRequestApprovalDesc": "Kelivo will ask before accessing files outside the workspace, running desktop commands, or using other tools that need approval.",
+  "toolPermissionFullAccessDesc": "Lets this conversation access files on this device, run commands, and use enabled online tools without asking each time.",
+  "toolPermissionFullAccessDescMobile": "Lets this conversation run tools automatically inside the sandbox and authorized folders, without asking each time.",
+  "toolPermissionUnboundHint": "No workspace bound: this does not turn on file or shell tools.",
+  "toolPermissionScopeThisChat": "This chat only",
+  "toolApprovalSwitchToFullAccess": "Switch to full access",
+  "toolApprovalDenied": "Denied",
+  "toolApprovalPendingKind": "Awaiting approval · {kind}",
+  "toolApprovalRequestedPath": "Requested path",
+  "toolApprovalRealTarget": "Actual target",
+  "toolApprovalScopeOnce": "Applies to this call only",
+  "toolApprovalByFullAccess": "Ran automatically",
+  "toolApprovalDenyWithReason": "Deny with reason…",
+  "toolPermissionSaveFailed": "Couldn’t save. Permission unchanged.",
+  "toolPermissionEnabledSnack": "Full access enabled for this chat",
+  "toolPermissionResetSnack": "Workspace changed · permission reset to Ask for approval",
+  "toolPermissionUndo": "Undo",
+  "wsDeniedPathOutside": "Target is outside the authorized area. Denied.",
+  "wsDeniedMountReadonly": "Read-only mount. Can’t write.",
+  "wsDeniedSkillsReadonly": "Skills folder is read-only.",
+  "wsPathChanged": "Target changed while awaiting approval.",
+  "wsContextChanged": "Conversation context changed. Request expired.",
+  "@toolApprovalPendingKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  }
 }

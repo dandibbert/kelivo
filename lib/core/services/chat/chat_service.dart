@@ -1,3 +1,4 @@
+import 'package:Kelivo/core/models/tool_permission_mode.dart';
 import '../../models/composer_draft.dart';
 import '../../database/composer_draft_store.dart';
 import '../../models/conversation_prompt_settings.dart';
@@ -31,6 +32,7 @@ import '../../models/conversation.dart';
 import '../../models/workspace_binding.dart';
 import '../../../utils/sandbox_path_resolver.dart';
 import '../../../utils/app_directories.dart';
+import '../mcp/mcp_image_snapshot.dart';
 
 final class LoadedTimelineSlot {
   const LoadedTimelineSlot({required this.identity, required this.message});
@@ -196,7 +198,7 @@ class ChatService extends ChangeNotifier {
     if (extras == null || extras.isEmpty) {
       return const <String, dynamic>{};
     }
-    return Map<String, dynamic>.from(extras);
+    return ToolPermissionMode.withoutGrant(extras);
   }
 
   Future<void> _copyConversationSettingsFrom(
@@ -209,7 +211,6 @@ class ChatService extends ChangeNotifier {
         WorkspaceBinding(
           workspaceId: source.workspaceId,
           cwd: source.cwd,
-          allowAll: source.allowAll,
         ).applyTo({
           if (sourceExtras.containsKey(WorldBookActivation.extrasKey))
             WorldBookActivation.extrasKey:
@@ -2099,10 +2100,10 @@ class ChatService extends ChangeNotifier {
     return count;
   }
 
-  List<({String path, String kind})> _extractLocalAttachmentsFromMessage(
-    ChatMessage message,
-  ) {
+  Future<List<({String path, String kind})>>
+  _extractLocalAttachmentsFromMessage(ChatMessage message) async {
     final fromParts = <String, ({String path, String kind})>{};
+    final previews = <String>{};
     for (final part in message.parts) {
       if (part is ImagePart) {
         // Unavailable placeholders stay in history for UI but must not enter
@@ -2124,6 +2125,16 @@ class ChatService extends ChangeNotifier {
         final fixed = SandboxPathResolver.resolveForIo(uri);
         if (fixed == null) continue;
         fromParts['file:$fixed'] = (path: fixed, kind: 'file');
+      } else if (part is ToolCallPart) {
+        final uri = part.browserPreviewImage;
+        if (uri == null || !previews.add(uri)) continue;
+        final file = await McpImageSnapshot.localFile(uri);
+        if (file != null) {
+          // Keep the sandbox spelling after validating its real destination;
+          // macOS /var can resolve to /private/var outside the lexical root.
+          final path = SandboxPathResolver.resolveForIo(uri)!;
+          fromParts['image:$path'] = (path: path, kind: 'image');
+        }
       }
     }
     return List.unmodifiable(fromParts.values);
@@ -2152,6 +2163,7 @@ class ChatService extends ChangeNotifier {
     (part) =>
         part is ImagePart ||
         part is FilePart ||
+        (part is ToolCallPart && part.browserPreviewImage != null) ||
         (part is MalformedPart && part.isAttachmentKind),
   );
 
@@ -2238,7 +2250,9 @@ class ChatService extends ChangeNotifier {
       p.normalize(p.join(appDataDir.absolute.path, 'images')),
     ];
     final registrations = <MessageAssetRegistration>[];
-    for (final attachment in _extractLocalAttachmentsFromMessage(message)) {
+    for (final attachment in await _extractLocalAttachmentsFromMessage(
+      message,
+    )) {
       final normalizedPath = p.normalize(File(attachment.path).absolute.path);
       if (!allowedRoots.any((root) => p.isWithin(root, normalizedPath))) {
         continue;
@@ -2282,6 +2296,15 @@ class ChatService extends ChangeNotifier {
       // Message persistence is authoritative. The message transaction queues
       // relevant revisions first, so a failed asset-index update is retried by
       // the bounded startup backfill instead of failing the send.
+      debugPrint('Message asset synchronization failed: $error');
+    }
+  }
+
+  Future<void> _synchronizePersistedMessageAssetsBestEffort(String id) async {
+    try {
+      final message = await _repo.getMessage(id);
+      if (message != null) await _synchronizeMessageAssets(message);
+    } catch (error) {
       debugPrint('Message asset synchronization failed: $error');
     }
   }
@@ -2351,6 +2374,10 @@ class ChatService extends ChangeNotifier {
             followLinks: false,
           );
           if (type == FileSystemEntityType.file) {
+            if (await _recentlyReusedPreview(File(normalized), effectiveNow)) {
+              safe = false;
+              break;
+            }
             regularFiles.add(File(normalized));
           } else if (type != FileSystemEntityType.notFound) {
             safe = false;
@@ -2372,6 +2399,19 @@ class ChatService extends ChangeNotifier {
             }
             await file.rename(quarantine.path);
             quarantined.add((original: file, quarantine: quarantine));
+          }
+          if (!safe) continue;
+          // Recheck after rename: a tool may have reused the original between
+          // the first stat and isolation. In that case finally restores it.
+          for (final moved in quarantined) {
+            if (await _recentlyReusedPreview(
+              moved.quarantine,
+              effectiveNow,
+              originalPath: moved.original.path,
+            )) {
+              safe = false;
+              break;
+            }
           }
           if (!safe) continue;
           final completed = await _repo.completeAssetGc(
@@ -2397,6 +2437,14 @@ class ChatService extends ChangeNotifier {
       debugPrint('Asset maintenance failed: $error');
     }
   }
+
+  Future<bool> _recentlyReusedPreview(
+    File file,
+    DateTime now, {
+    String? originalPath,
+  }) async =>
+      McpImageSnapshot.isDeduplicatedFile(originalPath ?? file.path) &&
+      (await file.lastModified()).toUtc().isAfter(now.subtract(_assetGcDelay));
 
   Future<void> _cleanupOrphanUploads() => runAssetMaintenance();
 
@@ -2792,19 +2840,38 @@ class ChatService extends ChangeNotifier {
   /// Reads extras, applies [update], writes the result, and refreshes the cache.
   Future<void> updateConversationExtras(
     String conversationId,
-    Map<String, dynamic> Function(Map<String, dynamic> current) update,
-  ) async {
+    Map<String, dynamic> Function(Map<String, dynamic> current) update, {
+    Conversation? expectedOwner,
+  }) async {
     final draft = _draftConversations[conversationId];
     if (draft != null) {
-      _draftConversations[conversationId] = draft.copyWith(
-        extras: update(Map<String, dynamic>.from(draft.extras)),
-      );
+      if (expectedOwner != null &&
+          draft.assistantId != expectedOwner.assistantId) {
+        throw StateError('context_changed');
+      }
+      final extras =
+          _initialized &&
+              !_temporaryConversationIds.contains(conversationId) &&
+              _repo.composerDrafts.isNewEntry(conversationId)
+          ? await _repo.composerDrafts.updateNewEntryExtras(
+              conversationId,
+              update,
+              expectedOwner: expectedOwner,
+            )
+          : update(Map<String, dynamic>.from(draft.extras));
+      final current = _draftConversations[conversationId];
+      if (current == null) throw StateError('conversation_not_found');
+      _draftConversations[conversationId] = current.copyWith(extras: extras);
       _bumpContextRevision(conversationId);
       notifyListeners();
       return;
     }
     if (!_initialized) return;
-    await _repo.updateConversationExtras(conversationId, update);
+    await _repo.updateConversationExtras(
+      conversationId,
+      update,
+      expectedOwner: expectedOwner,
+    );
     await _refreshConversation(conversationId);
     _bumpContextRevision(conversationId);
     notifyListeners();
@@ -3436,6 +3503,12 @@ class ChatService extends ChangeNotifier {
     }
     if (generationRunId == null) {
       await updateStreamingCheckpointSilent(message, toolEvents);
+      if (_messageCanOwnAssets(message) ||
+          toolEvents.any(
+            (event) => browserPreviewImageFromToolEvent(event) != null,
+          )) {
+        await _synchronizePersistedMessageAssetsBestEffort(message.id);
+      }
       _statisticsRevision++;
       notifyListeners();
       return null;
@@ -3453,8 +3526,12 @@ class ChatService extends ChangeNotifier {
       checkpointSeq: checkpointSeq,
       errorCode: errorCode,
     );
-    if (_messageCanOwnAssets(message)) {
-      await _synchronizeMessageAssetsBestEffort(message);
+    if (_messageCanOwnAssets(message) ||
+        toolEvents.any(
+          (event) => browserPreviewImageFromToolEvent(event) != null,
+        )) {
+      // Tool-event overlays may be ahead of the message's streaming parts.
+      await _synchronizePersistedMessageAssetsBestEffort(message.id);
     }
     _replaceCachedMessage(message);
     _toolEventsCache[message.id] = List<Map<String, dynamic>>.of(toolEvents);
@@ -3533,6 +3610,11 @@ class ChatService extends ChangeNotifier {
       return;
     }
     await _repo.setToolEvents(assistantMessageId, events);
+    if (events.any(
+      (event) => browserPreviewImageFromToolEvent(event) != null,
+    )) {
+      await _synchronizePersistedMessageAssetsBestEffort(assistantMessageId);
+    }
     _toolEventsCache[assistantMessageId] = List<Map<String, dynamic>>.of(
       events,
     );
@@ -3590,9 +3672,7 @@ class ChatService extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    await _repo.setToolEvents(assistantMessageId, list);
-    _toolEventsCache[assistantMessageId] = list;
-    notifyListeners();
+    await setToolEvents(assistantMessageId, list);
   }
 
   // Gemini thought signature persistence (per assistant message)
@@ -4473,8 +4553,11 @@ class ChatService extends ChangeNotifier {
       )) {
         return false;
       }
-      draft.assistantId = assistantId;
-      draft.updatedAt = DateTime.now();
+      _draftConversations[conversationId] = draft.copyWith(
+        assistantId: assistantId,
+        updatedAt: DateTime.now(),
+        extras: ToolPermissionMode.withoutGrant(draft.extras),
+      );
       _bumpContextRevision(conversationId);
       if (notify) notifyListeners();
       return true;
@@ -4493,9 +4576,12 @@ class ChatService extends ChangeNotifier {
       ),
     );
     if (!moved) return false;
-    c.assistantId = assistantId;
-    c.updatedAt = updatedAt;
-    c.injectedMemoryHash = null;
+    _conversationsCache[conversationId] = c.copyWith(
+      assistantId: assistantId,
+      updatedAt: updatedAt,
+      clearInjectedMemoryHash: true,
+      extras: ToolPermissionMode.withoutGrant(c.extras),
+    );
     _bumpContextRevision(conversationId);
     if (notify) {
       _bumpConversationListRevision();
