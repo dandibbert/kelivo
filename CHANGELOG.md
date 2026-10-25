@@ -5,8 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [1.3.5] - 2026-10-24
 
 ### Changed
-- Rebase onto upstream Kelivo: integrated browser and browser agent tools, password-encrypted backups, grouped MCP management, iOS native selection menus, world book entry copy and batch transfer, Windows restore recovery, and more. The iOS `kelivo://v1` deep links are kept.
-- Bump version to 1.3.5+84.
+- Rebase onto upstream Kelivo: integrated browser and browser agent tools, per-conversation tool permissions, password-encrypted backups, grouped MCP management, iOS native selection menus, world book entry copy and batch transfer, Windows restore recovery, and more. The iOS `kelivo://v1` deep links are kept.
+- Bump version to 1.3.5+85.
+
+### Fixed
+- The "new chat" button no longer returns to the current conversation. A new chat that already held messages stayed registered as the assistant's reusable unsent chat (external-link sends left it behind, persisted across restarts), so every new chat went back to it. It is now dropped once it holds more than the assistant's preset messages, which also heals registrations already on disk.
 
 ## [1.3.4] - 2026-10-23
 
