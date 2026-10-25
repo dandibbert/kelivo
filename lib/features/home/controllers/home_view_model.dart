@@ -1100,6 +1100,15 @@ class HomeViewModel extends ChangeNotifier {
         ? ap.currentAssistant
         : ap.getById(targetAssistantId);
 
+    final presetMessageCount = ap
+        .getPresetMessagesForAssistant(a?.id)
+        .where((pm) => (pm['content'] ?? '').trim().isNotEmpty)
+        .length;
+    await _chatService.discardUsedNewEntry(
+      targetAssistantId,
+      presetMessageCount: presetMessageCount,
+    );
+    if (!_contextProvider.mounted) return null;
     final existingEntryId = _chatService.composerDrafts
         ?.newEntry(targetAssistantId)
         ?.id;

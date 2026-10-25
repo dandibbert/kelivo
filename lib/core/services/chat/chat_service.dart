@@ -1876,6 +1876,24 @@ class ChatService extends ChangeNotifier {
     }
   }
 
+  /// Stops reusing [assistantId]'s registered "new chat" once it holds more
+  /// than the assistant's [presetMessageCount] preset messages.
+  ///
+  /// Messages sent outside a composer submission (external links) used to leave
+  /// a used conversation registered, so every "new chat" returned to it.
+  Future<void> discardUsedNewEntry(
+    String? assistantId, {
+    required int presetMessageCount,
+  }) async {
+    final drafts = composerDrafts;
+    final entry = drafts?.newEntry(assistantId);
+    if (drafts == null || entry == null) return;
+    // The cached count is unknown after a restart, so ask for the ids.
+    if ((await getMessageIds(entry.id)).length > presetMessageCount) {
+      await drafts.releaseNewEntry(entry.id);
+    }
+  }
+
   // Create a draft conversation that is not persisted until first message arrives.
   Future<Conversation> createDraftConversation({
     String? title,
