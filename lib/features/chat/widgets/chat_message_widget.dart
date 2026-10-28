@@ -1,10 +1,19 @@
+import 'package:Kelivo/desktop/desktop_overlay_backdrop.dart';
+import '../utils/message_reasoning_source.dart';
+import '../../intelligent_ui/host/ui_copy_actions.dart';
+import '../../intelligent_ui/host/ui_user_message_content.dart';
+import 'package:Kelivo/features/intelligent_ui/host/ui_runtime_registry.dart';
+import 'package:Kelivo/features/intelligent_ui/host/ui_source_map.dart';
+import 'package:Kelivo/features/intelligent_ui/host/ui_host_scope.dart';
+import 'package:Kelivo/features/intelligent_ui/host/ui_generation_state.dart';
+import 'package:markstream/markstream_core.dart' show SourceSpan;
 import 'tool_permission_widgets.dart';
 import '../../provider/widgets/oauth_message_recovery.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform, visibleForTesting, mapEquals;
-import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import '../../../core/services/haptics.dart';
@@ -34,7 +43,8 @@ import 'package:intl/intl.dart';
 import '../../../utils/sandbox_path_resolver.dart';
 import '../../../utils/safe_resize_image.dart';
 import '../../../utils/utf16_safe_cut.dart';
-import '../../../utils/avatar_cache.dart';
+import '../../../shared/widgets/avatar_image.dart';
+import '../../../utils/unicode_sanitizer.dart';
 import '../../../utils/assistant_regex.dart';
 import '../../../core/models/assistant.dart';
 import '../../../core/providers/tts_provider.dart';
@@ -598,7 +608,7 @@ Widget _buildTextToSpeechReplayRow(
     children: [
       Expanded(
         child: Text(
-          text,
+          UnicodeSanitizer.sanitize(text),
           maxLines: maxLines,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(fontSize: fontSize, height: 1.4, color: textColor),
@@ -637,10 +647,10 @@ String _toolTitleFor(
 }) {
   final l10n = AppLocalizations.of(context)!;
   if (name == LocalToolNames.askUser) {
-    return _askUserToolTitleFor(l10n, args);
+    return UnicodeSanitizer.sanitize(_askUserToolTitleFor(l10n, args));
   }
   final localToolTitle = _localToolTitleFor(l10n, name, args);
-  if (localToolTitle != null) return localToolTitle;
+  if (localToolTitle != null) return UnicodeSanitizer.sanitize(localToolTitle);
   if (isWorkspaceToolName(name)) {
     return workspaceToolTitle(l10n, name);
   }
@@ -664,18 +674,20 @@ String _toolTitleFor(
     case 'create_memory':
       return l10n.chatMessageWidgetCreateMemory;
     case 'search_web':
-      final q = (args['query'] ?? '').toString();
+      final q = UnicodeSanitizer.sanitize((args['query'] ?? '').toString());
       return l10n.chatMessageWidgetWebSearch(q);
     case 'builtin_search':
       return l10n.chatMessageWidgetBuiltinSearch;
     case 'fetch_url':
-      final url = (args['url'] ?? '').toString().trim();
+      final url = UnicodeSanitizer.sanitize(
+        (args['url'] ?? '').toString().trim(),
+      );
       final host = Uri.tryParse(url)?.host ?? '';
       return l10n.chatMessageWidgetWebFetch(host.isEmpty ? url : host);
     default:
       return isResult
-          ? l10n.chatMessageWidgetToolResult(name)
-          : l10n.chatMessageWidgetToolCall(name);
+          ? l10n.chatMessageWidgetToolResult(UnicodeSanitizer.sanitize(name))
+          : l10n.chatMessageWidgetToolCall(UnicodeSanitizer.sanitize(name));
   }
 }
 
@@ -1258,6 +1270,10 @@ class ChatMessageWidget extends StatefulWidget {
   final VoidCallback? onToggleReasoning;
   // For multiple reasoning segments
   final List<ReasoningSegment>? reasoningSegments;
+
+  /// Presentation overlays extracted from inline thinking are not independent
+  /// provider reasoning. Keep removing their original spans from the body.
+  final bool reasoningSegmentsFromInlineThinking;
   // Optional translation UI props
   final bool translationExpanded;
   final VoidCallback? onToggleTranslation;
@@ -1317,6 +1333,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.reasoningFinishedAt,
     this.onToggleReasoning,
     this.reasoningSegments,
+    this.reasoningSegmentsFromInlineThinking = false,
     this.translationExpanded = true,
     this.onToggleTranslation,
     this.toolParts,
@@ -1360,6 +1377,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   // Memoized think-tag parse, keyed by source string equality. The parser is
   // a pure function of message content, so a single slot is enough.
   String? _inlineThinkMemoSource;
+  UiMessageSource? _inlineThinkMemoUiSource;
   ThinkingTagParseResult? _inlineThinkMemoResult;
   // Memoized assistant visual-regex results, keyed by scope + input string.
   // Cleared when the rule signature changes; skipped while streaming because
@@ -1399,10 +1417,26 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   @override
   void didUpdateWidget(covariant ChatMessageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _reconcileUiOwner();
     _syncTicker();
     // Auto-collapse when inline <think> transitions from loading -> finished
     _applyAutoCollapseInlineThinkIfFinished(oldWidget: oldWidget);
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reconcileUiOwner();
+  }
+
+  void _reconcileUiOwner() => UiRuntimeScope.maybeOf(context)?.reconcile(
+    widget.message,
+    hasProviderReasoning:
+        (widget.reasoningText?.isNotEmpty ?? false) ||
+        widget.reasoningLoading ||
+        (!widget.reasoningSegmentsFromInlineThinking &&
+            (widget.reasoningSegments?.isNotEmpty ?? false)),
+  );
 
   void _applyAutoCollapseInlineThinkIfFinished({ChatMessageWidget? oldWidget}) {
     if (!mounted) return;
@@ -1473,9 +1507,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   }
 
   ThinkingTagParseResult _legacyInlineThinkingFor(ChatMessageWidget widget) {
-    if ((widget.reasoningText?.isNotEmpty ?? false) ||
+    if (messageHasProviderReasoning(widget.message) ||
+        (widget.reasoningText?.isNotEmpty ?? false) ||
         widget.reasoningLoading ||
-        (widget.reasoningSegments?.isNotEmpty ?? false)) {
+        (!widget.reasoningSegmentsFromInlineThinking &&
+            (widget.reasoningSegments?.isNotEmpty ?? false))) {
       return ThinkingTagParseResult(
         visibleContent: widget.message.content,
         thinkingTexts: const <String>[],
@@ -1483,8 +1519,18 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     }
     final source = widget.message.content;
     final memo = _inlineThinkMemoResult;
-    if (memo != null && _inlineThinkMemoSource == source) return memo;
-    final parsed = ThinkingTagParser.parseLegacyInlineBlocks(source);
+    final uiSource = UiMessageSource.of(widget.message.parts);
+    if (memo != null &&
+        _inlineThinkMemoSource == source &&
+        identical(uiSource, _inlineThinkMemoUiSource)) {
+      return memo;
+    }
+    final parsed = ThinkingTagParser.parseLegacyInlineBlocks(
+      source,
+      protectedRanges: uiSource.protectedJoinedRanges,
+      includeUnclosed: uiSource.hasFences,
+    );
+    _inlineThinkMemoUiSource = uiSource;
     _inlineThinkMemoSource = source;
     _inlineThinkMemoResult = parsed;
     return parsed;
@@ -1580,7 +1626,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       builder: (dctx) => AlertDialog(
         backgroundColor: dctx.overlaySurface,
         title: Text(l10n.chatMessageWidgetRegenerateConfirmTitle),
-        content: Text(content),
+        content: Text('$content\n\n${l10n.branchInheritNote}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dctx).pop(false),
@@ -1732,8 +1778,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: DesktopOverlayBackdrop(
+                      sigma: 14,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: cs.surfaceContainerHigh.withValues(
@@ -1753,19 +1799,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                   if (widget.onCopy != null) {
                                     widget.onCopy!.call();
                                   } else {
-                                    await Clipboard.setData(
-                                      ClipboardData(
-                                        text: widget.message.content,
-                                      ),
+                                    await copyUiMessage(
+                                      context,
+                                      widget.message,
                                     );
-                                    if (mounted) {
-                                      showAppSnackBar(
-                                        context,
-                                        message: l10n
-                                            .chatMessageWidgetCopiedToClipboard,
-                                        type: NotificationType.success,
-                                      );
-                                    }
                                   }
                                 },
                               ),
@@ -1844,43 +1881,18 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         ),
       );
     } else if (avatarType == 'url' && avatarValue != null) {
-      final url = avatarValue;
-      avatarContent = FutureBuilder<String?>(
-        future: AvatarCache.getPath(url),
-        builder: (ctx, snap) {
-          final p = snap.data;
-          if (p != null && File(p).existsSync()) {
-            return ClipOval(
-              child: Image.file(
-                File(p),
-                width: 32,
-                height: 32,
-                fit: BoxFit.cover,
-              ),
-            );
-          }
-          return ClipOval(
-            child: Image.network(
-              url,
-              width: 32,
-              height: 32,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  Icon(Lucide.User, size: 18, color: cs.primary),
-            ),
-          );
-        },
+      avatarContent = AvatarImage(
+        source: avatarValue,
+        isNetwork: true,
+        size: 32,
+        fallback: Icon(Lucide.User, size: 18, color: cs.primary),
       );
     } else if (avatarType == 'file' && avatarValue != null) {
-      final fixed = SandboxPathResolver.fix(avatarValue);
-      final f = File(fixed);
-      if (f.existsSync()) {
-        avatarContent = ClipOval(
-          child: Image.file(f, width: 32, height: 32, fit: BoxFit.cover),
-        );
-      } else {
-        avatarContent = Icon(Lucide.User, size: 18, color: cs.primary);
-      }
+      avatarContent = AvatarImage(
+        source: avatarValue,
+        size: 32,
+        fallback: Icon(Lucide.User, size: 18, color: cs.primary),
+      );
     } else {
       avatarContent = Icon(Lucide.User, size: 18, color: cs.primary);
     }
@@ -1952,7 +1964,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final userAvatarValue = context.select<UserProvider, String?>(
       (u) => u.avatarValue,
     );
-    final l10n = AppLocalizations.of(context)!;
     final userMessageSettings = context
         .select<
           SettingsProvider,
@@ -1977,8 +1988,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     // Attachments come from structured parts only. Literal marker-like text
     // inside TextPart stays plain text and is never re-parsed.
     final assistant = _assistantForMessage();
+    final uiContent = UiUserMessageContent(widget.message);
     final visualText = _applyVisualAssistantRegexes(
-      widget.message.content,
+      uiContent.text,
       assistant: assistant,
       scope: AssistantRegexScope.user,
     );
@@ -1990,19 +2002,21 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       isDark: isDark,
       alignEnd: true,
     );
-    final textBubble = visualText.isNotEmpty
+    final textBubble = visualText.isNotEmpty || uiContent.hasContext
         ? Container(
             key: ValueKey('user-message-text-bubble:${widget.message.id}'),
             child: _buildBubbleContainer(
               context: context,
               isUser: true,
-              child: _buildUserTextContent(
-                context,
-                visualText,
-                userMessageSettings.enableMarkdown,
-                widget.collapseLongUserText
-                    ? userMessageSettings.collapseChars
-                    : 0,
+              child: uiContent.wrap(
+                _buildUserTextContent(
+                  context,
+                  visualText,
+                  userMessageSettings.enableMarkdown,
+                  widget.collapseLongUserText
+                      ? userMessageSettings.collapseChars
+                      : 0,
+                ),
               ),
             ),
           )
@@ -2111,17 +2125,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                             color: cs.onSurface.withValues(alpha: 0.9),
                             onTap:
                                 widget.onCopy ??
-                                () {
-                                  Clipboard.setData(
-                                    ClipboardData(text: widget.message.content),
-                                  );
-                                  showAppSnackBar(
-                                    context,
-                                    message:
-                                        l10n.chatMessageWidgetCopiedToClipboard,
-                                    type: NotificationType.success,
-                                  );
-                                },
+                                () => copyUiMessage(context, widget.message),
                           ),
                         ),
                       ),
@@ -2238,16 +2242,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             if (widget.onCopy != null) {
               widget.onCopy!.call();
             } else {
-              await Clipboard.setData(
-                ClipboardData(text: widget.message.content),
-              );
-              if (mounted) {
-                showAppSnackBar(
-                  context,
-                  message: l10n.chatMessageWidgetCopiedToClipboard,
-                  type: NotificationType.success,
-                );
-              }
+              await copyUiMessage(context, widget.message);
             }
           },
         ),
@@ -2305,7 +2300,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       );
     } else {
       content = Text(
-        visualText,
+        UnicodeSanitizer.sanitize(visualText),
         style: TextStyle(
           fontSize: baseUser,
           height: 1.4,
@@ -2742,6 +2737,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     bool enableAssistantMarkdown,
     String? Function(String) citationIndexResolver, {
     String contentKey = '',
+    UiTextSlice? uiSource,
   }) {
     final bool isDesktop =
         defaultTargetPlatform == TargetPlatform.macOS ||
@@ -2753,6 +2749,14 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     if (enableAssistantMarkdown) {
       assistantContent = MarkdownWithCodeHighlight(
         text: visualContent,
+        uiHost: widget.message.role != 'assistant' || uiSource == null
+            ? null
+            : UiHostBinding(
+                conversationId: widget.message.conversationId,
+                revisionId: widget.message.id,
+                source: uiSource,
+                generation: uiGenerationStatus(widget.message),
+              ),
         onCitationTap: _handleCitationTap,
         citationIndexResolver: citationIndexResolver,
         baseStyle: TextStyle(fontSize: baseAssistant, height: 1.5),
@@ -2761,7 +2765,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       );
     } else {
       assistantContent = Text(
-        visualContent,
+        UnicodeSanitizer.sanitize(visualContent),
         style: TextStyle(
           fontSize: baseAssistant,
           height: 1.5,
@@ -2845,18 +2849,25 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     bool enableAssistantMarkdown,
     String? Function(String) citationIndexResolver, {
     required String blockKey,
+    UiTextSlice? uiSource,
   }) {
     final split = context.select<SettingsProvider, bool>(
       (s) => s.assistantBubbleSplitParagraphs,
     );
     final parts = split
-        ? splitAssistantParagraphs(visualContent)
-        : <String>[visualContent];
+        ? splitAssistantParagraphsWithSource(visualContent)
+        : <AssistantParagraph>[
+            AssistantParagraph(
+              visualContent,
+              SourceSpan(0, visualContent.length),
+            ),
+          ];
     return <Widget>[
       for (var i = 0; i < parts.length; i++)
         _buildAssistantTextBlock(
           context,
-          parts[i],
+          uiSource == null ? parts[i].text : parts[i].span.slice(visualContent),
+          uiSource: uiSource?.slice(parts[i].span.start, parts[i].span.end),
           enableAssistantMarkdown,
           citationIndexResolver,
           contentKey: parts.length == 1 ? '' : '$blockKey.$i',
@@ -2870,6 +2881,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     bool enableAssistantMarkdown,
     String? Function(String) citationIndexResolver, {
     String contentKey = '',
+    UiTextSlice? uiSource,
   }) {
     return _assistantBlockWidth(
       context,
@@ -2881,6 +2893,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           enableAssistantMarkdown,
           citationIndexResolver,
           contentKey: contentKey,
+          uiSource: uiSource,
         ),
       ),
     );
@@ -2944,6 +2957,12 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       contentSplitOffsets: widget.contentSplitOffsets,
       reasoningCountAtSplit: widget.reasoningCountAtSplit,
       toolCountAtSplit: widget.toolCountAtSplit,
+      transformProtectedText: (text) => applyAssistantRegexesProtected(
+        text,
+        assistant: assistant,
+        scope: AssistantRegexScope.assistant,
+        target: AssistantRegexTransformTarget.visual,
+      ),
       transformText: (text) => _applyVisualAssistantRegexes(
         text,
         assistant: assistant,
@@ -3325,6 +3344,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                     enableAssistantMarkdown,
                     citationIndexResolver,
                     blockKey: 'text$blockIndex',
+                    uiSource: block.uiSource,
                   )) {
                     addVisible(bubble);
                   }
@@ -3496,7 +3516,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                             );
                                       } else {
                                         translationContent = Text(
-                                          translationText,
+                                          UnicodeSanitizer.sanitize(
+                                            translationText,
+                                          ),
                                           style: TextStyle(
                                             fontSize: baseTranslation,
                                             height: 1.4,
@@ -3568,19 +3590,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                 color: cs.onSurface.withValues(alpha: 0.9),
                                 onTap:
                                     widget.onCopy ??
-                                    () {
-                                      Clipboard.setData(
-                                        ClipboardData(
-                                          text: widget.message.content,
-                                        ),
-                                      );
-                                      showAppSnackBar(
-                                        context,
-                                        message: l10n
-                                            .chatMessageWidgetCopiedToClipboard,
-                                        type: NotificationType.success,
-                                      );
-                                    },
+                                    () =>
+                                        copyUiMessage(context, widget.message),
                               ),
                             ),
                           ),
@@ -3988,42 +3999,13 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   Widget _buildAssistantAvatar(ColorScheme cs) {
     final av = (widget.assistantAvatar ?? '').trim();
     if (av.isNotEmpty) {
-      if (av.startsWith('http')) {
-        return FutureBuilder<String?>(
-          future: AvatarCache.getPath(av),
-          builder: (ctx, snap) {
-            final p = snap.data;
-            if (p != null && File(p).existsSync()) {
-              return ClipOval(
-                child: Image.file(
-                  File(p),
-                  width: 32,
-                  height: 32,
-                  fit: BoxFit.cover,
-                ),
-              );
-            }
-            return ClipOval(
-              child: Image.network(
-                av,
-                width: 32,
-                height: 32,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _assistantInitial(cs),
-              ),
-            );
-          },
+      if (av.startsWith('http') || av.startsWith('/') || av.contains(':')) {
+        return AvatarImage(
+          source: av,
+          isNetwork: av.startsWith('http'),
+          size: 32,
+          fallback: _assistantInitial(cs),
         );
-      }
-      if (av.startsWith('/') || av.contains(':')) {
-        final fixed = SandboxPathResolver.fix(av);
-        final f = File(fixed);
-        if (f.existsSync()) {
-          return ClipOval(
-            child: Image.file(f, width: 32, height: 32, fit: BoxFit.cover),
-          );
-        }
-        return _assistantInitial(cs);
       }
       // treat as emoji or single char label
       final bool isIOS = defaultTargetPlatform == TargetPlatform.iOS;
@@ -5360,6 +5342,7 @@ class _ChainOfThoughtReasoningStepState
   final ValueNotifier<int> _elapsedTick = ValueNotifier<int>(0);
   Timer? _elapsedTimer;
   final ScrollController _scroll = ScrollController();
+  bool _followBottom = true;
   bool _hasOverflow = false;
   bool? _localExpanded;
 
@@ -5409,10 +5392,14 @@ class _ChainOfThoughtReasoningStepState
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(_updateFollowBottom);
     _syncElapsedTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkOverflow();
-      if (widget.step.loading && _scroll.hasClients) {
+      if (mounted &&
+          widget.step.loading &&
+          _followBottom &&
+          _scroll.hasClients) {
         _scroll.jumpTo(_scroll.position.maxScrollExtent);
       }
     });
@@ -5422,14 +5409,25 @@ class _ChainOfThoughtReasoningStepState
   void didUpdateWidget(covariant _ChainOfThoughtReasoningStep oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncElapsedTimer();
-    if (widget.step.loading) {
+    if (widget.step.loading && widget.step.text != oldWidget.step.text) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scroll.hasClients) {
+        if (mounted &&
+            widget.step.loading &&
+            _followBottom &&
+            _scroll.hasClients) {
           _scroll.jumpTo(_scroll.position.maxScrollExtent);
         }
       });
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+  }
+
+  void _updateFollowBottom() {
+    if (!_scroll.hasClients) return;
+    final position = _scroll.position;
+    _followBottom =
+        position.userScrollDirection != ScrollDirection.forward &&
+        position.extentAfter <= 1;
   }
 
   @override
@@ -5504,7 +5502,7 @@ class _ChainOfThoughtReasoningStepState
         );
       }
       return Text(
-        text.isNotEmpty ? text : '…',
+        text.isNotEmpty ? UnicodeSanitizer.sanitize(text) : '…',
         style: TextStyle(fontSize: 12.5, height: 1.32),
       );
     }
@@ -6130,7 +6128,7 @@ class _ChainOfThoughtToolStepState extends State<_ChainOfThoughtToolStep> {
       content,
       metadata: metadata,
     );
-    _cleanText = cleanText;
+    _cleanText = UnicodeSanitizer.sanitize(cleanText);
     _imagePaths = paths;
   }
 
@@ -6253,14 +6251,16 @@ class _ChainOfThoughtToolStepState extends State<_ChainOfThoughtToolStep> {
         ? WeatherToolResult.tryParse(cleanText)
         : null;
     final String summaryText = approvalRequest != null
-        ? _argsSummary(approvalRequest.arguments)
+        ? UnicodeSanitizer.sanitize(_argsSummary(approvalRequest.arguments))
         : cleanText.isNotEmpty
         ? cleanText
-        : ((widget.part.arguments['query'] ??
-                      widget.part.arguments['url'] ??
-                      widget.part.arguments['text']) ??
-                  '')
-              .toString();
+        : UnicodeSanitizer.sanitize(
+            ((widget.part.arguments['query'] ??
+                        widget.part.arguments['url'] ??
+                        widget.part.arguments['text']) ??
+                    '')
+                .toString(),
+          );
     final bool shouldShowSummary = showToolResultSummary;
     final askUserExpanded = _askUserExpanded ?? true;
     final ttsText = widget.part.toolName == LocalToolNames.textToSpeech
@@ -7988,7 +7988,7 @@ class _ReasoningSectionState extends State<_ReasoningSection> {
         );
       }
       return Text(
-        text.isNotEmpty ? text : '…',
+        text.isNotEmpty ? UnicodeSanitizer.sanitize(text) : '…',
         style: baseStyle,
         strutStyle: baseStrut,
         textHeightBehavior: baseTHB,

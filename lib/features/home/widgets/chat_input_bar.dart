@@ -1,3 +1,7 @@
+import '../../intelligent_ui/models/ui_context_attachment.dart';
+import '../../intelligent_ui/host/ui_composer_context_chip.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../theme/app_semantic_colors.dart';
 import 'package:Kelivo/features/chat/widgets/tool_permission_widgets.dart';
 import '../services/composer_clipboard.dart';
 import 'package:Kelivo/shared/text_input/message_editing_controller.dart';
@@ -355,7 +359,67 @@ class ChatInputBarController {
       ],
       documents: draft.documents,
       allowImagesApiRouting: draft.allowImagesApiRouting,
+      uiContext: draft.uiContext,
     );
+  }
+
+  bool get hasUiContext =>
+      (_state?._uiContext ?? _pendingDraft?.uiContext) != null;
+
+  bool get isComposing =>
+      !(_root._state?._controller.value.composing.isCollapsed ?? true);
+
+  bool get _canStageDraft {
+    final state = _root._state;
+    return _currentTarget &&
+        state != null &&
+        !state._composerLocked &&
+        !state._isSubmitting &&
+        !state._ownsVoiceSession &&
+        !state._finishingVoice &&
+        (state._nativeOwner?.pending ?? 0) == 0 &&
+        !(state._controller is MessageEditingController &&
+            (state._controller as MessageEditingController).isInputPaused);
+  }
+
+  /// Flush accepted native work before a preview. A captured controller can
+  /// only stage into the still-visible owner/edit/input epoch.
+  Future<ComposerDraftInput?> prepareExternalDraft() async {
+    if (!_canStageDraft) return null;
+    final state = _root._state!;
+    final value = await state._controller.flushMessageInput();
+    if (!_canStageDraft ||
+        !identical(state, _root._state) ||
+        !value.composing.isCollapsed) {
+      return null;
+    }
+    return state._snapshotDraft(value.text);
+  }
+
+  bool applyExternalDraft(
+    ComposerDraftInput expected,
+    ComposerDraftInput next,
+  ) {
+    if (!_canStageDraft) return false;
+    final state = _root._state!;
+    if (!state._controller.value.composing.isCollapsed ||
+        !state._snapshotDraft(state._controller.text).sameValue(expected)) {
+      return false;
+    }
+    state.setState(() {
+      state._uiContext = next.uiContext;
+      state._controller.value = TextEditingValue(
+        text: next.text,
+        selection: TextSelection.collapsed(offset: next.text.length),
+      );
+    });
+    _root.onDraftChanged?.call();
+    // A draft can be prepared from an expanded UI route. Keep that route's
+    // keyboard focus until it closes; a covered composer must not steal Esc.
+    if (ModalRoute.of(state.context)?.isCurrent != false) {
+      state.widget.focusNode?.requestFocus();
+    }
+    return true;
   }
 
   void clearDraft() {
@@ -581,6 +645,9 @@ class ChatInputBar extends StatefulWidget {
     this.loading = false,
     this.hasQueuedInput = false,
     this.queuedPreviewText,
+    this.queuedStatusLabel,
+    this.queuedSubtitle,
+    this.queuedPaused = false,
     this.onCancelQueuedInput,
     this.onExpandedChanged,
     this.reasoningActive = false,
@@ -642,6 +709,9 @@ class ChatInputBar extends StatefulWidget {
   final bool loading;
   final bool hasQueuedInput;
   final String? queuedPreviewText;
+  final String? queuedStatusLabel;
+  final String? queuedSubtitle;
+  final bool queuedPaused;
   final VoidCallback? onCancelQueuedInput;
 
   /// Reports when the composer starts filling the chat area and when it has
@@ -785,6 +855,7 @@ class _ChatInputBarState extends State<ChatInputBar>
   static const double _imageRemoveButtonSize = 18;
   // Suppress context menu briefly after app resume to avoid flickering
   bool _suppressContextMenu = false;
+  UiContextAttachment? _uiContext;
   bool _isSubmitting = false;
   int _submitSerial = 0;
   String? _imageModeModelKey;
@@ -1097,6 +1168,7 @@ class _ChatInputBarState extends State<ChatInputBar>
   void _restoreInput(ChatInputData input) {
     setState(() {
       _draftReplacementRevision++;
+      _uiContext = input.uiContext;
       _abandonVoiceSession();
       _pendingImagePasteIds.clear();
       _pendingTextPasteIds.clear();
@@ -1130,6 +1202,7 @@ class _ChatInputBarState extends State<ChatInputBar>
       ],
       documents: List<DocumentAttachment>.of(_docs),
       allowImagesApiRouting: _allowImagesApiRouting,
+      uiContext: _uiContext,
     );
   }
 
@@ -1147,6 +1220,7 @@ class _ChatInputBarState extends State<ChatInputBar>
     ],
     documents: List.of(_docs),
     allowImagesApiRouting: _allowImagesApiRouting,
+    uiContext: _uiContext,
   );
 
   void _restoreDraft(ComposerDraftInput input, {bool resetHistory = true}) {
@@ -1167,6 +1241,7 @@ class _ChatInputBarState extends State<ChatInputBar>
       );
     setState(() {
       _draftReplacementRevision++;
+      _uiContext = input.uiContext;
       if (resetHistory) {
         _abandonVoiceSession();
         _pendingImagePasteIds.clear();
@@ -1215,6 +1290,7 @@ class _ChatInputBarState extends State<ChatInputBar>
     setState(() {
       _draftReplacementRevision++;
       _abandonVoiceSession();
+      _uiContext = null;
       _controller.clear();
       _pendingImagePasteIds.clear();
       _pendingTextPasteIds.clear();
@@ -1253,8 +1329,11 @@ class _ChatInputBarState extends State<ChatInputBar>
     // When app resumes from background, suppress context menu briefly to avoid flickering
     if (state == AppLifecycleState.resumed) {
       _suppressContextMenu = true;
-      // Also unfocus to reset any stuck toolbar state
-      widget.focusNode?.unfocus();
+      // Only iOS needs this toolbar reset. Desktop must retain the focus
+      // restored by Flutter after switching windows (for example, Alt+Tab).
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        widget.focusNode?.unfocus();
+      }
       // Re-enable context menu after a short delay
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) {
@@ -1265,7 +1344,9 @@ class _ChatInputBarState extends State<ChatInputBar>
         state == AppLifecycleState.paused) {
       // When going to background, hide any open toolbar
       _suppressContextMenu = true;
-      widget.focusNode?.unfocus();
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        widget.focusNode?.unfocus();
+      }
       if (_ownsVoiceSession) _abandonVoiceSession();
     }
   }
@@ -1976,7 +2057,12 @@ class _ChatInputBarState extends State<ChatInputBar>
     final submittedText = submittedValue.text;
     final send = widget.onSend;
     final text = submittedText.trim();
-    if (text.isEmpty && _images.isEmpty && _docs.isEmpty) return;
+    if (text.isEmpty &&
+        _images.isEmpty &&
+        _docs.isEmpty &&
+        _uiContext == null) {
+      return;
+    }
     final submittedImages = List<_DraftImage>.of(_images);
     final submittedImageIds = submittedImages.map((image) => image.id).toSet();
     final submittedDocuments = List<DocumentAttachment>.of(_docs);
@@ -2003,6 +2089,7 @@ class _ChatInputBarState extends State<ChatInputBar>
     // depend on it at all. A rejected send puts everything back below.
     setState(() {
       _resetInputHistory();
+      _uiContext = null;
       _controller.clear();
       _images.removeWhere((image) => submittedImageIds.contains(image.id));
       for (final document in submittedDocuments) {
@@ -2028,6 +2115,7 @@ class _ChatInputBarState extends State<ChatInputBar>
           submittedValue,
           submittedImages,
           submittedDocuments,
+          submittedDraft.uiContext,
         ),
       );
     }
@@ -2044,6 +2132,7 @@ class _ChatInputBarState extends State<ChatInputBar>
                 documents: List<DocumentAttachment>.of(submittedDocuments),
                 allowImagesApiRouting: submittedDraft.allowImagesApiRouting,
                 draftSubmission: draftSubmission,
+                uiContext: submittedDraft.uiContext,
               ),
             ) ??
             ChatInputSubmissionResult.rejected;
@@ -2090,7 +2179,9 @@ class _ChatInputBarState extends State<ChatInputBar>
     TextEditingValue submittedValue,
     List<_DraftImage> submittedImages,
     List<DocumentAttachment> submittedDocuments,
+    UiContextAttachment? submittedUiContext,
   ) {
+    _uiContext = submittedUiContext;
     _restoreSubmittedText(submittedValue);
     final existingImageIds = _images.map((image) => image.id).toSet();
     _images.insertAll(
@@ -3759,7 +3850,7 @@ class _ChatInputBarState extends State<ChatInputBar>
     final hasText = _controller.text.trim().isNotEmpty;
     final hasImages = _images.isNotEmpty;
     final hasDocs = _docs.isNotEmpty;
-    final hasInput = hasText || hasImages || hasDocs;
+    final hasInput = hasText || hasImages || hasDocs || _uiContext != null;
     _supportsImagesApiRouting(context);
     final bool isMobileLayout =
         MediaQuery.sizeOf(context).width < AppBreakpoints.tablet;
@@ -3838,10 +3929,12 @@ class _ChatInputBarState extends State<ChatInputBar>
                 ),
               if (widget.hasQueuedInput) ...[
                 _QueuedInputBanner(
-                  label: AppLocalizations.of(
-                    context,
-                  )!.chatInputBarQueuedPending,
+                  label:
+                      widget.queuedStatusLabel ??
+                      AppLocalizations.of(context)!.chatInputBarQueuedPending,
                   previewText: widget.queuedPreviewText,
+                  subtitle: widget.queuedSubtitle,
+                  paused: widget.queuedPaused,
                   cancelLabel: AppLocalizations.of(
                     context,
                   )!.chatInputBarQueuedCancel,
@@ -3977,6 +4070,28 @@ class _ChatInputBarState extends State<ChatInputBar>
                                             ),
                                     ),
                                 ],
+                                if (_uiContext case final attachment?)
+                                  Padding(
+                                    padding:
+                                        const EdgeInsetsDirectional.fromSTEB(
+                                          AppSpacing.md,
+                                          AppSpacing.xs,
+                                          AppSpacing.md,
+                                          AppSpacing.xs,
+                                        ),
+                                    child: UiComposerContextChip(
+                                      attachment: attachment,
+                                      onRemove: _composerLocked || _isSubmitting
+                                          ? null
+                                          : () {
+                                              setState(() => _uiContext = null);
+                                              widget
+                                                  .mediaController
+                                                  ?.onDraftChanged
+                                                  ?.call();
+                                            },
+                                    ),
+                                  ),
                                 if (hasDocs || hasImages)
                                   _buildInlineAttachmentPreviews(
                                     context,
@@ -4425,12 +4540,16 @@ class _QueuedInputBanner extends StatelessWidget {
     required this.label,
     required this.cancelLabel,
     this.previewText,
+    this.subtitle,
+    this.paused = false,
     this.onCancel,
   });
 
   final String label;
   final String cancelLabel;
   final String? previewText;
+  final String? subtitle;
+  final bool paused;
   final VoidCallback? onCancel;
 
   @override
@@ -4460,9 +4579,11 @@ class _QueuedInputBanner extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Icon(
-              Icons.schedule_rounded,
+              paused ? LucideIcons.pause : LucideIcons.clock,
               size: 16,
-              color: theme.colorScheme.primary,
+              color: paused
+                  ? context.appColors.warning
+                  : theme.colorScheme.primary,
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
@@ -4471,11 +4592,26 @@ class _QueuedInputBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: AppFontWeights.semibold,
-                  ),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      label,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: AppFontWeights.semibold,
+                      ),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                  ],
                 ),
                 if (hasPreview) ...[
                   const SizedBox(height: 2),

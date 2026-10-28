@@ -2031,6 +2031,33 @@ void main() {
     });
 
     test(
+      'saved encryption preference rejects export without a password',
+      () async {
+        final preferences = BusinessPreferences(businessRepository);
+        await preferences.setBool('backup_encryption_enabled_v1', true);
+        final chat = ChatService();
+        addTearDown(chat.dispose);
+        final sync = DataSync(
+          businessRepository: businessRepository,
+          businessPreferences: preferences,
+          chatService: chat,
+        );
+        await expectLater(
+          sync.prepareBackupFile(_withoutChatsOrAssets),
+          throwsA(
+            isA<FormatException>().having(
+              (error) => error.message,
+              'message',
+              'backup_password_required',
+            ),
+          ),
+        );
+        expect(await Directory('${root.path}/tmp').exists(), isFalse);
+        expect(preferences.getBool('backup_encryption_enabled_v1'), isTrue);
+      },
+    );
+
+    test(
       'encrypted export retries before restoring and cleans plaintext',
       () async {
         final service = BusinessRestoreService(businessRepository);
@@ -5275,11 +5302,7 @@ void main() {
         final restored = chatService.getConversation('conversation')!;
         expect(restored.truncateIndex, 2);
         expect(
-          await chatService.loadSelectedContextMessages(
-            restored.id,
-            truncateIndex: restored.truncateIndex,
-            limit: 10,
-          ),
+          await chatService.loadSelectedContextMessages(restored.id, limit: 10),
           isEmpty,
         );
         final missingBeforeKept = chatService.getConversation(
@@ -5289,7 +5312,6 @@ void main() {
         expect(
           await chatService.loadSelectedContextMessages(
             missingBeforeKept.id,
-            truncateIndex: missingBeforeKept.truncateIndex,
             limit: 10,
           ),
           isEmpty,
@@ -5301,7 +5323,6 @@ void main() {
         expect(
           await chatService.loadSelectedContextMessages(
             duplicateBeforeTruncate.id,
-            truncateIndex: duplicateBeforeTruncate.truncateIndex,
             limit: 10,
           ),
           isEmpty,
@@ -5311,7 +5332,6 @@ void main() {
         expect(
           (await chatService.loadSelectedContextMessages(
             crossReuse.id,
-            truncateIndex: crossReuse.truncateIndex,
             limit: 10,
           )).map((message) => message.id),
           ['cross-h', 'later-g'],

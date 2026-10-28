@@ -347,6 +347,7 @@ Future<List<Map<String, dynamic>>> buildOpenAIChatCompletionMessages(
     );
     final outMsg = Map<String, dynamic>.from(m);
     outMsg.remove(multimodalInternalMediaPathsKey);
+    outMsg.remove(multimodalInternalLiteralTextKey);
     outMsg.remove(multimodalInternalDocumentPathsKey);
     outMsg.remove(multimodalInternalRevisionIdKey);
     outMsg.remove(multimodalInternalClaudeContainerKey);
@@ -483,14 +484,7 @@ Future<List<Map<String, dynamic>>> buildOpenAIChatCompletionMessages(
         final seenImageUrls = <String>{};
         final seenVideoUrls = <String>{};
 
-        String normalizeSrc(String src) {
-          if (src.startsWith('http') || src.startsWith('data:')) return src;
-          try {
-            return SandboxPathResolver.fix(src);
-          } catch (_) {
-            return src;
-          }
-        }
+        String normalizeSrc(String src) => SandboxPathResolver.dedupeKey(src);
 
         void addImageUrl(String url) {
           if (url.isEmpty) return;
@@ -687,6 +681,7 @@ Future<List<Map<String, dynamic>>> buildOpenAIChatCompletionMessages(
 
     final parsed = await parseTextAndImages(
       raw,
+      literalText: internalLiteralText(m),
       allowRemoteImages: canImageInput && allowRemoteImages,
       allowLocalImages: canImageInput,
       allowDataImages: canImageInput,
@@ -705,14 +700,7 @@ Future<List<Map<String, dynamic>>> buildOpenAIChatCompletionMessages(
     final seenImageUrls = <String>{};
     final seenVideoUrls = <String>{};
 
-    String normalizeSrc(String src) {
-      if (src.startsWith('http') || src.startsWith('data:')) return src;
-      try {
-        return SandboxPathResolver.fix(src);
-      } catch (_) {
-        return src;
-      }
-    }
+    String normalizeSrc(String src) => SandboxPathResolver.dedupeKey(src);
 
     void addImageUrl(String url) {
       if (url.isEmpty) return;
