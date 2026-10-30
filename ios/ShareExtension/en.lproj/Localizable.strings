@@ -4,6 +4,7 @@
 "done" = "Done";
 "failed" = "Could not save";
 "failedMessage" = "Check that the files are available and there is enough storage, then try again. Up to 32 files are supported.";
+"unavailableMessage" = "Kelivo's shared storage (App Group) is not available. A re-signed build may be missing App Group access.";
 "importing" = "Importing";
 "cancel" = "Cancel";
 "opening" = "Opening Kelivo…";

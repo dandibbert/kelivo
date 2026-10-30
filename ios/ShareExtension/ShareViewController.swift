@@ -72,6 +72,7 @@ final class ShareViewController: UIViewController {
         var texts = IncomingShareInbox.textContents(in: items)
         var files = [[String: Any]]()
         var failed = max(0, providers.count - IncomingShareInbox.maxFiles)
+        var firstFileError: Error?
         for (index, provider) in providers.prefix(IncomingShareInbox.maxFiles).enumerated() {
           try Task.checkCancellation()
           do {
@@ -97,7 +98,10 @@ final class ShareViewController: UIViewController {
             } else {
               failed += 1
             }
-          } catch { failed += 1 }
+          } catch {
+            failed += 1
+            firstFileError = firstFileError ?? error
+          }
         }
         let text = texts.joined(separator: "\n\n")
         try Task.checkCancellation()
@@ -114,9 +118,23 @@ final class ShareViewController: UIViewController {
       } catch {
         if let directory { try? FileManager.default.removeItem(at: directory) }
         if Task.isCancelled || copyControl.isCancelled { return }
-        showCompletion(title: "failed", message: "failedMessage")
+        let report = failureReport(for: error, fileError: firstFileError)
+        showCompletion(title: "failed", message: report.message, detail: report.detail)
       }
     }
+  }
+
+  /// One dialog used to cover three unrelated failures. Name the real one.
+  private func failureReport(for error: Error, fileError: Error?) -> (message: String, detail: String) {
+    if case IncomingShareInbox.InboxError.unavailable = error {
+      let group = Bundle.main.object(forInfoDictionaryKey: "KelivoShareAppGroup") as? String ?? "-"
+      return ("unavailableMessage", "App Group: \(group)")
+    }
+    // "empty" means every file failed; the useful error is the file's own.
+    var reason = error
+    if case IncomingShareInbox.InboxError.empty = error, let fileError { reason = fileError }
+    let ns = reason as NSError
+    return ("failedMessage", "\(ns.domain) #\(ns.code)\n\(ns.localizedDescription)")
   }
 
   private func openApp(failedFiles: Int) {
@@ -142,11 +160,12 @@ final class ShareViewController: UIViewController {
     showCompletion(title: "saved", message: failedFiles == 0 ? "savedMessage" : "partialMessage")
   }
 
-  private func showCompletion(title: String, message: String) {
+  private func showCompletion(title: String, message: String, detail: String? = nil) {
     spinner.stopAnimating()
     cancelButton.isEnabled = false
     statusLabel.text = label(title)
-    let alert = UIAlertController(title: label(title), message: label(message), preferredStyle: .alert)
+    let text = detail.map { "\(label(message))\n\n\($0)" } ?? label(message)
+    let alert = UIAlertController(title: label(title), message: text, preferredStyle: .alert)
     alert.addAction(UIAlertAction(title: label("done"), style: .default) { _ in
       self.completeRequest()
     })

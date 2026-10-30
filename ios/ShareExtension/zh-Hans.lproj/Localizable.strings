@@ -4,6 +4,7 @@
 "done" = "完成";
 "failed" = "保存失败";
 "failedMessage" = "请确认文件可用且存储空间充足后重试。一次最多支持 32 个文件。";
+"unavailableMessage" = "无法访问 Kelivo 的共享存储（App Group）。重签名的安装包可能缺少 App Group 权限。";
 "importing" = "正在导入";
 "cancel" = "取消";
 "opening" = "正在打开 Kelivo…";

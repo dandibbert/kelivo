@@ -4,6 +4,7 @@
 "done" = "完成";
 "failed" = "儲存失敗";
 "failedMessage" = "請確認檔案可用且儲存空間充足後重試。一次最多支援 32 個檔案。";
+"unavailableMessage" = "無法存取 Kelivo 的共享儲存空間（App Group）。重新簽署的安裝包可能缺少 App Group 權限。";
 "importing" = "正在匯入";
 "cancel" = "取消";
 "opening" = "正在開啟 Kelivo…";
