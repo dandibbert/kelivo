@@ -5510,6 +5510,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get asrServicesMistralSubtitle => 'Voxtral 分段云端转写';
 
   @override
+  String get asrServicesElevenLabsSubtitle => 'Scribe 分段云端转写';
+
+  @override
   String get asrServicesDashScopeTitle => 'DashScope';
 
   @override
@@ -5568,6 +5571,36 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get asrServicesEndpointLabel => '服务地址';
+
+  @override
+  String get asrServicesRecognitionModeLabel => '识别方式';
+
+  @override
+  String get asrServicesRealtimeMode => '实时识别';
+
+  @override
+  String get asrServicesRecordedMode => '录音转写';
+
+  @override
+  String get asrServicesQwenAudioSubtitle => '实时识别或录音转写';
+
+  @override
+  String get asrServicesQwenTokenPlanHint =>
+      '使用 Token Plan 时，选择录音转写，业务空间 ID 填 token-plan，并选择与密钥对应的地域。';
+
+  @override
+  String get asrServicesEndpointOverrideLabel => '自定义端点（可选）';
+
+  @override
+  String get asrServicesWorkspaceIdInvalid => '请输入业务空间 ID，不要填写网址。';
+
+  @override
+  String get asrServicesWebSocketEndpointInvalid =>
+      '请输入完整的 ws:// 或 wss:// 端点，不含用户名、密码或 URL 片段。';
+
+  @override
+  String get asrServicesHttpEndpointInvalid =>
+      '请输入完整的 http:// 或 https:// 端点，不含用户名、密码或 URL 片段。';
 
   @override
   String get asrServicesModelLabel => '模型';
@@ -14939,6 +14972,53 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get hotkeySidePanelFocus => '切换聊天与面板焦点';
+
+  @override
+  String get selectionQuote => '引用';
+
+  @override
+  String selectionQuoteMarker(int index) {
+    return '[引用$index]';
+  }
+
+  @override
+  String get selectionTranslate => '翻译';
+
+  @override
+  String get selectionAiTranslateIos => 'AI翻译';
+
+  @override
+  String get selectionCopyMarkdown => '复制为 Markdown';
+
+  @override
+  String get selectionCopyRich => '复制富文本';
+
+  @override
+  String get quoteJumpToSource => '跳到原文';
+
+  @override
+  String get quoteRemove => '移除引用';
+
+  @override
+  String get quoteDuplicate => '这段已在引用中';
+
+  @override
+  String get quoteLimit => '一条消息最多引用 10 段';
+
+  @override
+  String get quoteLocated => '已定位到引用原文';
+
+  @override
+  String get quoteSourceMissing => '原文已不存在';
+
+  @override
+  String get selectionRegenerate => '重新生成';
+
+  @override
+  String get translating => '正在翻译…';
+
+  @override
+  String get retry => '重试';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -20447,6 +20527,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get asrServicesMistralSubtitle => 'Voxtral 分段云端转写';
 
   @override
+  String get asrServicesElevenLabsSubtitle => 'Scribe 分段云端转写';
+
+  @override
   String get asrServicesDashScopeTitle => 'DashScope';
 
   @override
@@ -20505,6 +20588,36 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get asrServicesEndpointLabel => '服务地址';
+
+  @override
+  String get asrServicesRecognitionModeLabel => '识别方式';
+
+  @override
+  String get asrServicesRealtimeMode => '实时识别';
+
+  @override
+  String get asrServicesRecordedMode => '录音转写';
+
+  @override
+  String get asrServicesQwenAudioSubtitle => '实时识别或录音转写';
+
+  @override
+  String get asrServicesQwenTokenPlanHint =>
+      '使用 Token Plan 时，选择录音转写，业务空间 ID 填 token-plan，并选择与密钥对应的地域。';
+
+  @override
+  String get asrServicesEndpointOverrideLabel => '自定义端点（可选）';
+
+  @override
+  String get asrServicesWorkspaceIdInvalid => '请输入业务空间 ID，不要填写网址。';
+
+  @override
+  String get asrServicesWebSocketEndpointInvalid =>
+      '请输入完整的 ws:// 或 wss:// 端点，不含用户名、密码或 URL 片段。';
+
+  @override
+  String get asrServicesHttpEndpointInvalid =>
+      '请输入完整的 http:// 或 https:// 端点，不含用户名、密码或 URL 片段。';
 
   @override
   String get asrServicesModelLabel => '模型';
@@ -29802,6 +29915,53 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get hotkeySidePanelFocus => '切换聊天与面板焦点';
+
+  @override
+  String get selectionQuote => '引用';
+
+  @override
+  String selectionQuoteMarker(int index) {
+    return '[引用$index]';
+  }
+
+  @override
+  String get selectionTranslate => '翻译';
+
+  @override
+  String get selectionAiTranslateIos => 'AI翻译';
+
+  @override
+  String get selectionCopyMarkdown => '复制为 Markdown';
+
+  @override
+  String get selectionCopyRich => '复制富文本';
+
+  @override
+  String get quoteJumpToSource => '跳到原文';
+
+  @override
+  String get quoteRemove => '移除引用';
+
+  @override
+  String get quoteDuplicate => '这段已在引用中';
+
+  @override
+  String get quoteLimit => '一条消息最多引用 10 段';
+
+  @override
+  String get quoteLocated => '已定位到引用原文';
+
+  @override
+  String get quoteSourceMissing => '原文已不存在';
+
+  @override
+  String get selectionRegenerate => '重新生成';
+
+  @override
+  String get translating => '正在翻译…';
+
+  @override
+  String get retry => '重试';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -35309,6 +35469,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get asrServicesMistralSubtitle => 'Voxtral 分段雲端轉寫';
 
   @override
+  String get asrServicesElevenLabsSubtitle => 'Scribe 分段雲端轉寫';
+
+  @override
   String get asrServicesDashScopeTitle => 'DashScope';
 
   @override
@@ -35367,6 +35530,36 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get asrServicesEndpointLabel => '服務位址';
+
+  @override
+  String get asrServicesRecognitionModeLabel => '辨識方式';
+
+  @override
+  String get asrServicesRealtimeMode => '即時辨識';
+
+  @override
+  String get asrServicesRecordedMode => '錄音轉寫';
+
+  @override
+  String get asrServicesQwenAudioSubtitle => '即時辨識或錄音轉寫';
+
+  @override
+  String get asrServicesQwenTokenPlanHint =>
+      '使用 Token Plan 時，選擇錄音轉寫，業務空間 ID 填 token-plan，並選擇與金鑰對應的地域。';
+
+  @override
+  String get asrServicesEndpointOverrideLabel => '自訂端點（選填）';
+
+  @override
+  String get asrServicesWorkspaceIdInvalid => '請輸入業務空間 ID，不要填寫網址。';
+
+  @override
+  String get asrServicesWebSocketEndpointInvalid =>
+      '請輸入完整的 ws:// 或 wss:// 端點，不含使用者名稱、密碼或 URL 片段。';
+
+  @override
+  String get asrServicesHttpEndpointInvalid =>
+      '請輸入完整的 http:// 或 https:// 端點，不含使用者名稱、密碼或 URL 片段。';
 
   @override
   String get asrServicesModelLabel => '模型';
@@ -44746,4 +44939,51 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get hotkeySidePanelFocus => '切換聊天與面板焦點';
+
+  @override
+  String get selectionQuote => '引用';
+
+  @override
+  String selectionQuoteMarker(int index) {
+    return '[引用$index]';
+  }
+
+  @override
+  String get selectionTranslate => '翻譯';
+
+  @override
+  String get selectionAiTranslateIos => 'AI翻譯';
+
+  @override
+  String get selectionCopyMarkdown => '複製為 Markdown';
+
+  @override
+  String get selectionCopyRich => '複製富文字';
+
+  @override
+  String get quoteJumpToSource => '跳至原文';
+
+  @override
+  String get quoteRemove => '移除引用';
+
+  @override
+  String get quoteDuplicate => '這段已在引用中';
+
+  @override
+  String get quoteLimit => '一則訊息最多引用 10 段';
+
+  @override
+  String get quoteLocated => '已定位至引用原文';
+
+  @override
+  String get quoteSourceMissing => '原文已不存在';
+
+  @override
+  String get selectionRegenerate => '重新產生';
+
+  @override
+  String get translating => '正在翻譯…';
+
+  @override
+  String get retry => '重試';
 }

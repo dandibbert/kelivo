@@ -10453,6 +10453,12 @@ abstract class AppLocalizations {
   /// **'Voxtral segmented transcription'**
   String get asrServicesMistralSubtitle;
 
+  /// No description provided for @asrServicesElevenLabsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scribe segmented transcription'**
+  String get asrServicesElevenLabsSubtitle;
+
   /// No description provided for @asrServicesDashScopeTitle.
   ///
   /// In en, this message translates to:
@@ -10572,6 +10578,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Endpoint'**
   String get asrServicesEndpointLabel;
+
+  /// No description provided for @asrServicesRecognitionModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition mode'**
+  String get asrServicesRecognitionModeLabel;
+
+  /// No description provided for @asrServicesRealtimeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time'**
+  String get asrServicesRealtimeMode;
+
+  /// No description provided for @asrServicesRecordedMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded audio'**
+  String get asrServicesRecordedMode;
+
+  /// No description provided for @asrServicesQwenAudioSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time or recorded audio transcription'**
+  String get asrServicesQwenAudioSubtitle;
+
+  /// No description provided for @asrServicesQwenTokenPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For Token Plan, choose Recorded audio, enter token-plan as the Workspace ID, and select the region for your key.'**
+  String get asrServicesQwenTokenPlanHint;
+
+  /// No description provided for @asrServicesEndpointOverrideLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom endpoint (optional)'**
+  String get asrServicesEndpointOverrideLabel;
+
+  /// No description provided for @asrServicesWorkspaceIdInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a workspace ID, not a URL.'**
+  String get asrServicesWorkspaceIdInvalid;
+
+  /// No description provided for @asrServicesWebSocketEndpointInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a complete ws:// or wss:// endpoint without credentials or a fragment.'**
+  String get asrServicesWebSocketEndpointInvalid;
+
+  /// No description provided for @asrServicesHttpEndpointInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a complete http:// or https:// endpoint without credentials or a fragment.'**
+  String get asrServicesHttpEndpointInvalid;
 
   /// No description provided for @asrServicesModelLabel.
   ///
@@ -27803,6 +27863,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cycle chat and panel focus'**
   String get hotkeySidePanelFocus;
+
+  /// No description provided for @selectionQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get selectionQuote;
+
+  /// Numbered quote reference in sent, copied, and exported messages
+  ///
+  /// In en, this message translates to:
+  /// **'[Quote {index}]'**
+  String selectionQuoteMarker(int index);
+
+  /// No description provided for @selectionTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get selectionTranslate;
+
+  /// No description provided for @selectionAiTranslateIos.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Translate'**
+  String get selectionAiTranslateIos;
+
+  /// No description provided for @selectionCopyMarkdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as Markdown'**
+  String get selectionCopyMarkdown;
+
+  /// No description provided for @selectionCopyRich.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy rich text'**
+  String get selectionCopyRich;
+
+  /// No description provided for @quoteJumpToSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to source'**
+  String get quoteJumpToSource;
+
+  /// No description provided for @quoteRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove quote'**
+  String get quoteRemove;
+
+  /// No description provided for @quoteDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Already quoted'**
+  String get quoteDuplicate;
+
+  /// No description provided for @quoteLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 10 quotes per message'**
+  String get quoteLimit;
+
+  /// No description provided for @quoteLocated.
+  ///
+  /// In en, this message translates to:
+  /// **'Jumped to quoted text'**
+  String get quoteLocated;
+
+  /// No description provided for @quoteSourceMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Source no longer exists'**
+  String get quoteSourceMissing;
+
+  /// No description provided for @selectionRegenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate'**
+  String get selectionRegenerate;
+
+  /// No description provided for @translating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating…'**
+  String get translating;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
 }
 
 class _AppLocalizationsDelegate

@@ -9,6 +9,9 @@ import '../../chat/widgets/context_operation_actions.dart';
 import '../../chat/widgets/context_compression_status.dart';
 import '../../browser/browser_navigation.dart';
 import 'package:Kelivo/shared/text_input/message_editing_controller.dart';
+import '../../chat/controllers/quote_editing_controller.dart';
+import '../../chat/widgets/quote_interaction_scope.dart';
+import '../../../core/models/quote_ref.dart';
 import '../../../core/services/chat/chat_service.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
@@ -91,8 +94,7 @@ import '../widgets/chat_input_section.dart';
 import '../widgets/conversation_system_prompt_button.dart';
 import '../widgets/chat_input_overlay_layout.dart';
 import '../widgets/chat_selection_app_bar.dart';
-import '../widgets/chat_selection_delete_bar.dart';
-import '../widgets/chat_selection_export_bar.dart';
+import '../widgets/chat_selection_action_bar.dart';
 import '../widgets/user_message_edit_overlay.dart';
 import '../utils/model_display_helper.dart';
 import '../utils/chat_layout_constants.dart';
@@ -193,7 +195,7 @@ class _HomePageState extends State<HomePage>
       InteractiveDrawerController();
   final ValueNotifier<int> _assistantPickerCloseTick = ValueNotifier<int>(0);
   final FocusNode _inputFocus = FocusNode();
-  final TextEditingController _inputController = MessageEditingController();
+  final QuoteEditingController _inputController = QuoteEditingController();
   final ChatInputBarController _mediaController = ChatInputBarController();
   scroll_ctrl.ChatAutoFollowScrollController _scrollController =
       scroll_ctrl.ChatAutoFollowScrollController();
@@ -216,6 +218,66 @@ class _HomePageState extends State<HomePage>
   // ============================================================================
 
   late HomePageController _controller;
+  late final QuoteInteractionController _quoteInteractions;
+  bool _quoteSyncScheduled = false;
+  (String?, int)? _quoteSourceVersion;
+
+  void _syncQuoteHighlights() {
+    if (_quoteSyncScheduled) return;
+    _quoteSyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _quoteSyncScheduled = false;
+      if (mounted) _quoteInteractions.setDraftQuotes(_inputController.quotes);
+    });
+  }
+
+  Future<void> _insertSelectionQuote(QuoteRef quote) async {
+    final conversationId = _controller.currentConversation?.id;
+    await _inputController.retireMessageInput();
+    if (!mounted) return;
+    try {
+      if (_controller.currentConversation?.id != conversationId) return;
+      final result = _inputController.insertQuote(quote);
+      final l10n = AppLocalizations.of(context)!;
+      if (result == QuoteInsertion.duplicate ||
+          result == QuoteInsertion.limit) {
+        showAppSnackBar(
+          context,
+          message: result == QuoteInsertion.duplicate
+              ? l10n.quoteDuplicate
+              : l10n.quoteLimit,
+        );
+      }
+    } finally {
+      _inputController.resumeInput();
+    }
+    _inputFocus.requestFocus();
+  }
+
+  Future<bool> _jumpToQuote(QuoteRef quote) async {
+    final source = (await context.read<ChatService>().loadMessagesByIds([
+      quote.messageId,
+    ])).firstOrNull;
+    if (!mounted) return false;
+    final labels = AppLocalizations.of(context)!;
+    if (source == null) {
+      showAppSnackBar(context, message: labels.quoteSourceMissing);
+      return false;
+    }
+    if (_controller.currentConversation?.id != source.conversationId) {
+      await _controller.switchConversationAnimated(source.conversationId);
+    }
+    if (!mounted) return false;
+    await _controller.setSelectedVersion(
+      source.groupId ?? source.id,
+      source.version,
+    );
+    await _controller.scrollToMessageId(source.id);
+    if (!mounted) return false;
+    _quoteInteractions.reveal(quote);
+    showAppSnackBar(context, message: labels.quoteLocated);
+    return true;
+  }
 
   // ============================================================================
   // Lifecycle
@@ -239,6 +301,12 @@ class _HomePageState extends State<HomePage>
       scrollController: _scrollController,
     );
 
+    _quoteInteractions = QuoteInteractionController(
+      onQuote: _insertSelectionQuote,
+      onJump: _jumpToQuote,
+      sourceExists: (id) => context.read<ChatService>().messageExists(id),
+    );
+    _inputController.addListener(_syncQuoteHighlights);
     _controller.onRevealConversation = () => _drawerController.jumpTo(0);
     _controller.addListener(_onControllerChanged);
     _drawerController.addListener(_onDrawerValueChanged);
@@ -307,6 +375,8 @@ class _HomePageState extends State<HomePage>
     _controller.removeListener(_onControllerChanged);
     _drawerController.removeListener(_onDrawerValueChanged);
     _controller.dispose();
+    _inputController.removeListener(_syncQuoteHighlights);
+    _quoteInteractions.dispose();
     _inputFocus.dispose();
     _inputController.dispose();
     _scrollController.dispose();
@@ -477,6 +547,16 @@ class _HomePageState extends State<HomePage>
   void _onControllerChanged() {
     _observeCompression();
     final conversationId = _controller.currentConversation?.id;
+    final quoteVersion = (
+      conversationId,
+      conversationId == null
+          ? 0
+          : context.read<ChatService>().getMessageCount(conversationId),
+    );
+    if (quoteVersion != _quoteSourceVersion) {
+      _quoteSourceVersion = quoteVersion;
+      _quoteInteractions.refreshSources();
+    }
     if (conversationId != null && conversationId != _scrollConversationId) {
       _scrollConversationId = conversationId;
       final previous = _scrollController;
@@ -921,7 +1001,10 @@ class _HomePageState extends State<HomePage>
             onDraft: _controller.stageUiDraft,
             child: UiSearchNavigationScope(
               navigation: _controller.uiSearchNavigation,
-              child: _buildPage(context),
+              child: QuoteInteractionScope(
+                controller: _quoteInteractions,
+                child: _buildPage(context),
+              ),
             ),
           ),
         ),
@@ -1201,33 +1284,22 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildSelectionActionBar(BuildContext context) {
-    if (_controller.selectionMode == ChatSelectionMode.delete) {
-      return ChatSelectionDeleteBar(
-        key: _selectionActionBarKey,
-        hasMultiVersionSelection:
-            _controller.selectedMessagesIncludeMultipleVersions,
-        onDeleteCurrentVersions: () {
-          unawaited(
-            _handleDeleteSelectedMessages(context, deleteAllVersions: false),
-          );
-        },
-        onDeleteAllVersions: () {
-          unawaited(
-            _handleDeleteSelectedMessages(context, deleteAllVersions: true),
-          );
-        },
-      );
-    }
-
-    return ChatSelectionExportBar(
+    return ChatSelectionActionBar(
       key: _selectionActionBarKey,
-      onExportMarkdown: _controller.exportSelectedAsMarkdown,
-      onExportTxt: _controller.exportSelectedAsTxt,
-      onExportImage: _controller.exportSelectedAsImage,
-      showThinkingTools: _controller.showThinkingTools,
-      showThinkingContent: _controller.showThinkingContent,
-      onToggleThinkingTools: _controller.toggleThinkingTools,
-      onToggleThinkingContent: _controller.toggleThinkingContent,
+      hasSelection: _controller.selectedCount > 0,
+      hasMultiVersionSelection:
+          _controller.selectedMessagesIncludeMultipleVersions,
+      onShare: _controller.exportSelectedMessages,
+      onDeleteCurrentVersions: () {
+        unawaited(
+          _handleDeleteSelectedMessages(context, deleteAllVersions: false),
+        );
+      },
+      onDeleteAllVersions: () {
+        unawaited(
+          _handleDeleteSelectedMessages(context, deleteAllVersions: true),
+        );
+      },
     );
   }
 
@@ -1408,12 +1480,7 @@ class _HomePageState extends State<HomePage>
         onViewOriginal: _controller.scrollToMessageId,
         onRecompress: () =>
             _showCompressContextOptions(targetConversationId: conversationId),
-        onContinueNewChat: () async {
-          final copy = await chat.duplicateConversation(conversationId);
-          if (mounted && copy != null) {
-            await _controller.switchConversationAnimated(copy.id);
-          }
-        },
+        onOpenConversation: _controller.switchConversationAnimated,
       ),
       onUndoContextOperation: (operation) =>
           changeContextOperationWithConfirmation(
@@ -1492,12 +1559,9 @@ class _HomePageState extends State<HomePage>
       onForkConversation: _controller.isTemporaryConversation
           ? null
           : (message) => _controller.forkConversation(message),
-      onShareMessage: (index, messages) =>
-          _controller.shareMessage(index, messages),
       onSelectMessages: (index, messages) => _controller.startMessageSelection(
         messageIndex: index,
         messageList: messages,
-        mode: ChatSelectionMode.delete,
       ),
       onSpeakMessage: (message) => _controller.speakMessage(message),
       onSuggestionTap: (suggestion) => _controller.sendSuggestion(suggestion),
@@ -1890,7 +1954,11 @@ class _HomePageState extends State<HomePage>
       context,
       anchorKey: _inputBarKey,
       conversationId: conversationId,
-      draftText: _inputController.text,
+      draftText: formatQuotedMessage(
+        _inputController.text,
+        _inputController.quotes,
+        quoteMarker: AppLocalizations.of(context)!.selectionQuoteMarker,
+      ),
     );
   }
 
@@ -2064,7 +2132,11 @@ class _HomePageState extends State<HomePage>
           top: false,
           child: ContextManagementSheet(
             conversationId: _controller.currentConversation?.id,
-            draftText: _inputController.text,
+            draftText: formatQuotedMessage(
+              _inputController.text,
+              _inputController.quotes,
+              quoteMarker: AppLocalizations.of(context)!.selectionQuoteMarker,
+            ),
             messageCountLabel: _controller.contextMessageCountLabel(),
             onCompress: () async {
               await Navigator.of(ctx).maybePop();
@@ -2128,6 +2200,7 @@ class _HomePageState extends State<HomePage>
         prepareInput: (messages, include) => chat.messagesForCompression(
           messages,
           includeAttachmentsAndTools: include,
+          quoteMarker: AppLocalizations.of(context)!.selectionQuoteMarker,
         ),
         estimateContext: estimator == null
             ? null

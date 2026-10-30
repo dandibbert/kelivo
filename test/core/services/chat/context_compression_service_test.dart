@@ -1,3 +1,4 @@
+import 'package:Kelivo/l10n/app_localizations_en.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -7,6 +8,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:Kelivo/core/database/chat_database_repository.dart';
 import 'package:Kelivo/core/models/compress_context_options.dart';
 import 'package:Kelivo/core/models/message_part.dart';
+import 'package:Kelivo/core/models/quote_ref.dart';
 import 'package:Kelivo/core/services/chat/chat_service.dart';
 import 'package:Kelivo/core/services/chat/context_compression_service.dart';
 
@@ -65,7 +67,12 @@ void main() {
       mode: CompressContextLimitMode.keepRecent,
       keepUserMessages: 6,
     ),
-  }) => CompressionRequest(options: options, model: 'test', generate: generate);
+  }) => CompressionRequest(
+    options: options,
+    model: 'test',
+    generate: generate,
+    quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
+  );
   Future<void> until(bool Function() condition) async {
     for (var i = 0; i < 500; i++) {
       if (condition()) return;
@@ -232,6 +239,22 @@ void main() {
   );
 
   test(
+    'continuing from an installed summary leaves its compression task unchanged',
+    () async {
+      await compression.start(id, request((_, _) async => 'summary'));
+      await until(
+        () => compression.taskFor(id)!.phase == CompressionPhase.completed,
+      );
+      final before = await chat.readCompressionTaskRecords();
+      final operation = (await chat.loadContextOperations(id)).single;
+      final created = await chat.continueFromContextSummary(id, operation.id);
+      expect(created.id, isNot(id));
+      expect(await chat.readCompressionTaskRecords(), before);
+      expect(compression.taskFor(id)!.resultConversationId, isNull);
+    },
+  );
+
+  test(
     'restore interrupted work exposes saved summary without starting a request',
     () async {
       var calls = 0;
@@ -275,10 +298,50 @@ void main() {
           ToolCallPart('{"name":"read_file","content":"${'a' * 10000}"}'),
         ],
       );
-      final input = await chat.messagesForCompression([source, tool]);
+      final input = await chat.messagesForCompression([
+        source,
+        tool,
+      ], quoteMarker: AppLocalizationsEn().selectionQuoteMarker);
       expect(input.first.content, contains('image content not summarized'));
       expect(input.last.content.length, lessThan(8200));
       expect(input.last.content, contains('truncated'));
+    },
+  );
+
+  test(
+    'compression preparation expands quote snapshots once with and without attachment prompts',
+    () async {
+      final quote = QuoteRef(
+        id: 'q',
+        messageId: 'missing',
+        start: 0,
+        end: 8,
+        text: 'retained original',
+        model: null,
+        createdAt: DateTime(2026),
+      );
+      final message = await chat.addMessage(
+        conversationId: id,
+        role: 'user',
+        content: 'Explain \uFFFC',
+        quotes: [quote],
+      );
+      for (final include in [false, true]) {
+        final input = await chat.messagesForCompression(
+          [message],
+          includeAttachmentsAndTools: include,
+          quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
+        );
+        final text = buildCompressRequestContents(
+          input,
+          const CompressContextOptions(
+            mode: CompressContextLimitMode.unlimited,
+          ),
+          quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
+        ).join();
+        expect('retained original'.allMatches(text), hasLength(1));
+        expect(text, isNot(contains(quotePlaceholder)));
+      }
     },
   );
 

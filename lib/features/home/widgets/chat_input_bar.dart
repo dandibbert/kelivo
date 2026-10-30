@@ -1,3 +1,4 @@
+import '../../chat/controllers/quote_editing_controller.dart';
 import '../../intelligent_ui/models/ui_context_attachment.dart';
 import '../../intelligent_ui/host/ui_composer_context_chip.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -6,7 +7,7 @@ import 'package:Kelivo/features/chat/widgets/tool_permission_widgets.dart';
 import '../services/composer_clipboard.dart';
 import 'package:Kelivo/shared/text_input/message_editing_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, listEquals;
 import 'package:flutter/rendering.dart';
 import '../../../core/services/incoming_share_service.dart';
 import 'composer_attachment_card.dart';
@@ -29,6 +30,7 @@ import '../../../shared/responsive/breakpoints.dart';
 import 'dart:async';
 import 'dart:io';
 import '../../../core/models/chat_input_data.dart';
+import '../../../core/models/quote_ref.dart';
 import '../../../core/models/model_spec.dart';
 import '../../../core/models/reasoning_request.dart';
 import '../../../core/services/api/reasoning/reasoning_level_options.dart';
@@ -333,6 +335,7 @@ class ChatInputBarController {
   }
 
   void insertText(String text) {
+    text = text.replaceAll(quotePlaceholder, '');
     if (_currentTarget) {
       _root._state?._insertPastedText(text);
     } else {
@@ -360,6 +363,7 @@ class ChatInputBarController {
       documents: draft.documents,
       allowImagesApiRouting: draft.allowImagesApiRouting,
       uiContext: draft.uiContext,
+      quotes: draft.quotes,
     );
   }
 
@@ -995,14 +999,33 @@ class _ChatInputBarState extends State<ChatInputBar>
   // Instance method for onChanged to avoid recreating the callback on every build
   void _onTextChanged(String _) => setState(() {});
 
+  AppLocalizations? _usageLocalizations;
   String? _usageDraftConversationId;
   String? _usageDraftText;
+  List<QuoteRef> _observedQuotes = const [];
+
+  void _onQuoteEdits() {
+    if (_controller is! QuoteEditingController) return;
+    final next = (_controller as QuoteEditingController).quotes;
+    if (listEquals(next, _observedQuotes)) return;
+    _observedQuotes = next;
+    if (mounted) setState(() {});
+  }
 
   void _syncUsageDraft() {
-    if (!mounted) return;
+    final l10n = _usageLocalizations;
+    // A pending draft can restore from _bind during initState, before the
+    // inherited locale is available. didChangeDependencies publishes it next.
+    if (!mounted || l10n == null) return;
     final id = widget.conversationId;
     if (id == null || id.isEmpty) return;
-    final text = _controller.text;
+    final text = _controller is QuoteEditingController
+        ? formatQuotedMessage(
+            _controller.text,
+            (_controller as QuoteEditingController).quotes,
+            quoteMarker: l10n.selectionQuoteMarker,
+          )
+        : _controller.text;
     if (_usageDraftConversationId == id && _usageDraftText == text) return;
     _usageDraftConversationId = id;
     _usageDraftText = text;
@@ -1203,11 +1226,17 @@ class _ChatInputBarState extends State<ChatInputBar>
       documents: List<DocumentAttachment>.of(_docs),
       allowImagesApiRouting: _allowImagesApiRouting,
       uiContext: _uiContext,
+      quotes: _controller is QuoteEditingController
+          ? (_controller as QuoteEditingController).quotes
+          : const [],
     );
   }
 
   ComposerDraftInput _snapshotDraft(String text) => ComposerDraftInput(
     text: text,
+    quotes: _controller is QuoteEditingController
+        ? (_controller as QuoteEditingController).quotes
+        : const [],
     selectionBase: _controller.selection.baseOffset,
     selectionExtent: _controller.selection.extentOffset,
     images: [
@@ -1224,6 +1253,22 @@ class _ChatInputBarState extends State<ChatInputBar>
   );
 
   void _restoreDraft(ComposerDraftInput input, {bool resetHistory = true}) {
+    if (_controller case final QuoteEditingController quotes) {
+      quotes.restore(
+        TextEditingValue(
+          text: input.text,
+          selection: TextSelection(
+            baseOffset: input.selectionBase < 0
+                ? input.text.length
+                : input.selectionBase.clamp(0, input.text.length),
+            extentOffset: input.selectionExtent < 0
+                ? input.text.length
+                : input.selectionExtent.clamp(0, input.text.length),
+          ),
+        ),
+        input.quotes,
+      );
+    }
     if (resetHistory) _resetInputHistory();
     final config = context
         .read<SettingsProvider>()
@@ -1314,13 +1359,22 @@ class _ChatInputBarState extends State<ChatInputBar>
   @override
   void initState() {
     super.initState();
-    _controller = widget.controller ?? MessageEditingController();
+    _controller = widget.controller ?? QuoteEditingController();
     _controller.addListener(_syncUsageDraft);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncUsageDraft());
+    _controller.addListener(_onQuoteEdits);
     widget.mediaController?._bind(this);
     if (widget.mediaController == null) _ownedNativeMedia._bind(this);
     widget.asrProvider?.addListener(_handleAsrChanged);
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final l10n = AppLocalizations.of(context)!;
+    if (identical(_usageLocalizations, l10n)) return;
+    _usageLocalizations = l10n;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncUsageDraft());
   }
 
   @override
@@ -1360,6 +1414,7 @@ class _ChatInputBarState extends State<ChatInputBar>
     _nativeOwner?.detachView();
     _nativeOwner?.removeListener(_onNativeOwnerChanged);
     _controller.removeListener(_syncUsageDraft);
+    _controller.removeListener(_onQuoteEdits);
     WidgetsBinding.instance.removeObserver(this);
     _stopVoiceLevelSampling();
     final asr = widget.asrProvider;
@@ -2054,6 +2109,15 @@ class _ChatInputBarState extends State<ChatInputBar>
       return;
     }
     final submittedValue = orderedValue ?? _controller.value;
+    if (_controller is QuoteEditingController &&
+        (_controller as QuoteEditingController).quotes.length >
+            maxMessageQuotes) {
+      showAppSnackBar(
+        context,
+        message: AppLocalizations.of(context)!.quoteLimit,
+      );
+      return;
+    }
     final submittedText = submittedValue.text;
     final send = widget.onSend;
     final text = submittedText.trim();
@@ -2133,6 +2197,7 @@ class _ChatInputBarState extends State<ChatInputBar>
                 allowImagesApiRouting: submittedDraft.allowImagesApiRouting,
                 draftSubmission: draftSubmission,
                 uiContext: submittedDraft.uiContext,
+                quotes: submittedDraft.quotes,
               ),
             ) ??
             ChatInputSubmissionResult.rejected;
@@ -2213,11 +2278,19 @@ class _ChatInputBarState extends State<ChatInputBar>
             end: currentValue.composing.end + offset,
           )
         : currentValue.composing;
-    _controller.value = currentValue.copyWith(
-      text: submittedValue.text + currentValue.text,
-      selection: selection,
-      composing: composing,
-    );
+    _controller.value =
+        currentValue is QuoteEditingValue && submittedValue is QuoteEditingValue
+        ? QuoteEditingValue(
+            text: submittedValue.text + currentValue.text,
+            quotes: [...submittedValue.quotes, ...currentValue.quotes],
+            selection: selection,
+            composing: composing,
+          )
+        : currentValue.copyWith(
+            text: submittedValue.text + currentValue.text,
+            selection: selection,
+            composing: composing,
+          );
   }
 
   void _insertNewlineAtCursor() {
@@ -2916,6 +2989,7 @@ class _ChatInputBarState extends State<ChatInputBar>
 
   void _insertPastedText(String text) {
     if (!mounted) return;
+    text = text.replaceAll(quotePlaceholder, '');
     final value = _controller.value;
     final selection = value.selection;
     if (!selection.isValid) {

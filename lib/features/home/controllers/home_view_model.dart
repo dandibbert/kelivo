@@ -646,6 +646,7 @@ class HomeViewModel extends ChangeNotifier {
   ChatInputData _cloneInput(ChatInputData input) {
     return ChatInputData(
       text: input.text,
+      quotes: input.quotes,
       imagePaths: List<String>.of(input.imagePaths),
       documents: List<DocumentAttachment>.of(input.documents),
       allowImagesApiRouting: input.allowImagesApiRouting,
@@ -1433,6 +1434,9 @@ class HomeViewModel extends ChangeNotifier {
       await _chatService.contextCompression.start(
         conversationId,
         CompressionRequest(
+          quoteMarker: AppLocalizations.of(
+            _contextProvider,
+          )!.selectionQuoteMarker,
           options: options,
           model: modelId,
           contextWindowTokens: ModelSpecResolver.instance

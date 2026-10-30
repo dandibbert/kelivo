@@ -25,6 +25,7 @@ extension ChatContextOperations on ChatService {
   Future<List<ChatMessage>> messagesForCompression(
     List<ChatMessage> messages, {
     bool includeAttachmentsAndTools = true,
+    required String Function(int) quoteMarker,
   }) async {
     if (!includeAttachmentsAndTools) return messages;
     final prompts = await _repo.getMessagePrompts(
@@ -40,7 +41,7 @@ extension ChatContextOperations on ChatService {
       for (final message in messages)
         (() {
           final frozen = prompts[message.id];
-          var body = message.content;
+          var body = message.quotedContent(quoteMarker);
           if (frozen != null) {
             body = frozen.carriesMemorySnapshot
                 ? MemoryBlockBuilder.splitInjectedPrefix(
@@ -89,7 +90,7 @@ extension ChatContextOperations on ChatService {
               );
             }
           }
-          return message.copyWith(content: buffer.toString());
+          return message.copyWith(content: buffer.toString(), quotes: const []);
         })(),
     ];
   }
@@ -283,6 +284,31 @@ extension ChatContextOperations on ChatService {
     await loadContextOperations(id, refresh: true);
     _notifyContextChanged(id);
   });
+
+  Future<Conversation> continueFromContextSummary(
+    String id,
+    String operationId,
+  ) async {
+    final snapshot = await loadContextSnapshot(id);
+    final operation = snapshot.operations
+        .where((op) => op.id == operationId && op.isCompression && !op.revoked)
+        .firstOrNull;
+    if (operation == null) throw StateError('context_changed');
+    final effective = ContextHistory.resolve(
+      snapshot.messages,
+      snapshot.operations,
+    );
+    final summaryIndex = effective.indexWhere(
+      (message) => message.id == operation.summaryMessageId,
+    );
+    if (summaryIndex < 0) throw StateError('context_changed');
+    return createCompressedConversation(
+      id,
+      operation,
+      expectedFingerprint: snapshot.fingerprint,
+      retained: effective.skip(summaryIndex + 1).toList(),
+    );
+  }
 
   Future<Conversation> createCompressedConversation(
     String id,

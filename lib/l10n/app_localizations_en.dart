@@ -5735,6 +5735,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get asrServicesMistralSubtitle => 'Voxtral segmented transcription';
 
   @override
+  String get asrServicesElevenLabsSubtitle => 'Scribe segmented transcription';
+
+  @override
   String get asrServicesDashScopeTitle => 'DashScope';
 
   @override
@@ -5793,6 +5796,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get asrServicesEndpointLabel => 'Endpoint';
+
+  @override
+  String get asrServicesRecognitionModeLabel => 'Recognition mode';
+
+  @override
+  String get asrServicesRealtimeMode => 'Real-time';
+
+  @override
+  String get asrServicesRecordedMode => 'Recorded audio';
+
+  @override
+  String get asrServicesQwenAudioSubtitle =>
+      'Real-time or recorded audio transcription';
+
+  @override
+  String get asrServicesQwenTokenPlanHint =>
+      'For Token Plan, choose Recorded audio, enter token-plan as the Workspace ID, and select the region for your key.';
+
+  @override
+  String get asrServicesEndpointOverrideLabel => 'Custom endpoint (optional)';
+
+  @override
+  String get asrServicesWorkspaceIdInvalid =>
+      'Enter a workspace ID, not a URL.';
+
+  @override
+  String get asrServicesWebSocketEndpointInvalid =>
+      'Enter a complete ws:// or wss:// endpoint without credentials or a fragment.';
+
+  @override
+  String get asrServicesHttpEndpointInvalid =>
+      'Enter a complete http:// or https:// endpoint without credentials or a fragment.';
 
   @override
   String get asrServicesModelLabel => 'Model';
@@ -15734,4 +15769,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hotkeySidePanelFocus => 'Cycle chat and panel focus';
+
+  @override
+  String get selectionQuote => 'Quote';
+
+  @override
+  String selectionQuoteMarker(int index) {
+    return '[Quote $index]';
+  }
+
+  @override
+  String get selectionTranslate => 'Translate';
+
+  @override
+  String get selectionAiTranslateIos => 'AI Translate';
+
+  @override
+  String get selectionCopyMarkdown => 'Copy as Markdown';
+
+  @override
+  String get selectionCopyRich => 'Copy rich text';
+
+  @override
+  String get quoteJumpToSource => 'Jump to source';
+
+  @override
+  String get quoteRemove => 'Remove quote';
+
+  @override
+  String get quoteDuplicate => 'Already quoted';
+
+  @override
+  String get quoteLimit => 'Up to 10 quotes per message';
+
+  @override
+  String get quoteLocated => 'Jumped to quoted text';
+
+  @override
+  String get quoteSourceMissing => 'Source no longer exists';
+
+  @override
+  String get selectionRegenerate => 'Regenerate';
+
+  @override
+  String get translating => 'Translating…';
+
+  @override
+  String get retry => 'Retry';
 }
