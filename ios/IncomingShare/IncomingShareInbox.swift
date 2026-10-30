@@ -28,8 +28,13 @@ enum IncomingShareInbox {
 
   /// App Groups declared by the provisioning profile embedded at signing time.
   /// `nil` means there is no readable profile (App Store and simulator builds).
+  /// An extension re-signed without its own profile falls back to the host
+  /// app's, which sits two levels up (`App.app/PlugIns/X.appex`).
   static func provisionedAppGroups() -> [String]? {
-    guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+    let bundle = Bundle.main.bundleURL
+    let profiles = [bundle, bundle.deletingLastPathComponent().deletingLastPathComponent()]
+      .map { $0.appendingPathComponent("embedded.mobileprovision") }
+    guard let url = profiles.first(where: { FileManager.default.fileExists(atPath: $0.path) }),
           let data = try? Data(contentsOf: url),
           let start = data.range(of: Data("<?xml".utf8)),
           let end = data.range(of: Data("</plist>".utf8)),
