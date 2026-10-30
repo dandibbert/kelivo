@@ -66,13 +66,13 @@ final class ShareViewController: UIViewController {
     let providers = items.flatMap { $0.attachments ?? [] }
     importTask = Task {
       var directory: URL?
+      var firstFileError: Error?
       do {
         let delivery = try IncomingShareInbox.createDelivery()
         directory = delivery
         var texts = IncomingShareInbox.textContents(in: items)
         var files = [[String: Any]]()
         var failed = max(0, providers.count - IncomingShareInbox.maxFiles)
-        var firstFileError: Error?
         for (index, provider) in providers.prefix(IncomingShareInbox.maxFiles).enumerated() {
           try Task.checkCancellation()
           do {
