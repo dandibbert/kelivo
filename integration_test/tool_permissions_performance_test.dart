@@ -276,6 +276,7 @@ void main() {
       });
       await measure('workspace_dialog', () async {
         for (var i = 0; i < rounds; i++) {
+          if (!hostContext.mounted) return;
           unawaited(
             showDesktopWorkspaceDialog(
               hostContext,
@@ -291,6 +292,7 @@ void main() {
       });
       await measure('tools_menu', () async {
         for (var i = 0; i < rounds; i++) {
+          if (!hostContext.mounted) return;
           if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
             unawaited(
               showDesktopToolsPopover(
@@ -298,7 +300,6 @@ void main() {
                 anchorKey: anchor,
                 assistantId: assistantId,
                 supportsModelTools: true,
-                conversationId: chat.conversation.id,
               ),
             );
             await tester.pump(const Duration(milliseconds: 350));
@@ -319,6 +320,7 @@ void main() {
       });
       await measure('permission_menu', () async {
         for (var i = 0; i < rounds; i++) {
+          if (!hostContext.mounted) return;
           final size = MediaQuery.sizeOf(hostContext);
           unawaited(
             showAdaptiveActionMenu(
@@ -349,6 +351,7 @@ void main() {
         }
       });
       if (capture) {
+        if (!hostContext.mounted) return;
         unawaited(
           showDesktopWorkspaceDialog(
             hostContext,

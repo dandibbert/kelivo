@@ -75,14 +75,12 @@ class _Chat extends ChatService {
   @override
   Future<List<ChatMessage>> loadSelectedContextMessages(
     String id, {
-    required int truncateIndex,
     required int limit,
     String? throughRevisionId,
     bool includeFollowingAssistant = false,
   }) {
-    return repository.getSelectedContextMessages(
+    return repository.getEffectiveContextMessages(
       id,
-      truncateIndex: truncateIndex,
       limit: limit,
       throughRevisionId: throughRevisionId,
       includeFollowingAssistant: includeFollowingAssistant,
@@ -100,7 +98,10 @@ class _Generation extends Fake implements GenerationController {
   @override
   Map<String, dynamic>? buildCustomBody(Assistant? assistant) => null;
   @override
-  McpToolRouteSnapshot captureMcpToolRoutes(Assistant? assistant) => _Routes();
+  McpToolRouteSnapshot captureMcpToolRoutes(
+    Assistant? assistant, {
+    String? conversationId,
+  }) => _Routes();
   @override
   List<Map<String, dynamic>> buildToolDefinitions(
     SettingsProvider settings,

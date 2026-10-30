@@ -1,3 +1,4 @@
+import '../../features/intelligent_ui/models/ui_context_attachment.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -19,8 +20,15 @@ import 'app_database.dart';
 /// Device-local editor state. All mutations have an owner, including writes
 /// completing after navigation. Files live outside the portable backup roots.
 class ComposerDraftStore extends ChangeNotifier {
-  ComposerDraftStore(this._db, {Future<Directory> Function()? directory})
-    : _directory = directory ?? _defaultDirectory;
+  ComposerDraftStore(
+    this._db, {
+    Future<Directory> Function()? directory,
+    Future<T> Function<T>(Future<T> Function())? writeTransaction,
+  }) : _directory = directory ?? _defaultDirectory,
+       _writeTransaction = writeTransaction ?? _db.transaction;
+
+  // Acquire the repository writer only inside the composer queue, before DB.
+  final Future<T> Function<T>(Future<T> Function()) _writeTransaction;
 
   static const kind = 'composerDraft';
   static const entryKind = 'composerNewEntry';
@@ -397,7 +405,7 @@ class ComposerDraftStore extends ChangeNotifier {
           }
           if (!isCurrent(id, generation)) continue;
           var committed = false;
-          await _db.transaction(() async {
+          await _writeTransaction(() async {
             committed =
                 snapshot.submissionId != null &&
                 await wasSubmitted(snapshot.submissionId!);
@@ -698,6 +706,7 @@ class ComposerDraftStore extends ChangeNotifier {
     }
 
     checkOwner();
+    if (input.imagePaths.isEmpty && input.documents.isEmpty) return input;
 
     final dir = await AppDirectories.getUploadDirectory();
     await dir.create(recursive: true);
@@ -757,17 +766,29 @@ class ComposerDraftStore extends ChangeNotifier {
           ),
       ],
       allowImagesApiRouting: input.allowImagesApiRouting,
+      uiContext: input.uiContext,
       draftSubmission: submission,
     );
   }
 
-  void restorePending(String id, {bool append = false, bool replace = false}) {
+  void restorePending(
+    String id, {
+    bool append = false,
+    bool replace = false,
+    UiContextAttachment? selectedUiContext,
+  }) {
     final draft = _drafts[id];
     if (draft == null || _deleted.contains(id)) return;
     final pending = draft.pending;
     if (pending == null) return;
     if (draft.hasRecoveryConflict && !append && !replace) return;
-    final restored = append ? merge(draft.recoveryTarget, pending) : pending;
+    final restored = append
+        ? merge(
+            draft.recoveryTarget,
+            pending,
+            selectedUiContext: selectedUiContext,
+          )
+        : pending;
     if (replace && !append) {
       invalidateInputOperations(id, editMessageId: draft.submissionEditId);
     }
@@ -812,10 +833,28 @@ class ComposerDraftStore extends ChangeNotifier {
     _changed(draft);
   }
 
-  static ComposerDraftInput merge(
+  static bool hasUiContextConflict(
     ComposerDraftInput first,
     ComposerDraftInput second,
-  ) {
+  ) =>
+      first.uiContext != null &&
+      second.uiContext != null &&
+      first.uiContext != second.uiContext;
+
+  static ComposerDraftInput merge(
+    ComposerDraftInput first,
+    ComposerDraftInput second, {
+    UiContextAttachment? selectedUiContext,
+  }) {
+    final conflict = hasUiContextConflict(first, second);
+    if (conflict && selectedUiContext == null) {
+      throw StateError('composer_ui_context_conflict');
+    }
+    if (selectedUiContext != null &&
+        selectedUiContext != first.uiContext &&
+        selectedUiContext != second.uiContext) {
+      throw ArgumentError('Selected UI context must belong to either draft');
+    }
     final text = first.text.isEmpty
         ? second.text
         : second.text.isEmpty
@@ -827,6 +866,7 @@ class ComposerDraftStore extends ChangeNotifier {
       selectionExtent: text.length,
       images: [...first.images, ...second.images],
       documents: [...first.documents, ...second.documents],
+      uiContext: selectedUiContext ?? first.uiContext ?? second.uiContext,
     );
   }
 
@@ -867,6 +907,7 @@ class ComposerDraftStore extends ChangeNotifier {
     String sourceId,
     String targetId, {
     required bool append,
+    UiContextAttachment? selectedUiContext,
   }) async {
     if (sourceId == targetId) return;
     final source = await load(sourceId);
@@ -902,7 +943,9 @@ class ComposerDraftStore extends ChangeNotifier {
         check();
         final from = ComposerDraft.fromJson(source.toJson());
         final to = ComposerDraft.fromJson(target.toJson());
-        final value = append ? merge(to.active, moved) : moved;
+        final value = append
+            ? merge(to.active, moved, selectedUiContext: selectedUiContext)
+            : moved;
         if (to.edit != null) {
           to.edit = value;
         } else {
@@ -913,7 +956,7 @@ class ComposerDraftStore extends ChangeNotifier {
         } else {
           from.compose = const ComposerDraftInput();
         }
-        await _db.transaction(() async {
+        await _writeTransaction(() async {
           await persist(to);
           await persist(from);
           check();
@@ -928,7 +971,7 @@ class ComposerDraftStore extends ChangeNotifier {
           // The database already committed, but live inputs are untouched.
           // Restore both together before reporting a conflict; queued deletes
           // still own removal of a conversation deleted during the commit.
-          await _db.transaction(() async {
+          await _writeTransaction(() async {
             if (!_deleted.contains(sourceId)) await persist(source);
             if (!_deleted.contains(targetId)) await persist(target);
           });
@@ -1001,7 +1044,7 @@ class ComposerDraftStore extends ChangeNotifier {
           .toList();
       final snapshot = ComposerDraft.fromJson(draft.toJson())
         ..assistantId = assistantId;
-      final moved = await _db.transaction(() async {
+      final moved = await _writeTransaction(() async {
         if (moveConversation != null && !await moveConversation()) return false;
         if (snapshot.hasContent) {
           await _put(kind, id, snapshot.toJson(), ownerId: assistantId);
@@ -1048,7 +1091,7 @@ class ComposerDraftStore extends ChangeNotifier {
     invalidateOperations(id);
     try {
       await _serialize(
-        () => _db.transaction(() async {
+        () => _writeTransaction(() async {
           if (deleteConversation != null) await deleteConversation();
           await _deleteRow(kind, id);
           await _db.customStatement(

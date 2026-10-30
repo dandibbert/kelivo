@@ -113,8 +113,13 @@ namespace flutter_inappwebview_plugin
       wil::com_ptr<ICoreWebView2Controller> webViewController,
       wil::com_ptr<ICoreWebView2CompositionController> webViewCompositionController);
     ~InAppWebView();
+    EventRegistrationToken browserShortcutToken_ = {};
+    bool browserShortcutRegistered_ = false;
 
-    static void createInAppWebViewEnv(const HWND parentWindow, const bool& willBeSurface, WebViewEnvironment* webViewEnvironment, const std::shared_ptr<InAppWebViewSettings> initialSettings, std::function<void(wil::com_ptr<ICoreWebView2Environment> webViewEnv,
+    static void createInAppWebViewEnv(const FlutterInappwebviewWindowsPlugin* plugin,
+      const HWND parentWindow, const bool& willBeSurface, WebViewEnvironment* webViewEnvironment,
+      const std::shared_ptr<InAppWebViewSettings> initialSettings,
+      std::function<void(HRESULT, const std::string&, wil::com_ptr<ICoreWebView2Environment> webViewEnv,
       wil::com_ptr<ICoreWebView2Controller> webViewController,
       wil::com_ptr<ICoreWebView2CompositionController> webViewCompositionController)> completionHandler,
       wil::com_ptr<ICoreWebView2Environment> popupEnvironment = nullptr);
@@ -203,6 +208,7 @@ namespace flutter_inappwebview_plugin
     POINT lastCursorPos_ = { 0, 0 };
     VirtualKeyState virtualKeys_;
 
+    UINT64 currentNavigationId_ = 0;
     std::map<UINT64, std::shared_ptr<NavigationAction>> navigationActions_ = {};
     std::shared_ptr<NavigationAction> lastNavigationAction_;
     bool isLoading_ = false;

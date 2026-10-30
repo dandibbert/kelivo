@@ -38,6 +38,25 @@ Future<void> _pumpUi(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _waitForItem(
+  WidgetTester tester,
+  String name, {
+  bool present = true,
+}) async {
+  final item = find.byKey(FileBrowser.itemKey(name));
+  // Mutations finish on the real I/O loop, then reload the list asynchronously.
+  // Do not race that reload with another refresh or assume 50 ms is sufficient.
+  for (var attempt = 0; attempt < 100; attempt++) {
+    await _flushIo(tester);
+    await tester.pump(const Duration(milliseconds: 16));
+    if (item.evaluate().isNotEmpty == present) {
+      await tester.pumpAndSettle();
+      if (item.evaluate().isNotEmpty == present) return;
+    }
+  }
+  expect(item, present ? findsOneWidget : findsNothing);
+}
+
 Future<void> _waitForFileState(
   WidgetTester tester,
   bool Function() ready,
@@ -367,12 +386,7 @@ void main() {
     await _tapVisible(tester, find.text('New folder'));
     await tester.enterText(find.byType(TextField), 'created');
     await _tapFormConfirm(tester);
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 50)),
-    );
-    await _pumpUi(tester);
-    await _reload(tester);
+    await _waitForItem(tester, 'created');
     expect(Directory(p.join(tempDir.path, 'created')).existsSync(), isTrue);
     expect(find.byKey(FileBrowser.itemKey('created')), findsOneWidget);
 
@@ -382,12 +396,7 @@ void main() {
     await _pumpUi(tester);
     await tester.enterText(find.byType(TextField), 'renamed');
     await _tapFormConfirm(tester);
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 50)),
-    );
-    await _pumpUi(tester);
-    await _reload(tester);
+    await _waitForItem(tester, 'renamed');
     expect(Directory(p.join(tempDir.path, 'renamed')).existsSync(), isTrue);
     expect(Directory(p.join(tempDir.path, 'created')).existsSync(), isFalse);
 
@@ -398,12 +407,7 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey<String>('workspace-confirm-accept')),
     );
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 50)),
-    );
-    await _pumpUi(tester);
-    await _reload(tester);
+    await _waitForItem(tester, 'renamed', present: false);
     expect(Directory(p.join(tempDir.path, 'renamed')).existsSync(), isFalse);
   });
 
