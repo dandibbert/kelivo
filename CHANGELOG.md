@@ -6,10 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Rebase onto upstream Kelivo: integrated browser and browser agent tools, per-conversation tool permissions, password-encrypted backups, grouped MCP management, iOS native selection menus, world book entry copy and batch transfer, Windows restore recovery, and more. The iOS `kelivo://v1` deep links are kept.
-- Bump version to 1.3.5+86.
+- Bump version to 1.3.5+87.
 
 ### Fixed
-- The iOS Share extension no longer shows one generic "could not save" message for every failure. It now says when Kelivo's shared storage (App Group) is unavailable, as happens with some re-signed builds, and otherwise shows the underlying error.
+- The iOS Share extension no longer shows one generic "could not save" message for every failure. It now says when Kelivo's shared storage (App Group) is unavailable, and otherwise shows the underlying error.
+- The iOS Share extension and the app now also try the App Groups declared by the build's embedded provisioning profile when `group.psyche.kelivo` is unavailable. An App Group ID belongs to the team that registered it, so a build re-signed under another team carries a different one.
 - The "new chat" button no longer returns to the current conversation. A new chat that already held messages stayed registered as the assistant's reusable unsent chat (external-link sends left it behind, persisted across restarts), so every new chat went back to it. It is now dropped once it holds more than the assistant's preset messages, which also heals registrations already on disk.
 
 ## [1.3.4] - 2026-10-23

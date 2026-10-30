@@ -26,10 +26,44 @@ enum IncomingShareInbox {
     return path.hasPrefix(inbox + "/")
   }
 
+  /// App Groups declared by the provisioning profile embedded at signing time.
+  /// `nil` means there is no readable profile (App Store and simulator builds).
+  static func provisionedAppGroups() -> [String]? {
+    guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+          let data = try? Data(contentsOf: url),
+          let start = data.range(of: Data("<?xml".utf8)),
+          let end = data.range(of: Data("</plist>".utf8)),
+          start.lowerBound < end.upperBound,
+          let plist = try? PropertyListSerialization.propertyList(
+            from: data.subdata(in: start.lowerBound..<end.upperBound), options: [], format: nil) as? [String: Any]
+    else { return nil }
+    let entitlements = plist["Entitlements"] as? [String: Any]
+    return entitlements?["com.apple.security.application-groups"] as? [String] ?? []
+  }
+
+  /// The configured group comes first, so correctly signed builds behave as
+  /// before. A group ID belongs to the team that registered it, so a build
+  /// re-signed under another team carries a different one; use that.
+  static func appGroupCandidates() -> [String] {
+    var groups = [String]()
+    if let configured = Bundle.main.object(forInfoDictionaryKey: "KelivoShareAppGroup") as? String {
+      groups.append(configured)
+    }
+    for group in (provisionedAppGroups() ?? []).sorted() where !groups.contains(group) {
+      groups.append(group)
+    }
+    return groups
+  }
+
   static func root() throws -> URL {
-    guard let group = Bundle.main.object(forInfoDictionaryKey: "KelivoShareAppGroup") as? String,
-          let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group)
-    else { throw InboxError.unavailable }
+    var found: URL?
+    for group in appGroupCandidates() {
+      if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group) {
+        found = url
+        break
+      }
+    }
+    guard let container = found else { throw InboxError.unavailable }
     let root = container.appendingPathComponent("IncomingShares", isDirectory: true)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     return root

@@ -127,8 +127,9 @@ final class ShareViewController: UIViewController {
   /// One dialog used to cover three unrelated failures. Name the real one.
   private func failureReport(for error: Error, fileError: Error?) -> (message: String, detail: String) {
     if case IncomingShareInbox.InboxError.unavailable = error {
-      let group = Bundle.main.object(forInfoDictionaryKey: "KelivoShareAppGroup") as? String ?? "-"
-      return ("unavailableMessage", "App Group: \(group)")
+      let tried = IncomingShareInbox.appGroupCandidates().joined(separator: ", ")
+      let profile = IncomingShareInbox.provisionedAppGroups().map { $0.isEmpty ? "no app groups" : $0.joined(separator: ", ") } ?? "no profile"
+      return ("unavailableMessage", "Tried: \(tried.isEmpty ? "-" : tried)\nProfile: \(profile)")
     }
     // "empty" means every file failed; the useful error is the file's own.
     var reason = error
