@@ -28,43 +28,12 @@ class ProducedFileEntry {
 
 const int kProducedFilesLimit = 12;
 
-class ProducedFilesSummary {
-  const ProducedFilesSummary(this.entries, {required this.truncated});
-  final List<ProducedFileEntry> entries;
-  final bool truncated;
-}
-
-final _metadataCache = Expando<(WorkspaceToolMetadata?,)>('produced metadata');
-
-WorkspaceToolMetadata? _metadataFor(WorkspaceToolPart part) =>
-    (_metadataCache[part] ??= (workspaceMetadataFrom(part.metadata),)).$1;
-
-/// Inputs are immutable snapshots; body tokens keep the same tools list.
-/// Weak per-call entries disappear along with an evicted message snapshot.
-class ProducedFilesSummaryCache {
-  List<WorkspaceToolPart>? _parts;
-  ProducedFilesSummary? _summary;
-
-  ProducedFilesSummary update(List<WorkspaceToolPart> parts) {
-    if (identical(parts, _parts)) return _summary!;
-    _parts = parts;
-    return _summary = ProducedFilesSummary(
-      List.unmodifiable(collectProducedFileEntries(parts)),
-      truncated: parts.any(
-        (part) =>
-            part.toolName == 'shell' &&
-            _metadataFor(part)?.filesTruncated == true,
-      ),
-    );
-  }
-}
-
 List<ProducedFileEntry> collectProducedFileEntries(
   Iterable<WorkspaceToolPart> parts,
 ) {
   final entries = <String, ProducedFileEntry>{};
   for (final part in parts) {
-    final meta = _metadataFor(part);
+    final meta = workspaceMetadataFrom(part.metadata);
     if (part.loading || meta == null || meta.status == 'denied') continue;
     for (final file in meta.files) {
       if (!file.isProduced || file.path.isEmpty) continue;
@@ -75,7 +44,7 @@ List<ProducedFileEntry> collectProducedFileEntries(
 }
 
 /// Deduped chips / image thumbs for files written or edited in a turn.
-class ProducedFilesRow extends StatefulWidget {
+class ProducedFilesRow extends StatelessWidget {
   const ProducedFilesRow({
     super.key,
     required this.parts,
@@ -91,18 +60,13 @@ class ProducedFilesRow extends StatefulWidget {
   final String conversationId;
 
   @override
-  State<ProducedFilesRow> createState() => _ProducedFilesRowState();
-}
-
-class _ProducedFilesRowState extends State<ProducedFilesRow> {
-  final _cache = ProducedFilesSummaryCache();
-
-  @override
   Widget build(BuildContext context) {
-    final summary = _cache.update(widget.parts);
-    final entries = summary.entries;
-    final truncated = summary.truncated;
-    final conversationId = widget.conversationId;
+    final entries = collectProducedFileEntries(parts);
+    final truncated = parts.any(
+      (part) =>
+          part.toolName == 'shell' &&
+          workspaceMetadataFrom(part.metadata)?.filesTruncated == true,
+    );
     if (entries.isEmpty && !truncated) return const SizedBox.shrink();
     final visible = entries.length <= kProducedFilesLimit
         ? entries
@@ -110,7 +74,7 @@ class _ProducedFilesRowState extends State<ProducedFilesRow> {
     final overflow = entries.length - visible.length;
     final l10n = AppLocalizations.of(context)!;
     return Wrap(
-      key: ProducedFilesRow.rowKey,
+      key: rowKey,
       spacing: 8,
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -128,7 +92,7 @@ class _ProducedFilesRowState extends State<ProducedFilesRow> {
                 ),
         if (overflow > 0)
           IosCardPress(
-            key: ProducedFilesRow.moreKey,
+            key: moreKey,
             borderRadius: BorderRadius.circular(8),
             baseColor: Colors.transparent,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -193,7 +157,6 @@ class _ProducedImageThumbState extends State<_ProducedImageThumb> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.entry.dedupeKey != widget.entry.dedupeKey ||
         oldWidget.entry.revision != widget.entry.revision ||
-        !identical(oldWidget.entry.file, widget.entry.file) ||
         oldWidget.conversationId != widget.conversationId) {
       unawaited(_resolve());
     }

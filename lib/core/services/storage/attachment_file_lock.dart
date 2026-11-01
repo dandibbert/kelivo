@@ -6,14 +6,14 @@ import 'dart:async';
 final class AttachmentFileLock {
   AttachmentFileLock._(this._released);
 
-  static Future<void>? _tail;
+  static Future<void> _tail = Future<void>.value();
   final Completer<void> _released;
 
   static Future<AttachmentFileLock> acquire() async {
     final previous = _tail;
     final released = Completer<void>();
     _tail = released.future;
-    if (previous != null) await previous;
+    await previous;
     return AttachmentFileLock._(released);
   }
 
@@ -27,11 +27,6 @@ final class AttachmentFileLock {
   }
 
   void release() {
-    if (_released.isCompleted) return;
-    // A completed Future retains its originating Zone. Drop the idle queue
-    // tail so a finished generation (or a disposed test scheduler) is not kept
-    // alive by a process-global lock. A queued waiter already owns a new tail.
-    if (identical(_tail, _released.future)) _tail = null;
-    _released.complete();
+    if (!_released.isCompleted) _released.complete();
   }
 }
