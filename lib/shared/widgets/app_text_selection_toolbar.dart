@@ -42,12 +42,10 @@ class AppTextSelectionToolbar extends StatelessWidget {
         onDismiss: onDismiss,
       );
     }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (platform == TargetPlatform.android) {
       return AndroidTextSelectionToolbar(
         anchors: anchors,
         buttonItems: buttonItems,
-        selectionContext: selectionContext,
-        onDismiss: onDismiss,
       );
     }
     if (platform != TargetPlatform.macOS &&

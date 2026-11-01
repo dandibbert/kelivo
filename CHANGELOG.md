@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Rebase onto upstream Kelivo: integrated browser and browser agent tools, per-conversation tool permissions, password-encrypted backups, grouped MCP management, iOS native selection menus, world book entry copy and batch transfer, Windows restore recovery, and more. The iOS `kelivo://v1` deep links are kept.
-- Sync upstream (long-session performance, Android native selection menus, scoped assistant copy, OAuth fixes, Linux NoImpeller variants).
-- Bump version to 1.3.5+91.
+- Sync upstream (optional legacy inline code style).
+- Bump version to 1.3.5+90.
 
 ### Fixed
 - The iOS Share extension no longer shows one generic "could not save" message for every failure. It now says when Kelivo's shared storage (App Group) is unavailable, and otherwise shows the underlying error.

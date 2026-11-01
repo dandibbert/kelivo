@@ -22,8 +22,10 @@ Future<AssistantProvider> _createLoadedAssistantProvider({
   }
 
   final provider = AssistantProvider(preferences: session.preferences);
-  await provider.loaded;
-  addTearDown(provider.dispose);
+  for (var i = 0; i < 25; i++) {
+    if (provider.assistants.length == assistants.length) return provider;
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
   return provider;
 }
 

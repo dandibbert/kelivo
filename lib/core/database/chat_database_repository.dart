@@ -6,7 +6,6 @@ import 'package:Kelivo/features/intelligent_ui/text/ui_search_text.dart';
 import '../../features/intelligent_ui/host/ui_context_submission.dart';
 import '../../features/intelligent_ui/models/ui_context_attachment.dart';
 import 'dart:async';
-import 'dart:collection';
 import '../../features/intelligent_ui/storage/ui_state_repository.dart';
 import '../../features/intelligent_ui/storage/ui_state_transfer.dart';
 import '../../features/intelligent_ui/host/ui_source_map.dart';
@@ -18,7 +17,6 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
-import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
@@ -33,8 +31,6 @@ import '../models/token_usage.dart';
 import '../models/conversation.dart';
 import '../models/conversation_mcp_settings.dart';
 import '../models/message_part.dart';
-import '../models/message_part_snapshot.dart';
-import '../models/tool_event_snapshot.dart';
 import '../utils/multimodal_input_utils.dart';
 import '../../utils/sandbox_path_resolver.dart';
 import '../../utils/kelivo_file_uri.dart';
@@ -5368,17 +5364,7 @@ class ChatDatabaseRepository {
   Future<void> _replaceMessageParts(
     ChatMessage message, {
     List<Map<String, dynamic>>? toolEvents,
-    bool streamingCheckpoint = false,
   }) async {
-    // Other writers (edits, imports, recovery) invalidate the streaming base
-    // immediately. A rollback only costs a cache miss, never skipped writes.
-    if (!streamingCheckpoint) {
-      _checkpointParts.remove(message.id);
-      _checkpointRoundPayloads.remove(message.id);
-      _checkpointProjections.remove(message.id);
-    }
-    final baseline = _checkpointParts[message.id];
-    final baselineRounds = _checkpointRoundPayloads[message.id];
     final originalMessage = message;
     // A mid-stream reasoning pause is not a reasoning removal: the checkpoint
     // snapshot still carries the pre-allocated reasoningStartAt timestamp, so
@@ -5420,35 +5406,19 @@ class ChatDatabaseRepository {
               row.ordinal.isBiggerOrEqualValue(parts.length),
         ))
         .go();
+    var ordinal = 0;
     final now = DateTime.now().toUtc();
     final updatedAt = now.isBefore(message.timestamp) ? message.timestamp : now;
-    final roundPayloads = <int, String>{};
     await _db.batch((batch) {
-      for (var ordinal = 0; ordinal < parts.length; ordinal++) {
-        final part = parts[ordinal];
-        // Provider replay details can hold a live nested list until Finish.
-        // Compare with the bytes submitted, never a shared mutable list.
-        final roundPayload = part is AssistantRoundEndPart
-            ? part.encodePayload()
-            : null;
-        if (roundPayload != null) roundPayloads[ordinal] = roundPayload;
-        if (baseline != null &&
-            baseline.conversationId == message.conversationId &&
-            baseline.timestamp == message.timestamp &&
-            ordinal < baseline.parts.length &&
-            baseline.parts[ordinal] == part &&
-            (roundPayload == null ||
-                baselineRounds?[ordinal] == roundPayload)) {
-          continue;
-        }
+      for (final part in parts) {
         batch.insert(
           _db.messagePartRows,
           MessagePartRowsCompanion.insert(
             conversationId: message.conversationId,
             revisionId: message.id,
-            ordinal: ordinal,
+            ordinal: ordinal++,
             kind: part.kind,
-            payload: roundPayload ?? part.encodePayload(),
+            payload: part.encodePayload(),
             createdAt: message.timestamp,
             updatedAt: updatedAt,
           ),
@@ -5473,23 +5443,6 @@ class ChatDatabaseRepository {
         );
       }
     });
-    if (streamingCheckpoint) {
-      genUiStates.afterCommit(() {
-        _checkpointParts.remove(message.id);
-        _checkpointRoundPayloads.remove(message.id);
-        if (!message.isStreaming) _checkpointProjections.remove(message.id);
-        if (message.isStreaming) {
-          _checkpointParts[message.id] = message.copyWith(parts: parts);
-          _checkpointRoundPayloads[message.id] = roundPayloads;
-          // Bounded acceleration only; an evicted base is written in full.
-          while (_checkpointParts.length > 16) {
-            final oldest = _checkpointParts.keys.first;
-            _checkpointParts.remove(oldest);
-            _checkpointRoundPayloads.remove(oldest);
-          }
-        }
-      });
-    }
     if (!message.isStreaming && UiMessageSource.of(parts).hasCandidate) {
       await _sealGenUiSearch([message.id]);
     }
@@ -6906,11 +6859,7 @@ class ChatDatabaseRepository {
       // Keep message_rows (incl. is_streaming) ahead of parts rewrite so the
       // FTS finalize trigger indexes the pre-rewrite text part correctly.
       await _updateMessageRow(message);
-      await _replaceMessageParts(
-        message,
-        toolEvents: toolEvents,
-        streamingCheckpoint: true,
-      );
+      await _replaceMessageParts(message, toolEvents: toolEvents);
       if (generationRunId != null && checkpointSeq != null) {
         await GenerationRunCommands(_db).checkpoint(
           id: generationRunId,
@@ -6921,9 +6870,6 @@ class ChatDatabaseRepository {
       }
     });
   }
-
-  final _checkpointParts = <String, ChatMessage>{};
-  final _checkpointRoundPayloads = <String, Map<int, String>>{};
 
   @Deprecated('legacy/test only; rewrites the complete conversation order')
   Future<void> updateConversationMessages({
@@ -7978,33 +7924,6 @@ class ChatDatabaseRepository {
     ChatMessage message,
     List<Map<String, dynamic>>? toolEvents,
   ) {
-    final source = message.parts;
-    final cached = _checkpointProjections[message.id];
-    if (source is MessagePartSnapshot &&
-        (toolEvents == null || toolEvents is ToolEventSnapshot) &&
-        cached != null &&
-        identical(cached.events, toolEvents) &&
-        cached.reasoningText == message.reasoningText &&
-        source.length == cached.source.length) {
-      final changed = source.changesSince(cached.source);
-      if (changed != null &&
-          changed.every(
-            (index) =>
-                source[index] is TextPart && cached.source[index] is TextPart,
-          )) {
-        final result = List<MessagePart>.of(cached.parts);
-        for (final index in changed) {
-          result[index] = source[index];
-        }
-        _checkpointProjections[message.id] = (
-          source: source,
-          events: toolEvents,
-          reasoningText: message.reasoningText,
-          parts: result,
-        );
-        return result;
-      }
-    }
     var parts = List<MessagePart>.of(message.parts);
     if (!parts.any((part) => part is ReasoningPart)) {
       final reasoning = message.reasoningText;
@@ -8025,37 +7944,13 @@ class ChatDatabaseRepository {
     if (parts.isEmpty) {
       return <MessagePart>[TextPart(message.content)];
     }
-    if (source is MessagePartSnapshot && parts.length == source.length) {
-      _checkpointProjections.remove(message.id);
-      _checkpointProjections[message.id] = (
-        source: source,
-        events: toolEvents,
-        reasoningText: message.reasoningText,
-        parts: parts,
-      );
-      while (_checkpointProjections.length > 16) {
-        _checkpointProjections.remove(_checkpointProjections.keys.first);
-      }
-    }
     return parts;
   }
-
-  final _checkpointProjections =
-      <
-        String,
-        ({
-          MessagePartSnapshot source,
-          List<Map<String, dynamic>>? events,
-          String? reasoningText,
-          List<MessagePart> parts,
-        })
-      >{};
 
   List<MessagePart> _applyToolEventsToParts(
     List<MessagePart> parts,
     List<Map<String, dynamic>> toolEvents,
   ) {
-    if (toolEvents.isEmpty) return parts;
     final partCount = parts.whereType<ToolCallPart>().length;
     if (partCount != toolEvents.length) {
       debugPrint(
@@ -8063,18 +7958,14 @@ class ChatDatabaseRepository {
         'parts=$partCount',
       );
     }
-    final byId = <String, Queue<int>>{};
-    final used = List<bool>.filled(toolEvents.length, false);
-    for (var i = 0; i < toolEvents.length; i++) {
-      final id = (toolEvents[i]['id'] ?? '').toString();
-      if (id.isNotEmpty) (byId[id] ??= Queue<int>()).add(i);
-    }
+    final unused = [for (final event in toolEvents) event];
     Map<String, dynamic>? takeById(String id) {
-      final queue = byId[id];
-      if (queue == null || queue.isEmpty) return null;
-      final index = queue.removeFirst();
-      used[index] = true;
-      return toolEvents[index];
+      if (id.isEmpty) return null;
+      final index = unused.indexWhere(
+        (event) => (event['id'] ?? '').toString() == id,
+      );
+      if (index < 0) return null;
+      return unused.removeAt(index);
     }
 
     final matchedByPart = List<Map<String, dynamic>?>.filled(
@@ -8084,23 +7975,16 @@ class ChatDatabaseRepository {
     for (var i = 0; i < parts.length; i++) {
       final part = parts[i];
       if (part is! ToolCallPart) continue;
-      final partId = (_decodedToolPayload(part)['id'] ?? '').toString();
+      final partId = _toolCallPartId(part) ?? '';
       if (partId.isEmpty) continue;
       matchedByPart[i] = takeById(partId);
     }
-    var cursor = 0;
     for (var i = 0; i < parts.length; i++) {
       final part = parts[i];
       if (part is! ToolCallPart) continue;
-      if ((_decodedToolPayload(part)['id'] ?? '').toString().isNotEmpty) {
-        continue;
-      }
-      while (cursor < used.length && used[cursor]) {
-        cursor++;
-      }
-      if (cursor == used.length) break;
-      used[cursor] = true;
-      matchedByPart[i] = toolEvents[cursor++];
+      if ((_toolCallPartId(part) ?? '').isNotEmpty) continue;
+      if (unused.isEmpty) break;
+      matchedByPart[i] = unused.removeAt(0);
     }
 
     final out = <MessagePart>[];
@@ -8113,23 +7997,16 @@ class ChatDatabaseRepository {
       }
       final matched = matchedByPart[i];
       if (matched != null) {
-        final base = _decodedToolPayload(part);
-        final merged = _mergeToolPayload(base, matched);
-        out.add(
-          const DeepCollectionEquality().equals(base, merged)
-              ? part
-              : ToolCallPart(jsonEncode(merged)),
-        );
+        out.add(ToolCallPart(jsonEncode(_mergeToolPayload(part, matched))));
       } else {
         out.add(part);
       }
       lastToolIndex = out.length - 1;
     }
-    final extras = [
-      for (var i = 0; i < toolEvents.length; i++)
-        if (!used[i]) ToolCallPart(jsonEncode(toolEvents[i])),
-    ];
-    if (extras.isNotEmpty) {
+    if (unused.isNotEmpty) {
+      final extras = [
+        for (final event in unused) ToolCallPart(jsonEncode(event)),
+      ];
       final insertAt = lastToolIndex >= 0 ? lastToolIndex + 1 : out.length;
       out.insertAll(insertAt, extras);
     }
@@ -8137,9 +8014,16 @@ class ChatDatabaseRepository {
   }
 
   Map<String, dynamic> _mergeToolPayload(
-    Map<String, dynamic> base,
+    ToolCallPart part,
     Map<String, dynamic> event,
   ) {
+    Map<String, dynamic> base = const <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(part.payloadJson);
+      if (decoded is Map) {
+        base = Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {}
     final merged = Map<String, dynamic>.from(base);
     for (final entry in event.entries) {
       if (_isEmptyToolOverlay(entry.value) &&
@@ -8197,20 +8081,15 @@ class ChatDatabaseRepository {
     return null;
   }
 
-  final _toolPayloads = Expando<Map<String, dynamic>>(
-    'checkpoint tool payload',
-  );
-
-  Map<String, dynamic> _decodedToolPayload(ToolCallPart part) {
-    final cached = _toolPayloads[part];
-    if (cached != null) return cached;
+  String? _toolCallPartId(ToolCallPart part) {
     try {
       final decoded = jsonDecode(part.payloadJson);
       if (decoded is Map) {
-        return _toolPayloads[part] = Map<String, dynamic>.from(decoded);
+        final id = (decoded['id'] ?? '').toString();
+        return id.isEmpty ? null : id;
       }
     } catch (_) {}
-    return _toolPayloads[part] = const <String, dynamic>{};
+    return null;
   }
 
   MessagePart _hydratePart({

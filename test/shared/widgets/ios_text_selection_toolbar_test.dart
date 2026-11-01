@@ -16,7 +16,6 @@ import 'package:provider/provider.dart';
 import 'package:re_editor/re_editor.dart';
 
 import '../../support/business_test_harness.dart';
-import '../../support/android_selection_menu_mock.dart';
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,13 +23,11 @@ void main() {
   const channel = MethodChannel('app.ios_selection_menu');
   const codec = StandardMethodCodec();
   final calls = <MethodCall>[];
-  late AndroidSelectionMenuMock androidMenu;
   var supported = true;
   var shown = true;
   String? clipboard;
 
   setUp(() {
-    androidMenu = AndroidSelectionMenuMock();
     IosTextSelectionToolbar.resetAvailabilityForTesting();
     calls.clear();
     supported = true;
@@ -53,7 +50,6 @@ void main() {
     });
   });
   tearDown(() {
-    androidMenu.dispose();
     messenger.setMockMethodCallHandler(channel, null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
   });
@@ -116,12 +112,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(harness(toolbar()));
       await tester.pumpAndSettle();
-      if (Theme.of(tester.element(find.byType(Scaffold))).platform ==
-          TargetPlatform.android) {
-        expect(androidMenu.labels, ['Custom']);
-      } else {
-        expect(find.text('Custom'), findsOneWidget);
-      }
+      expect(find.text('Custom'), findsOneWidget);
       expect(calls, isEmpty);
     },
     variant: TargetPlatformVariant({

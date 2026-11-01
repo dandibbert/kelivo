@@ -116,7 +116,19 @@ class WorldBookProvider with ChangeNotifier {
     final book = update(current);
     if (!book.enabled) {
       try {
-        await _store.removeBookFromBindings(book.id);
+        final map = await _store.getActiveIdsByAssistant();
+        final next = <String, List<String>>{};
+        bool changed = false;
+        for (final entry in map.entries) {
+          final filtered = entry.value
+              .where((e) => e != book.id)
+              .toList(growable: false);
+          if (filtered.length != entry.value.length) changed = true;
+          next[entry.key] = filtered;
+        }
+        if (changed) {
+          await _store.setActiveIdsMap(next);
+        }
       } catch (_) {}
     }
     await _store.update(book);
