@@ -6,6 +6,7 @@ import 'package:Kelivo/features/intelligent_ui/text/ui_search_text.dart';
 import '../../features/intelligent_ui/host/ui_context_submission.dart';
 import '../../features/intelligent_ui/models/ui_context_attachment.dart';
 import 'dart:async';
+import 'dart:collection';
 import '../../features/intelligent_ui/storage/ui_state_repository.dart';
 import '../../features/intelligent_ui/storage/ui_state_transfer.dart';
 import '../../features/intelligent_ui/host/ui_source_map.dart';
@@ -17,6 +18,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
@@ -31,6 +33,8 @@ import '../models/token_usage.dart';
 import '../models/conversation.dart';
 import '../models/conversation_mcp_settings.dart';
 import '../models/message_part.dart';
+import '../models/message_part_snapshot.dart';
+import '../models/tool_event_snapshot.dart';
 import '../utils/multimodal_input_utils.dart';
 import '../../utils/sandbox_path_resolver.dart';
 import '../../utils/kelivo_file_uri.dart';
@@ -46,6 +50,7 @@ import 'chat_database_observer.dart';
 import 'generation_run.dart';
 import 'generation_run_commands.dart';
 import 'schema_migrations.dart';
+import '../services/storage/storage_space.dart';
 import 'gen_ui_derived_schema.dart';
 import '../services/api/stream/stream_chunk_handler.dart';
 import '../services/api/providers/claude/claude_thinking_recovery.dart';
@@ -429,7 +434,8 @@ class ChatDatabaseRepository {
     final int schemaVersion;
     try {
       schemaVersion = SchemaMigrations.readSchemaVersion(file);
-    } on sqlite.SqliteException {
+    } on sqlite.SqliteException catch (error) {
+      if (InsufficientStorageSpace.causedBy(error)) rethrow;
       throw StateError('database_corrupt');
     }
 
@@ -442,7 +448,8 @@ class ChatDatabaseRepository {
         // Deliberately validated only at the current schema; see
         // _validateRawStructure.
         _validateRawStructure(database);
-      } on sqlite.SqliteException {
+      } on sqlite.SqliteException catch (error) {
+        if (InsufficientStorageSpace.causedBy(error)) rethrow;
         throw StateError('database_corrupt');
       } finally {
         database.close();
@@ -458,6 +465,12 @@ class ChatDatabaseRepository {
       throw StateError('database_schema_version');
     }
 
+    // Recheck on every attempt, including installations already copied by an
+    // earlier build. Never start the checkpoint/backup with a known shortfall.
+    await InsufficientStorageSpace.require(
+      64 * 1024 * 1024 + await SchemaMigrations.additionalUpgradeBytes(file),
+    );
+
     final resolvedDurability = durability ?? RestorePlatformDurability();
     final parent = file.absolute.parent;
     final backup = File(
@@ -472,7 +485,8 @@ class ChatDatabaseRepository {
       } finally {
         database.close();
       }
-    } on sqlite.SqliteException {
+    } on sqlite.SqliteException catch (error) {
+      if (InsufficientStorageSpace.causedBy(error)) rethrow;
       throw StateError('database_corrupt');
     }
 
@@ -493,7 +507,7 @@ class ChatDatabaseRepository {
       } finally {
         database.close();
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
       // The copy is deliberately LEFT BEHIND. Between deleting the database
       // family and finishing the copy back there is no usable database on
       // disk, so the copy is the only surviving good state and must outlive
@@ -504,6 +518,9 @@ class ChatDatabaseRepository {
         target: file,
         durability: resolvedDurability,
       );
+      if (InsufficientStorageSpace.causedBy(error)) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
       throw StateError('database_migration_failed:$schemaVersion');
     }
 
@@ -5351,7 +5368,17 @@ class ChatDatabaseRepository {
   Future<void> _replaceMessageParts(
     ChatMessage message, {
     List<Map<String, dynamic>>? toolEvents,
+    bool streamingCheckpoint = false,
   }) async {
+    // Other writers (edits, imports, recovery) invalidate the streaming base
+    // immediately. A rollback only costs a cache miss, never skipped writes.
+    if (!streamingCheckpoint) {
+      _checkpointParts.remove(message.id);
+      _checkpointRoundPayloads.remove(message.id);
+      _checkpointProjections.remove(message.id);
+    }
+    final baseline = _checkpointParts[message.id];
+    final baselineRounds = _checkpointRoundPayloads[message.id];
     final originalMessage = message;
     // A mid-stream reasoning pause is not a reasoning removal: the checkpoint
     // snapshot still carries the pre-allocated reasoningStartAt timestamp, so
@@ -5393,19 +5420,35 @@ class ChatDatabaseRepository {
               row.ordinal.isBiggerOrEqualValue(parts.length),
         ))
         .go();
-    var ordinal = 0;
     final now = DateTime.now().toUtc();
     final updatedAt = now.isBefore(message.timestamp) ? message.timestamp : now;
+    final roundPayloads = <int, String>{};
     await _db.batch((batch) {
-      for (final part in parts) {
+      for (var ordinal = 0; ordinal < parts.length; ordinal++) {
+        final part = parts[ordinal];
+        // Provider replay details can hold a live nested list until Finish.
+        // Compare with the bytes submitted, never a shared mutable list.
+        final roundPayload = part is AssistantRoundEndPart
+            ? part.encodePayload()
+            : null;
+        if (roundPayload != null) roundPayloads[ordinal] = roundPayload;
+        if (baseline != null &&
+            baseline.conversationId == message.conversationId &&
+            baseline.timestamp == message.timestamp &&
+            ordinal < baseline.parts.length &&
+            baseline.parts[ordinal] == part &&
+            (roundPayload == null ||
+                baselineRounds?[ordinal] == roundPayload)) {
+          continue;
+        }
         batch.insert(
           _db.messagePartRows,
           MessagePartRowsCompanion.insert(
             conversationId: message.conversationId,
             revisionId: message.id,
-            ordinal: ordinal++,
+            ordinal: ordinal,
             kind: part.kind,
-            payload: part.encodePayload(),
+            payload: roundPayload ?? part.encodePayload(),
             createdAt: message.timestamp,
             updatedAt: updatedAt,
           ),
@@ -5430,6 +5473,23 @@ class ChatDatabaseRepository {
         );
       }
     });
+    if (streamingCheckpoint) {
+      genUiStates.afterCommit(() {
+        _checkpointParts.remove(message.id);
+        _checkpointRoundPayloads.remove(message.id);
+        if (!message.isStreaming) _checkpointProjections.remove(message.id);
+        if (message.isStreaming) {
+          _checkpointParts[message.id] = message.copyWith(parts: parts);
+          _checkpointRoundPayloads[message.id] = roundPayloads;
+          // Bounded acceleration only; an evicted base is written in full.
+          while (_checkpointParts.length > 16) {
+            final oldest = _checkpointParts.keys.first;
+            _checkpointParts.remove(oldest);
+            _checkpointRoundPayloads.remove(oldest);
+          }
+        }
+      });
+    }
     if (!message.isStreaming && UiMessageSource.of(parts).hasCandidate) {
       await _sealGenUiSearch([message.id]);
     }
@@ -6846,7 +6906,11 @@ class ChatDatabaseRepository {
       // Keep message_rows (incl. is_streaming) ahead of parts rewrite so the
       // FTS finalize trigger indexes the pre-rewrite text part correctly.
       await _updateMessageRow(message);
-      await _replaceMessageParts(message, toolEvents: toolEvents);
+      await _replaceMessageParts(
+        message,
+        toolEvents: toolEvents,
+        streamingCheckpoint: true,
+      );
       if (generationRunId != null && checkpointSeq != null) {
         await GenerationRunCommands(_db).checkpoint(
           id: generationRunId,
@@ -6857,6 +6921,9 @@ class ChatDatabaseRepository {
       }
     });
   }
+
+  final _checkpointParts = <String, ChatMessage>{};
+  final _checkpointRoundPayloads = <String, Map<int, String>>{};
 
   @Deprecated('legacy/test only; rewrites the complete conversation order')
   Future<void> updateConversationMessages({
@@ -7911,6 +7978,33 @@ class ChatDatabaseRepository {
     ChatMessage message,
     List<Map<String, dynamic>>? toolEvents,
   ) {
+    final source = message.parts;
+    final cached = _checkpointProjections[message.id];
+    if (source is MessagePartSnapshot &&
+        (toolEvents == null || toolEvents is ToolEventSnapshot) &&
+        cached != null &&
+        identical(cached.events, toolEvents) &&
+        cached.reasoningText == message.reasoningText &&
+        source.length == cached.source.length) {
+      final changed = source.changesSince(cached.source);
+      if (changed != null &&
+          changed.every(
+            (index) =>
+                source[index] is TextPart && cached.source[index] is TextPart,
+          )) {
+        final result = List<MessagePart>.of(cached.parts);
+        for (final index in changed) {
+          result[index] = source[index];
+        }
+        _checkpointProjections[message.id] = (
+          source: source,
+          events: toolEvents,
+          reasoningText: message.reasoningText,
+          parts: result,
+        );
+        return result;
+      }
+    }
     var parts = List<MessagePart>.of(message.parts);
     if (!parts.any((part) => part is ReasoningPart)) {
       final reasoning = message.reasoningText;
@@ -7931,13 +8025,37 @@ class ChatDatabaseRepository {
     if (parts.isEmpty) {
       return <MessagePart>[TextPart(message.content)];
     }
+    if (source is MessagePartSnapshot && parts.length == source.length) {
+      _checkpointProjections.remove(message.id);
+      _checkpointProjections[message.id] = (
+        source: source,
+        events: toolEvents,
+        reasoningText: message.reasoningText,
+        parts: parts,
+      );
+      while (_checkpointProjections.length > 16) {
+        _checkpointProjections.remove(_checkpointProjections.keys.first);
+      }
+    }
     return parts;
   }
+
+  final _checkpointProjections =
+      <
+        String,
+        ({
+          MessagePartSnapshot source,
+          List<Map<String, dynamic>>? events,
+          String? reasoningText,
+          List<MessagePart> parts,
+        })
+      >{};
 
   List<MessagePart> _applyToolEventsToParts(
     List<MessagePart> parts,
     List<Map<String, dynamic>> toolEvents,
   ) {
+    if (toolEvents.isEmpty) return parts;
     final partCount = parts.whereType<ToolCallPart>().length;
     if (partCount != toolEvents.length) {
       debugPrint(
@@ -7945,14 +8063,18 @@ class ChatDatabaseRepository {
         'parts=$partCount',
       );
     }
-    final unused = [for (final event in toolEvents) event];
+    final byId = <String, Queue<int>>{};
+    final used = List<bool>.filled(toolEvents.length, false);
+    for (var i = 0; i < toolEvents.length; i++) {
+      final id = (toolEvents[i]['id'] ?? '').toString();
+      if (id.isNotEmpty) (byId[id] ??= Queue<int>()).add(i);
+    }
     Map<String, dynamic>? takeById(String id) {
-      if (id.isEmpty) return null;
-      final index = unused.indexWhere(
-        (event) => (event['id'] ?? '').toString() == id,
-      );
-      if (index < 0) return null;
-      return unused.removeAt(index);
+      final queue = byId[id];
+      if (queue == null || queue.isEmpty) return null;
+      final index = queue.removeFirst();
+      used[index] = true;
+      return toolEvents[index];
     }
 
     final matchedByPart = List<Map<String, dynamic>?>.filled(
@@ -7962,16 +8084,23 @@ class ChatDatabaseRepository {
     for (var i = 0; i < parts.length; i++) {
       final part = parts[i];
       if (part is! ToolCallPart) continue;
-      final partId = _toolCallPartId(part) ?? '';
+      final partId = (_decodedToolPayload(part)['id'] ?? '').toString();
       if (partId.isEmpty) continue;
       matchedByPart[i] = takeById(partId);
     }
+    var cursor = 0;
     for (var i = 0; i < parts.length; i++) {
       final part = parts[i];
       if (part is! ToolCallPart) continue;
-      if ((_toolCallPartId(part) ?? '').isNotEmpty) continue;
-      if (unused.isEmpty) break;
-      matchedByPart[i] = unused.removeAt(0);
+      if ((_decodedToolPayload(part)['id'] ?? '').toString().isNotEmpty) {
+        continue;
+      }
+      while (cursor < used.length && used[cursor]) {
+        cursor++;
+      }
+      if (cursor == used.length) break;
+      used[cursor] = true;
+      matchedByPart[i] = toolEvents[cursor++];
     }
 
     final out = <MessagePart>[];
@@ -7984,16 +8113,23 @@ class ChatDatabaseRepository {
       }
       final matched = matchedByPart[i];
       if (matched != null) {
-        out.add(ToolCallPart(jsonEncode(_mergeToolPayload(part, matched))));
+        final base = _decodedToolPayload(part);
+        final merged = _mergeToolPayload(base, matched);
+        out.add(
+          const DeepCollectionEquality().equals(base, merged)
+              ? part
+              : ToolCallPart(jsonEncode(merged)),
+        );
       } else {
         out.add(part);
       }
       lastToolIndex = out.length - 1;
     }
-    if (unused.isNotEmpty) {
-      final extras = [
-        for (final event in unused) ToolCallPart(jsonEncode(event)),
-      ];
+    final extras = [
+      for (var i = 0; i < toolEvents.length; i++)
+        if (!used[i]) ToolCallPart(jsonEncode(toolEvents[i])),
+    ];
+    if (extras.isNotEmpty) {
       final insertAt = lastToolIndex >= 0 ? lastToolIndex + 1 : out.length;
       out.insertAll(insertAt, extras);
     }
@@ -8001,16 +8137,9 @@ class ChatDatabaseRepository {
   }
 
   Map<String, dynamic> _mergeToolPayload(
-    ToolCallPart part,
+    Map<String, dynamic> base,
     Map<String, dynamic> event,
   ) {
-    Map<String, dynamic> base = const <String, dynamic>{};
-    try {
-      final decoded = jsonDecode(part.payloadJson);
-      if (decoded is Map) {
-        base = Map<String, dynamic>.from(decoded);
-      }
-    } catch (_) {}
     final merged = Map<String, dynamic>.from(base);
     for (final entry in event.entries) {
       if (_isEmptyToolOverlay(entry.value) &&
@@ -8068,15 +8197,20 @@ class ChatDatabaseRepository {
     return null;
   }
 
-  String? _toolCallPartId(ToolCallPart part) {
+  final _toolPayloads = Expando<Map<String, dynamic>>(
+    'checkpoint tool payload',
+  );
+
+  Map<String, dynamic> _decodedToolPayload(ToolCallPart part) {
+    final cached = _toolPayloads[part];
+    if (cached != null) return cached;
     try {
       final decoded = jsonDecode(part.payloadJson);
       if (decoded is Map) {
-        final id = (decoded['id'] ?? '').toString();
-        return id.isEmpty ? null : id;
+        return _toolPayloads[part] = Map<String, dynamic>.from(decoded);
       }
     } catch (_) {}
-    return null;
+    return _toolPayloads[part] = const <String, dynamic>{};
   }
 
   MessagePart _hydratePart({

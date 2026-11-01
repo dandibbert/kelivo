@@ -2764,6 +2764,132 @@ abstract class AppLocalizations {
   /// **'Copy'**
   String get assistantSettingsCopySuffix;
 
+  /// No description provided for @assistantCopyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy assistant'**
+  String get assistantCopyTitle;
+
+  /// No description provided for @assistantCopyDefaultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what to copy, or copy everything.'**
+  String get assistantCopyDefaultHint;
+
+  /// No description provided for @assistantCopyConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant configuration'**
+  String get assistantCopyConfiguration;
+
+  /// No description provided for @assistantCopyConfigurationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Always included: name, avatar, prompts, model, parameters, and preset messages.'**
+  String get assistantCopyConfigurationHint;
+
+  /// No description provided for @assistantCopyMemories.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant memories'**
+  String get assistantCopyMemories;
+
+  /// No description provided for @assistantCopyMemoriesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes current and legacy memories, preserving archived status. Global memories remain shared.'**
+  String get assistantCopyMemoriesHint;
+
+  /// No description provided for @assistantCopyChooseMemories.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose memories'**
+  String get assistantCopyChooseMemories;
+
+  /// No description provided for @assistantCopyChooseEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose entries'**
+  String get assistantCopyChooseEntries;
+
+  /// No description provided for @assistantCopyPhrasesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy this assistant’s phrases. Global phrases remain shared.'**
+  String get assistantCopyPhrasesHint;
+
+  /// No description provided for @assistantCopyBindingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These options reuse existing resources; workspace files are not copied. Unselected world books and injections use global defaults.'**
+  String get assistantCopyBindingsHint;
+
+  /// No description provided for @assistantCopyWorldBooks.
+  ///
+  /// In en, this message translates to:
+  /// **'World book bindings'**
+  String get assistantCopyWorldBooks;
+
+  /// No description provided for @assistantCopySkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill selection'**
+  String get assistantCopySkills;
+
+  /// No description provided for @assistantCopyTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool and search settings'**
+  String get assistantCopyTools;
+
+  /// No description provided for @assistantCopyWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Default workspace binding'**
+  String get assistantCopyWorkspace;
+
+  /// No description provided for @assistantCopyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy everything'**
+  String get assistantCopyAll;
+
+  /// No description provided for @assistantCopyInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Copying…'**
+  String get assistantCopyInProgress;
+
+  /// No description provided for @assistantCopyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not copy the assistant. Your original data is unchanged. Please try again.'**
+  String get assistantCopyFailed;
+
+  /// No description provided for @assistantCopyMemoryLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load memories. Please try again.'**
+  String get assistantCopyMemoryLoadFailed;
+
+  /// No description provided for @assistantCopyRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get assistantCopyRetry;
+
+  /// No description provided for @assistantCopyNoMemories.
+  ///
+  /// In en, this message translates to:
+  /// **'This assistant has no personal memories to copy.'**
+  String get assistantCopyNoMemories;
+
+  /// No description provided for @assistantCopySelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all memories'**
+  String get assistantCopySelectAll;
+
   /// No description provided for @assistantSettingsDeleteButton.
   ///
   /// In en, this message translates to:
@@ -3325,7 +3451,7 @@ abstract class AppLocalizations {
   /// No description provided for @startupRecoveryResetButton.
   ///
   /// In en, this message translates to:
-  /// **'Reset data'**
+  /// **'Start with an empty chat list'**
   String get startupRecoveryResetButton;
 
   /// No description provided for @startupRecoveryBusy.
@@ -3361,19 +3487,19 @@ abstract class AppLocalizations {
   /// No description provided for @startupRecoveryResetDialogTitle.
   ///
   /// In en, this message translates to:
-  /// **'Reset all data?'**
+  /// **'Start with an empty chat list?'**
   String get startupRecoveryResetDialogTitle;
 
   /// No description provided for @startupRecoveryResetDialogContent.
   ///
   /// In en, this message translates to:
-  /// **'Start with a new empty database? The current database, its journals and existing copies will be retained for recovery.'**
+  /// **'This will not recover your previous chats. Kelivo will keep the current database and existing copies, and start a new empty chat list. To get your chats back, cancel and choose a local copy.'**
   String get startupRecoveryResetDialogContent;
 
   /// No description provided for @startupRecoveryResetDialogConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Reset and restart'**
+  /// **'Keep copies and start fresh'**
   String get startupRecoveryResetDialogConfirm;
 
   /// No description provided for @startupRecoveryResetDialogCancel.
@@ -3505,7 +3631,7 @@ abstract class AppLocalizations {
   /// No description provided for @startupRecoverySectionDataBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing has been deleted. Save a copy somewhere safe before trying anything below.'**
+  /// **'You can also export the remaining data and keep it somewhere safe before continuing.'**
   String get startupRecoverySectionDataBody;
 
   /// No description provided for @startupRecoveryExportSavedTo.
@@ -3559,7 +3685,7 @@ abstract class AppLocalizations {
   /// No description provided for @startupRecoveryDangerZone.
   ///
   /// In en, this message translates to:
-  /// **'Danger zone'**
+  /// **'Other options'**
   String get startupRecoveryDangerZone;
 
   /// No description provided for @startupRecoveryDangerBody.
@@ -3571,7 +3697,7 @@ abstract class AppLocalizations {
   /// No description provided for @startupRecoveryResetAcknowledge.
   ///
   /// In en, this message translates to:
-  /// **'I want to start with a new empty database.'**
+  /// **'I choose to continue with an empty chat list without recovering my chats now.'**
   String get startupRecoveryResetAcknowledge;
 
   /// No description provided for @startupDatabaseUpdateRequiredTitle.
@@ -8740,7 +8866,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchServicesPageWebFetchFooter.
   ///
   /// In en, this message translates to:
-  /// **'With web search on, the model can also read full pages. When the search service can\'t read pages, local reading is used, which can\'t handle pages that need JavaScript or block bots.'**
+  /// **'With web search on, the model can also read full pages. When the search service can\'t read pages, local reading is used, which can\'t handle pages that need JavaScript or block bots.\n\nIf you use the page reader configured here, disable the built-in @kelivo/fetch in Settings → MCP to avoid overlapping tools. The page reader configured here will still work.'**
   String get searchServicesPageWebFetchFooter;
 
   /// No description provided for @searchServicesPageWebFetchSupported.
@@ -21792,7 +21918,7 @@ abstract class AppLocalizations {
   /// No description provided for @startupRecoverySnapshotTitle.
   ///
   /// In en, this message translates to:
-  /// **'Restore from a database snapshot'**
+  /// **'Recover from a local copy'**
   String get startupRecoverySnapshotTitle;
 
   /// No description provided for @startupRecoverySnapshotBody.
@@ -21810,7 +21936,7 @@ abstract class AppLocalizations {
   /// No description provided for @startupRecoverySnapshotButton.
   ///
   /// In en, this message translates to:
-  /// **'Choose a snapshot'**
+  /// **'Choose a copy to recover'**
   String get startupRecoverySnapshotButton;
 
   /// No description provided for @startupRecoverySnapshotConfirm.
@@ -22719,6 +22845,96 @@ abstract class AppLocalizations {
   /// **'Could not connect. Check your network and try again.'**
   String get oauthNetworkError;
 
+  /// No description provided for @oauthDnsError.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS lookup failed. Check your network or proxy DNS settings.'**
+  String get oauthDnsError;
+
+  /// No description provided for @oauthTlsError.
+  ///
+  /// In en, this message translates to:
+  /// **'The TLS connection failed. Check the certificates used by your network or proxy.'**
+  String get oauthTlsError;
+
+  /// No description provided for @oauthProxyError.
+  ///
+  /// In en, this message translates to:
+  /// **'The proxy connection failed. Check your proxy address and authentication settings.'**
+  String get oauthProxyError;
+
+  /// No description provided for @oauthConnectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection failed or was interrupted. Check your network or proxy settings.'**
+  String get oauthConnectionError;
+
+  /// No description provided for @oauthConnectionTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to the server timed out. Check your network or proxy settings.'**
+  String get oauthConnectionTimeout;
+
+  /// No description provided for @oauthSendTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending the request timed out. Check your network and try again.'**
+  String get oauthSendTimeout;
+
+  /// No description provided for @oauthReceiveTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the server response timed out. Please try again.'**
+  String get oauthReceiveTimeout;
+
+  /// No description provided for @oauthRequestTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out. Check your network or proxy settings and try again.'**
+  String get oauthRequestTimeout;
+
+  /// No description provided for @oauthFailureStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed at: {stage}'**
+  String oauthFailureStage(String stage);
+
+  /// No description provided for @oauthStageRequestDeviceCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting a device code'**
+  String get oauthStageRequestDeviceCode;
+
+  /// No description provided for @oauthStageWaitDeviceAuthorization.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for device authorization'**
+  String get oauthStageWaitDeviceAuthorization;
+
+  /// No description provided for @oauthStagePrepareBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing browser sign-in'**
+  String get oauthStagePrepareBrowser;
+
+  /// No description provided for @oauthStageBrowserAuthorization.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser authorization and callback'**
+  String get oauthStageBrowserAuthorization;
+
+  /// No description provided for @oauthStageExchangeToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchanging the authorization code'**
+  String get oauthStageExchangeToken;
+
+  /// No description provided for @oauthStageRefreshToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing the login token'**
+  String get oauthStageRefreshToken;
+
   /// No description provided for @oauthInvalidResponse.
   ///
   /// In en, this message translates to:
@@ -22820,6 +23036,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Extra usage'**
   String get oauthExtraUsage;
+
+  /// No description provided for @oauthMonthlyTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly total'**
+  String get oauthMonthlyTotal;
+
+  /// No description provided for @oauthMonthlyCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly code'**
+  String get oauthMonthlyCode;
+
+  /// No description provided for @oauthSpendCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit spend cap'**
+  String get oauthSpendCap;
+
+  /// No description provided for @oauthOnDemand.
+  ///
+  /// In en, this message translates to:
+  /// **'On-demand quota'**
+  String get oauthOnDemand;
+
+  /// No description provided for @oauthQuotaAdvisory.
+  ///
+  /// In en, this message translates to:
+  /// **'For reference only: active weekly credits make this monthly limit uncertain.'**
+  String get oauthQuotaAdvisory;
+
+  /// No description provided for @oauthCreditsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} credits'**
+  String oauthCreditsValue(String value);
+
+  /// No description provided for @oauthRemainingValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining {value}'**
+  String oauthRemainingValue(String value);
 
   /// No description provided for @oauthPromptCachingHelp.
   ///
@@ -23967,7 +24225,7 @@ abstract class AppLocalizations {
   /// No description provided for @recoveryMissingDataBody.
   ///
   /// In en, this message translates to:
-  /// **'The current database is missing, but this device still contains previous data. Kelivo has paused startup and has not created an empty database. Your remaining files and copies are being preserved.'**
+  /// **'Kelivo could not find the current chat database. It has paused loading and has not created an empty database. We’ll look for previous copies below; existing files will be kept.'**
   String get recoveryMissingDataBody;
 
   /// No description provided for @recoveryEmptyDataTitle.
@@ -23979,19 +24237,19 @@ abstract class AppLocalizations {
   /// No description provided for @recoveryEmptyDataBody.
   ///
   /// In en, this message translates to:
-  /// **'The current database has no conversations, but previous copies were found. Kelivo has paused startup so you can recover a copy or explicitly keep the current data. Nothing will be overwritten automatically.'**
+  /// **'The current chat list is empty, and previous copies were found. Choose a copy below to recover your chats. Existing files will be kept.'**
   String get recoveryEmptyDataBody;
 
   /// No description provided for @recoveryKeepCurrent.
   ///
   /// In en, this message translates to:
-  /// **'Keep current data and continue'**
+  /// **'Continue with an empty chat list'**
   String get recoveryKeepCurrent;
 
   /// No description provided for @recoveryKeepCurrentConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Continue with the current empty database? Previous copies will remain available for recovery later.'**
+  /// **'This continues without recovering your previous chats. The current chat list will stay empty; old copies will be kept. If you want your chats back, cancel and choose a local copy.'**
   String get recoveryKeepCurrentConfirm;
 
   /// No description provided for @recoverySearchingCopies.
@@ -24033,7 +24291,7 @@ abstract class AppLocalizations {
   /// No description provided for @recoveryStorageFailureBody.
   ///
   /// In en, this message translates to:
-  /// **'Kelivo could not activate its protected data storage. Startup has stopped and the original data has been kept. Export a copy of your data or retry; no empty database will be created.'**
+  /// **'The data update could not finish. The original data has been kept. Try reopening Kelivo, or choose a local copy below to recover.'**
   String get recoveryStorageFailureBody;
 
   /// No description provided for @recoveryProtectingTitle.
@@ -24075,7 +24333,7 @@ abstract class AppLocalizations {
   /// No description provided for @recoveryStorageInsufficientSpaceBody.
   ///
   /// In en, this message translates to:
-  /// **'There is not enough free space to keep the original database and create its verified internal copy. Existing data and snapshots are unchanged. Free some space, then retry.'**
+  /// **'There is not enough storage to safely prepare your data. Free space in system settings, then reopen Kelivo or recheck the copies below. Keep Kelivo installed and leave its data and local copies in place.'**
   String get recoveryStorageInsufficientSpaceBody;
 
   /// No description provided for @migrationFreshStartTitle.
@@ -27965,6 +28223,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get retry;
+
+  /// No description provided for @recoveryGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let’s recover your chats'**
+  String get recoveryGuideTitle;
+
+  /// No description provided for @recoveryGuideBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo paused loading your data. We’ll look for local copies so you can choose what to recover. Existing files will be kept.'**
+  String get recoveryGuideBody;
+
+  /// No description provided for @recoverySpaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Some free space is needed'**
+  String get recoverySpaceTitle;
+
+  /// No description provided for @recoveryChecksNeedSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Local copies were found, but there is not enough space to check them. This does not mean they are damaged. Free some space, then check again.'**
+  String get recoveryChecksNeedSpace;
+
+  /// No description provided for @recoveryChecksUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Some local copies could not be checked yet. Their files are still available. Check again, or export your data for help.'**
+  String get recoveryChecksUnavailable;
+
+  /// No description provided for @recoveryRecheckCopies.
+  ///
+  /// In en, this message translates to:
+  /// **'Check local copies again'**
+  String get recoveryRecheckCopies;
+
+  /// No description provided for @recoveryCopyPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy preview'**
+  String get recoveryCopyPreview;
+
+  /// No description provided for @recoveryRestoreRetryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The restore could not be completed. The selected copy has been kept. Check local copies again or reopen Kelivo to continue.'**
+  String get recoveryRestoreRetryBody;
+
+  /// No description provided for @recoverySpaceAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Last check: {available} available; at least {required} of free space is needed to prepare your data safely.'**
+  String recoverySpaceAmount(String required, String available);
+
+  /// No description provided for @recoveryCopiesNeedUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Some copies were made by a newer version of Kelivo. Update Kelivo before restoring them. These copies have been kept.'**
+  String get recoveryCopiesNeedUpdate;
 }
 
 class _AppLocalizationsDelegate

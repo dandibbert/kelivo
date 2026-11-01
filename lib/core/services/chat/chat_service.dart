@@ -46,6 +46,7 @@ import '../../../utils/sandbox_path_resolver.dart';
 import '../../../utils/app_directories.dart';
 import '../mcp/mcp_image_snapshot.dart';
 import '../storage/storage_image_usage.dart';
+import '../storage/attachment_file_lock.dart';
 
 part 'chat_context_operations.dart';
 
@@ -2472,7 +2473,10 @@ class ChatService extends ChangeNotifier {
     await _repo.resetStaleStreamingState();
   }
 
-  Future<void> runAssetMaintenance({DateTime? now}) async {
+  Future<void> runAssetMaintenance({DateTime? now}) =>
+      AttachmentFileLock.synchronized(() => _runAssetMaintenance(now: now));
+
+  Future<void> _runAssetMaintenance({DateTime? now}) async {
     final effectiveNow = (now ?? DateTime.now()).toUtc();
     try {
       await _repo.scheduleUnreferencedAssetGc(
@@ -4809,10 +4813,11 @@ class ChatService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _deleteUploadDirectory() async {
-    final uploadDir = await AppDirectories.getUploadDirectory();
-    if (await uploadDir.exists()) await uploadDir.delete(recursive: true);
-  }
+  Future<void> _deleteUploadDirectory() =>
+      AttachmentFileLock.synchronized(() async {
+        final uploadDir = await AppDirectories.getUploadDirectory();
+        if (await uploadDir.exists()) await uploadDir.delete(recursive: true);
+      });
 
   // Uploads stats: count and total size of files under app documents/upload
   Future<UploadStats> getUploadStats() async {

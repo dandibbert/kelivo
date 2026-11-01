@@ -1400,6 +1400,70 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantSettingsCopySuffix => '副本';
 
   @override
+  String get assistantCopyTitle => '复制助手';
+
+  @override
+  String get assistantCopyDefaultHint => '选择复制范围，或直接全量复制。';
+
+  @override
+  String get assistantCopyConfiguration => '助手配置';
+
+  @override
+  String get assistantCopyConfigurationHint => '始终复制名称、头像、提示词、模型、参数及预设消息等配置。';
+
+  @override
+  String get assistantCopyMemories => '助手专属记忆';
+
+  @override
+  String get assistantCopyMemoriesHint => '包含新旧两套专属记忆，保留归档状态；全局记忆继续共享。';
+
+  @override
+  String get assistantCopyChooseMemories => '选择记忆条目';
+
+  @override
+  String get assistantCopyChooseEntries => '选择条目';
+
+  @override
+  String get assistantCopyPhrasesHint => '复制此助手专属的快捷短语；全局短语继续共享。';
+
+  @override
+  String get assistantCopyBindingsHint =>
+      '以下仅复制绑定，不另建资源或复制工作区文件。世界书、指令注入未勾选时沿用全局默认。';
+
+  @override
+  String get assistantCopyWorldBooks => '世界书绑定';
+
+  @override
+  String get assistantCopySkills => '技能选择';
+
+  @override
+  String get assistantCopyTools => '工具与搜索设置';
+
+  @override
+  String get assistantCopyWorkspace => '默认工作区绑定';
+
+  @override
+  String get assistantCopyAll => '全量复制';
+
+  @override
+  String get assistantCopyInProgress => '正在复制…';
+
+  @override
+  String get assistantCopyFailed => '复制失败，原数据未改变，请重试。';
+
+  @override
+  String get assistantCopyMemoryLoadFailed => '无法加载记忆，请重试。';
+
+  @override
+  String get assistantCopyRetry => '重试';
+
+  @override
+  String get assistantCopyNoMemories => '此助手没有可复制的专属记忆。';
+
+  @override
+  String get assistantCopySelectAll => '全选记忆';
+
+  @override
   String get assistantSettingsDeleteButton => '删除';
 
   @override
@@ -1689,7 +1753,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get startupRecoveryExportButton => '导出我的数据副本';
 
   @override
-  String get startupRecoveryResetButton => '重置数据';
+  String get startupRecoveryResetButton => '从空列表重新开始';
 
   @override
   String get startupRecoveryBusy => '处理中…';
@@ -1708,14 +1772,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get startupRecoveryResetFailed => '重置失败。请彻底关闭 Kelivo 后重新打开。';
 
   @override
-  String get startupRecoveryResetDialogTitle => '重置全部数据？';
+  String get startupRecoveryResetDialogTitle => '确定从空列表重新开始？';
 
   @override
   String get startupRecoveryResetDialogContent =>
-      '开始使用新的空数据库？当前数据库及其日志文件、已有副本都会保留，供之后恢复。';
+      '这不会找回之前的聊天。Kelivo 会保留当前数据库和已有副本，建立新的空聊天列表。想找回聊天，请取消并选择本地副本恢复。';
 
   @override
-  String get startupRecoveryResetDialogConfirm => '重置并重启';
+  String get startupRecoveryResetDialogConfirm => '保留副本并重新开始';
 
   @override
   String get startupRecoveryResetDialogCancel => '取消';
@@ -1787,8 +1851,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get startupRecoverySectionDataTitle => '你的数据';
 
   @override
-  String get startupRecoverySectionDataBody =>
-      '目前没有任何数据被删除。在尝试下面的操作前，先把副本保存到安全的地方。';
+  String get startupRecoverySectionDataBody => '也可以先导出剩余数据，保存到安全的位置，再继续操作。';
 
   @override
   String startupRecoveryExportSavedTo(String path) {
@@ -1820,14 +1883,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get startupRecoveryIntegrityFailed => '完整性检查无法运行。';
 
   @override
-  String get startupRecoveryDangerZone => '危险操作';
+  String get startupRecoveryDangerZone => '其他选项';
 
   @override
   String get startupRecoveryDangerBody =>
       '重新开始后，当前数据将不再显示。Kelivo 会保留旧数据库和已有副本以供恢复，建议先导出一份数据副本。';
 
   @override
-  String get startupRecoveryResetAcknowledge => '我确认开始使用新的空数据库。';
+  String get startupRecoveryResetAcknowledge => '我确认暂不恢复聊天，继续使用空聊天列表。';
 
   @override
   String get startupDatabaseUpdateRequiredTitle => '请更新 Kelivo 以继续';
@@ -4601,7 +4664,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get searchServicesPageWebFetchFooter =>
-      '开启联网搜索后，模型还可以读取网页全文。搜索服务不支持抓取时会改用本地抓取，本地抓取无法处理需要 JavaScript 渲染或有反爬限制的页面。';
+      '开启联网搜索后，模型还可以读取网页全文。搜索服务不支持抓取时会改用本地抓取，本地抓取无法处理需要 JavaScript 渲染或有反爬限制的页面。\n\n如已使用此处的网页抓取，建议前往「设置 → MCP」关闭内置 @kelivo/fetch，避免模型混用两个抓取工具。此处配置的网页抓取仍可正常使用。';
 
   @override
   String get searchServicesPageWebFetchSupported => '支持网页抓取';
@@ -11647,7 +11710,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpImportConfirm => '导入';
 
   @override
-  String get startupRecoverySnapshotTitle => '从数据库快照恢复';
+  String get startupRecoverySnapshotTitle => '从本地副本找回';
 
   @override
   String get startupRecoverySnapshotBody =>
@@ -11657,7 +11720,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get startupRecoverySnapshotEmpty => '未在本机找到数据库快照。请先导出数据，再尝试其他恢复操作。';
 
   @override
-  String get startupRecoverySnapshotButton => '选择快照恢复';
+  String get startupRecoverySnapshotButton => '选择副本恢复记录';
 
   @override
   String startupRecoverySnapshotConfirm(String when) {
@@ -12146,6 +12209,53 @@ class AppLocalizationsZh extends AppLocalizations {
   String get oauthNetworkError => '连接失败，请检查网络后重试。';
 
   @override
+  String get oauthDnsError => 'DNS 解析失败，请检查网络或代理的 DNS 设置。';
+
+  @override
+  String get oauthTlsError => 'TLS 安全连接失败，请检查网络或代理的证书配置。';
+
+  @override
+  String get oauthProxyError => '代理连接失败，请检查代理地址和认证设置。';
+
+  @override
+  String get oauthConnectionError => '连接失败或中断，请检查网络或代理设置。';
+
+  @override
+  String get oauthConnectionTimeout => '连接服务器超时，请检查网络或代理设置。';
+
+  @override
+  String get oauthSendTimeout => '发送请求超时，请检查网络后重试。';
+
+  @override
+  String get oauthReceiveTimeout => '等待服务器响应超时，请重试。';
+
+  @override
+  String get oauthRequestTimeout => '请求超时，请检查网络或代理设置后重试。';
+
+  @override
+  String oauthFailureStage(String stage) {
+    return '失败阶段：$stage';
+  }
+
+  @override
+  String get oauthStageRequestDeviceCode => '申请设备码';
+
+  @override
+  String get oauthStageWaitDeviceAuthorization => '等待设备授权';
+
+  @override
+  String get oauthStagePrepareBrowser => '准备浏览器登录';
+
+  @override
+  String get oauthStageBrowserAuthorization => '浏览器授权与回调';
+
+  @override
+  String get oauthStageExchangeToken => '交换登录令牌';
+
+  @override
+  String get oauthStageRefreshToken => '刷新登录令牌';
+
+  @override
   String get oauthInvalidResponse => '授权未完成，请重试。';
 
   @override
@@ -12197,6 +12307,31 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get oauthExtraUsage => '额外用量';
+
+  @override
+  String get oauthMonthlyTotal => '本月总额度';
+
+  @override
+  String get oauthMonthlyCode => '本月代码额度';
+
+  @override
+  String get oauthSpendCap => '积分消费上限';
+
+  @override
+  String get oauthOnDemand => '按需额度';
+
+  @override
+  String get oauthQuotaAdvisory => '仅供参考：本周额度仍有效，暂无法确认该月额度是否限制使用。';
+
+  @override
+  String oauthCreditsValue(String value) {
+    return '$value 积分';
+  }
+
+  @override
+  String oauthRemainingValue(String value) {
+    return '剩余 $value';
+  }
 
   @override
   String get oauthPromptCachingHelp => '复用多轮对话中的上下文，可设置缓存保留时长。';
@@ -12816,20 +12951,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recoveryMissingDataBody =>
-      '当前数据库缺失，但设备上仍有旧数据。Kelivo 已暂停启动，没有新建空数据库，并保留现有文件和副本。';
+      '暂时找不到当前聊天数据库，Kelivo 已暂停载入，没有新建空数据库。我们会在下方查找旧副本，现有文件会保留。';
 
   @override
   String get recoveryEmptyDataTitle => '当前聊天记录为空';
 
   @override
   String get recoveryEmptyDataBody =>
-      '当前数据库没有对话，但发现了历史副本。Kelivo 已暂停启动，你可以恢复副本，也可以明确选择保留当前数据。应用不会自动覆盖数据。';
+      '当前聊天列表为空，但找到了旧副本。可以从下方选择副本找回聊天记录，现有文件会保留。';
 
   @override
-  String get recoveryKeepCurrent => '保留当前数据并继续';
+  String get recoveryKeepCurrent => '继续使用空聊天列表';
 
   @override
-  String get recoveryKeepCurrentConfirm => '继续使用当前空数据库？历史副本仍会保留，可以稍后恢复。';
+  String get recoveryKeepCurrentConfirm =>
+      '此操作不会找回之前的聊天，当前聊天列表将保持为空，旧副本会继续保留。如果想找回聊天，请取消并选择本地副本恢复。';
 
   @override
   String get recoverySearchingCopies => '正在查找并校验本机数据副本…';
@@ -12856,7 +12992,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recoveryStorageFailureBody =>
-      'Kelivo 未能启用受保护的数据存储，已暂停启动并保留原数据。可以导出数据副本或重试，应用不会因此新建空数据库。';
+      '数据更新暂时未能完成，原数据已保留。可以尝试重新打开 Kelivo，或选择下方的本地副本恢复。';
 
   @override
   String get recoveryProtectingTitle => '正在保护聊天数据库';
@@ -12880,7 +13016,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recoveryStorageInsufficientSpaceBody =>
-      '剩余空间不足，无法在保留原数据库的同时建立经过校验的内部副本。现有数据和快照均未改动，请腾出一些空间后重试。';
+      '存储空间不足，暂时无法安全地准备数据。请到系统设置释放一些空间，再重新打开 Kelivo，或重新检查下方的副本。请保留 Kelivo，不要删除它的数据和本地副本。';
 
   @override
   String get migrationFreshStartTitle => '已重新开始';
@@ -15026,6 +15162,43 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get retry => '重试';
+
+  @override
+  String get recoveryGuideTitle => '帮你找回聊天记录';
+
+  @override
+  String get recoveryGuideBody =>
+      'Kelivo 暂时无法载入数据，已暂停操作。我们会查找本地副本，供你选择恢复。现有文件会保留。';
+
+  @override
+  String get recoverySpaceTitle => '需要一些存储空间';
+
+  @override
+  String get recoveryChecksNeedSpace =>
+      '找到了本地副本，但空间不足，暂时无法检查。这不代表副本已损坏。释放一些空间后，可以重新检查。';
+
+  @override
+  String get recoveryChecksUnavailable =>
+      '部分本地副本暂时无法检查，文件仍然保留。可以重新检查，或导出数据副本寻求帮助。';
+
+  @override
+  String get recoveryRecheckCopies => '重新检查本地副本';
+
+  @override
+  String get recoveryCopyPreview => '副本预览';
+
+  @override
+  String get recoveryRestoreRetryBody =>
+      '这次恢复尚未完成，选中的副本已保留。可以重新检查本地副本，或重新打开 Kelivo 继续。';
+
+  @override
+  String recoverySpaceAmount(String required, String available) {
+    return '上次检查：可用空间 $available，安全准备数据至少需要预留 $required。';
+  }
+
+  @override
+  String get recoveryCopiesNeedUpdate =>
+      '部分副本来自更新版本的 Kelivo，请升级 App 后再恢复。这些副本仍然保留。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -16424,6 +16597,70 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get assistantSettingsCopySuffix => '副本';
 
   @override
+  String get assistantCopyTitle => '复制助手';
+
+  @override
+  String get assistantCopyDefaultHint => '选择复制范围，或直接全量复制。';
+
+  @override
+  String get assistantCopyConfiguration => '助手配置';
+
+  @override
+  String get assistantCopyConfigurationHint => '始终复制名称、头像、提示词、模型、参数及预设消息等配置。';
+
+  @override
+  String get assistantCopyMemories => '助手专属记忆';
+
+  @override
+  String get assistantCopyMemoriesHint => '包含新旧两套专属记忆，保留归档状态；全局记忆继续共享。';
+
+  @override
+  String get assistantCopyChooseMemories => '选择记忆条目';
+
+  @override
+  String get assistantCopyChooseEntries => '选择条目';
+
+  @override
+  String get assistantCopyPhrasesHint => '复制此助手专属的快捷短语；全局短语继续共享。';
+
+  @override
+  String get assistantCopyBindingsHint =>
+      '以下仅复制绑定，不另建资源或复制工作区文件。世界书、指令注入未勾选时沿用全局默认。';
+
+  @override
+  String get assistantCopyWorldBooks => '世界书绑定';
+
+  @override
+  String get assistantCopySkills => '技能选择';
+
+  @override
+  String get assistantCopyTools => '工具与搜索设置';
+
+  @override
+  String get assistantCopyWorkspace => '默认工作区绑定';
+
+  @override
+  String get assistantCopyAll => '全量复制';
+
+  @override
+  String get assistantCopyInProgress => '正在复制…';
+
+  @override
+  String get assistantCopyFailed => '复制失败，原数据未改变，请重试。';
+
+  @override
+  String get assistantCopyMemoryLoadFailed => '无法加载记忆，请重试。';
+
+  @override
+  String get assistantCopyRetry => '重试';
+
+  @override
+  String get assistantCopyNoMemories => '此助手没有可复制的专属记忆。';
+
+  @override
+  String get assistantCopySelectAll => '全选记忆';
+
+  @override
   String get assistantSettingsDeleteButton => '删除';
 
   @override
@@ -16713,7 +16950,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get startupRecoveryExportButton => '导出我的数据副本';
 
   @override
-  String get startupRecoveryResetButton => '重置数据';
+  String get startupRecoveryResetButton => '从空列表重新开始';
 
   @override
   String get startupRecoveryBusy => '处理中…';
@@ -16732,14 +16969,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get startupRecoveryResetFailed => '重置失败。请彻底关闭 Kelivo 后重新打开。';
 
   @override
-  String get startupRecoveryResetDialogTitle => '重置全部数据？';
+  String get startupRecoveryResetDialogTitle => '确定从空列表重新开始？';
 
   @override
   String get startupRecoveryResetDialogContent =>
-      '开始使用新的空数据库？当前数据库及其日志文件、已有副本都会保留，供之后恢复。';
+      '这不会找回之前的聊天。Kelivo 会保留当前数据库和已有副本，建立新的空聊天列表。想找回聊天，请取消并选择本地副本恢复。';
 
   @override
-  String get startupRecoveryResetDialogConfirm => '重置并重启';
+  String get startupRecoveryResetDialogConfirm => '保留副本并重新开始';
 
   @override
   String get startupRecoveryResetDialogCancel => '取消';
@@ -16811,8 +17048,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get startupRecoverySectionDataTitle => '你的数据';
 
   @override
-  String get startupRecoverySectionDataBody =>
-      '目前没有任何数据被删除。在尝试下面的操作前，先把副本保存到安全的地方。';
+  String get startupRecoverySectionDataBody => '也可以先导出剩余数据，保存到安全的位置，再继续操作。';
 
   @override
   String startupRecoveryExportSavedTo(String path) {
@@ -16844,14 +17080,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get startupRecoveryIntegrityFailed => '完整性检查无法运行。';
 
   @override
-  String get startupRecoveryDangerZone => '危险操作';
+  String get startupRecoveryDangerZone => '其他选项';
 
   @override
   String get startupRecoveryDangerBody =>
       '重新开始后，当前数据将不再显示。Kelivo 会保留旧数据库和已有副本以供恢复，建议先导出一份数据副本。';
 
   @override
-  String get startupRecoveryResetAcknowledge => '我确认开始使用新的空数据库。';
+  String get startupRecoveryResetAcknowledge => '我确认暂不恢复聊天，继续使用空聊天列表。';
 
   @override
   String get startupDatabaseUpdateRequiredTitle => '请更新 Kelivo 以继续';
@@ -19625,7 +19861,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get searchServicesPageWebFetchFooter =>
-      '开启联网搜索后，模型还可以读取网页全文。搜索服务不支持抓取时会改用本地抓取，本地抓取无法处理需要 JavaScript 渲染或有反爬限制的页面。';
+      '开启联网搜索后，模型还可以读取网页全文。搜索服务不支持抓取时会改用本地抓取，本地抓取无法处理需要 JavaScript 渲染或有反爬限制的页面。\n\n如已使用此处的网页抓取，建议前往「设置 → MCP」关闭内置 @kelivo/fetch，避免模型混用两个抓取工具。此处配置的网页抓取仍可正常使用。';
 
   @override
   String get searchServicesPageWebFetchSupported => '支持网页抓取';
@@ -26597,7 +26833,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get mcpImportConfirm => '导入';
 
   @override
-  String get startupRecoverySnapshotTitle => '从数据库快照恢复';
+  String get startupRecoverySnapshotTitle => '从本地副本找回';
 
   @override
   String get startupRecoverySnapshotBody =>
@@ -26607,7 +26843,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get startupRecoverySnapshotEmpty => '未在本机找到数据库快照。请先导出数据，再尝试其他恢复操作。';
 
   @override
-  String get startupRecoverySnapshotButton => '选择快照恢复';
+  String get startupRecoverySnapshotButton => '选择副本恢复记录';
 
   @override
   String startupRecoverySnapshotConfirm(String when) {
@@ -27096,6 +27332,53 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get oauthNetworkError => '连接失败，请检查网络后重试。';
 
   @override
+  String get oauthDnsError => 'DNS 解析失败，请检查网络或代理的 DNS 设置。';
+
+  @override
+  String get oauthTlsError => 'TLS 安全连接失败，请检查网络或代理的证书配置。';
+
+  @override
+  String get oauthProxyError => '代理连接失败，请检查代理地址和认证设置。';
+
+  @override
+  String get oauthConnectionError => '连接失败或中断，请检查网络或代理设置。';
+
+  @override
+  String get oauthConnectionTimeout => '连接服务器超时，请检查网络或代理设置。';
+
+  @override
+  String get oauthSendTimeout => '发送请求超时，请检查网络后重试。';
+
+  @override
+  String get oauthReceiveTimeout => '等待服务器响应超时，请重试。';
+
+  @override
+  String get oauthRequestTimeout => '请求超时，请检查网络或代理设置后重试。';
+
+  @override
+  String oauthFailureStage(String stage) {
+    return '失败阶段：$stage';
+  }
+
+  @override
+  String get oauthStageRequestDeviceCode => '申请设备码';
+
+  @override
+  String get oauthStageWaitDeviceAuthorization => '等待设备授权';
+
+  @override
+  String get oauthStagePrepareBrowser => '准备浏览器登录';
+
+  @override
+  String get oauthStageBrowserAuthorization => '浏览器授权与回调';
+
+  @override
+  String get oauthStageExchangeToken => '交换登录令牌';
+
+  @override
+  String get oauthStageRefreshToken => '刷新登录令牌';
+
+  @override
   String get oauthInvalidResponse => '授权未完成，请重试。';
 
   @override
@@ -27147,6 +27430,31 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get oauthExtraUsage => '额外用量';
+
+  @override
+  String get oauthMonthlyTotal => '本月总额度';
+
+  @override
+  String get oauthMonthlyCode => '本月代码额度';
+
+  @override
+  String get oauthSpendCap => '积分消费上限';
+
+  @override
+  String get oauthOnDemand => '按需额度';
+
+  @override
+  String get oauthQuotaAdvisory => '仅供参考：本周额度仍有效，暂无法确认该月额度是否限制使用。';
+
+  @override
+  String oauthCreditsValue(String value) {
+    return '$value 积分';
+  }
+
+  @override
+  String oauthRemainingValue(String value) {
+    return '剩余 $value';
+  }
 
   @override
   String get oauthPromptCachingHelp => '复用多轮对话中的上下文，可设置缓存保留时长。';
@@ -27766,20 +28074,21 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get recoveryMissingDataBody =>
-      '当前数据库缺失，但设备上仍有旧数据。Kelivo 已暂停启动，没有新建空数据库，并保留现有文件和副本。';
+      '暂时找不到当前聊天数据库，Kelivo 已暂停载入，没有新建空数据库。我们会在下方查找旧副本，现有文件会保留。';
 
   @override
   String get recoveryEmptyDataTitle => '当前聊天记录为空';
 
   @override
   String get recoveryEmptyDataBody =>
-      '当前数据库没有对话，但发现了历史副本。Kelivo 已暂停启动，你可以恢复副本，也可以明确选择保留当前数据。应用不会自动覆盖数据。';
+      '当前聊天列表为空，但找到了旧副本。可以从下方选择副本找回聊天记录，现有文件会保留。';
 
   @override
-  String get recoveryKeepCurrent => '保留当前数据并继续';
+  String get recoveryKeepCurrent => '继续使用空聊天列表';
 
   @override
-  String get recoveryKeepCurrentConfirm => '继续使用当前空数据库？历史副本仍会保留，可以稍后恢复。';
+  String get recoveryKeepCurrentConfirm =>
+      '此操作不会找回之前的聊天，当前聊天列表将保持为空，旧副本会继续保留。如果想找回聊天，请取消并选择本地副本恢复。';
 
   @override
   String get recoverySearchingCopies => '正在查找并校验本机数据副本…';
@@ -27806,7 +28115,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get recoveryStorageFailureBody =>
-      'Kelivo 未能启用受保护的数据存储，已暂停启动并保留原数据。可以导出数据副本或重试，应用不会因此新建空数据库。';
+      '数据更新暂时未能完成，原数据已保留。可以尝试重新打开 Kelivo，或选择下方的本地副本恢复。';
 
   @override
   String get recoveryProtectingTitle => '正在保护聊天数据库';
@@ -27830,7 +28139,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get recoveryStorageInsufficientSpaceBody =>
-      '剩余空间不足，无法在保留原数据库的同时建立经过校验的内部副本。现有数据和快照均未改动，请腾出一些空间后重试。';
+      '存储空间不足，暂时无法安全地准备数据。请到系统设置释放一些空间，再重新打开 Kelivo，或重新检查下方的副本。请保留 Kelivo，不要删除它的数据和本地副本。';
 
   @override
   String get migrationFreshStartTitle => '已重新开始';
@@ -29976,6 +30285,43 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get retry => '重试';
+
+  @override
+  String get recoveryGuideTitle => '帮你找回聊天记录';
+
+  @override
+  String get recoveryGuideBody =>
+      'Kelivo 暂时无法载入数据，已暂停操作。我们会查找本地副本，供你选择恢复。现有文件会保留。';
+
+  @override
+  String get recoverySpaceTitle => '需要一些存储空间';
+
+  @override
+  String get recoveryChecksNeedSpace =>
+      '找到了本地副本，但空间不足，暂时无法检查。这不代表副本已损坏。释放一些空间后，可以重新检查。';
+
+  @override
+  String get recoveryChecksUnavailable =>
+      '部分本地副本暂时无法检查，文件仍然保留。可以重新检查，或导出数据副本寻求帮助。';
+
+  @override
+  String get recoveryRecheckCopies => '重新检查本地副本';
+
+  @override
+  String get recoveryCopyPreview => '副本预览';
+
+  @override
+  String get recoveryRestoreRetryBody =>
+      '这次恢复尚未完成，选中的副本已保留。可以重新检查本地副本，或重新打开 Kelivo 继续。';
+
+  @override
+  String recoverySpaceAmount(String required, String available) {
+    return '上次检查：可用空间 $available，安全准备数据至少需要预留 $required。';
+  }
+
+  @override
+  String get recoveryCopiesNeedUpdate =>
+      '部分副本来自更新版本的 Kelivo，请升级 App 后再恢复。这些副本仍然保留。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -31374,6 +31720,70 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get assistantSettingsCopySuffix => '副本';
 
   @override
+  String get assistantCopyTitle => '複製助手';
+
+  @override
+  String get assistantCopyDefaultHint => '選擇複製範圍，或直接完整複製。';
+
+  @override
+  String get assistantCopyConfiguration => '助手設定';
+
+  @override
+  String get assistantCopyConfigurationHint => '一律複製名稱、頭像、提示詞、模型、參數及預設訊息等設定。';
+
+  @override
+  String get assistantCopyMemories => '助手專屬記憶';
+
+  @override
+  String get assistantCopyMemoriesHint => '包含新舊兩套專屬記憶，保留封存狀態；全域記憶繼續共用。';
+
+  @override
+  String get assistantCopyChooseMemories => '選擇記憶項目';
+
+  @override
+  String get assistantCopyChooseEntries => '選擇項目';
+
+  @override
+  String get assistantCopyPhrasesHint => '複製此助手專屬的快捷短語；全域短語繼續共用。';
+
+  @override
+  String get assistantCopyBindingsHint =>
+      '以下僅複製綁定，不另建資源或複製工作區檔案。世界書、指令注入未勾選時沿用全域預設。';
+
+  @override
+  String get assistantCopyWorldBooks => '世界書綁定';
+
+  @override
+  String get assistantCopySkills => '技能選擇';
+
+  @override
+  String get assistantCopyTools => '工具與搜尋設定';
+
+  @override
+  String get assistantCopyWorkspace => '預設工作區綁定';
+
+  @override
+  String get assistantCopyAll => '完整複製';
+
+  @override
+  String get assistantCopyInProgress => '正在複製…';
+
+  @override
+  String get assistantCopyFailed => '複製失敗，原始資料未變更，請重試。';
+
+  @override
+  String get assistantCopyMemoryLoadFailed => '無法載入記憶，請重試。';
+
+  @override
+  String get assistantCopyRetry => '重試';
+
+  @override
+  String get assistantCopyNoMemories => '此助手沒有可複製的專屬記憶。';
+
+  @override
+  String get assistantCopySelectAll => '全選記憶';
+
+  @override
   String get assistantSettingsDeleteButton => '刪除';
 
   @override
@@ -31664,7 +32074,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get startupRecoveryExportButton => '匯出我的資料副本';
 
   @override
-  String get startupRecoveryResetButton => '重設資料';
+  String get startupRecoveryResetButton => '從空清單重新開始';
 
   @override
   String get startupRecoveryBusy => '處理中…';
@@ -31683,14 +32093,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get startupRecoveryResetFailed => '重設失敗。請完全關閉 Kelivo 後再重新開啟。';
 
   @override
-  String get startupRecoveryResetDialogTitle => '重設全部資料？';
+  String get startupRecoveryResetDialogTitle => '確定從空清單重新開始？';
 
   @override
   String get startupRecoveryResetDialogContent =>
-      '開始使用新的空資料庫？目前資料庫及其日誌檔案、既有副本都會保留，以供日後還原。';
+      '這不會找回之前的聊天。Kelivo 會保留目前的資料庫和已有副本，建立新的空聊天清單。想找回聊天，請取消並選擇本機副本還原。';
 
   @override
-  String get startupRecoveryResetDialogConfirm => '重設並重新啟動';
+  String get startupRecoveryResetDialogConfirm => '保留副本並重新開始';
 
   @override
   String get startupRecoveryResetDialogCancel => '取消';
@@ -31762,8 +32172,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get startupRecoverySectionDataTitle => '你的資料';
 
   @override
-  String get startupRecoverySectionDataBody =>
-      '目前沒有任何資料被刪除。在嘗試下方操作前，先把副本存到安全的地方。';
+  String get startupRecoverySectionDataBody => '也可以先匯出剩餘資料，儲存到安全的位置，再繼續操作。';
 
   @override
   String startupRecoveryExportSavedTo(String path) {
@@ -31795,14 +32204,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get startupRecoveryIntegrityFailed => '完整性檢查無法執行。';
 
   @override
-  String get startupRecoveryDangerZone => '危險操作';
+  String get startupRecoveryDangerZone => '其他選項';
 
   @override
   String get startupRecoveryDangerBody =>
       '重新開始後，目前資料將不再顯示。Kelivo 會保留舊資料庫與既有副本以供還原，建議先匯出一份資料副本。';
 
   @override
-  String get startupRecoveryResetAcknowledge => '我確認開始使用新的空資料庫。';
+  String get startupRecoveryResetAcknowledge => '我確認暫不還原聊天，繼續使用空聊天清單。';
 
   @override
   String get startupDatabaseUpdateRequiredTitle => '請更新 Kelivo 以繼續';
@@ -34574,7 +34983,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get searchServicesPageWebFetchFooter =>
-      '開啟連網搜尋後，模型還可以讀取網頁全文。搜尋服務不支援抓取時會改用本機抓取，本機抓取無法處理需要 JavaScript 渲染或有反爬限制的頁面。';
+      '開啟連網搜尋後，模型還可以讀取網頁全文。搜尋服務不支援抓取時會改用本機抓取，本機抓取無法處理需要 JavaScript 渲染或有反爬限制的頁面。\n\n如已使用此處的網頁抓取，建議前往「設定 → MCP」關閉內建 @kelivo/fetch，避免模型混用兩個抓取工具。此處設定的網頁抓取仍可正常使用。';
 
   @override
   String get searchServicesPageWebFetchSupported => '支援網頁抓取';
@@ -41625,7 +42034,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mcpImportConfirm => '匯入';
 
   @override
-  String get startupRecoverySnapshotTitle => '從資料庫快照還原';
+  String get startupRecoverySnapshotTitle => '從本機副本找回';
 
   @override
   String get startupRecoverySnapshotBody =>
@@ -41635,7 +42044,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get startupRecoverySnapshotEmpty => '未在本機找到資料庫快照。請先匯出資料，再嘗試其他還原操作。';
 
   @override
-  String get startupRecoverySnapshotButton => '選擇快照還原';
+  String get startupRecoverySnapshotButton => '選擇副本還原記錄';
 
   @override
   String startupRecoverySnapshotConfirm(String when) {
@@ -42124,6 +42533,53 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get oauthNetworkError => '連線失敗，請檢查網路後重試。';
 
   @override
+  String get oauthDnsError => 'DNS 解析失敗，請檢查網路或代理的 DNS 設定。';
+
+  @override
+  String get oauthTlsError => 'TLS 安全連線失敗，請檢查網路或代理的憑證設定。';
+
+  @override
+  String get oauthProxyError => '代理連線失敗，請檢查代理位址和驗證設定。';
+
+  @override
+  String get oauthConnectionError => '連線失敗或中斷，請檢查網路或代理設定。';
+
+  @override
+  String get oauthConnectionTimeout => '連線至伺服器逾時，請檢查網路或代理設定。';
+
+  @override
+  String get oauthSendTimeout => '傳送請求逾時，請檢查網路後重試。';
+
+  @override
+  String get oauthReceiveTimeout => '等待伺服器回應逾時，請重試。';
+
+  @override
+  String get oauthRequestTimeout => '請求逾時，請檢查網路或代理設定後重試。';
+
+  @override
+  String oauthFailureStage(String stage) {
+    return '失敗階段：$stage';
+  }
+
+  @override
+  String get oauthStageRequestDeviceCode => '申請裝置碼';
+
+  @override
+  String get oauthStageWaitDeviceAuthorization => '等待裝置授權';
+
+  @override
+  String get oauthStagePrepareBrowser => '準備瀏覽器登入';
+
+  @override
+  String get oauthStageBrowserAuthorization => '瀏覽器授權與回呼';
+
+  @override
+  String get oauthStageExchangeToken => '交換登入權杖';
+
+  @override
+  String get oauthStageRefreshToken => '重新整理登入權杖';
+
+  @override
   String get oauthInvalidResponse => '授權未完成，請重試。';
 
   @override
@@ -42175,6 +42631,31 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get oauthExtraUsage => '額外用量';
+
+  @override
+  String get oauthMonthlyTotal => '本月總額度';
+
+  @override
+  String get oauthMonthlyCode => '本月程式碼額度';
+
+  @override
+  String get oauthSpendCap => '積分消費上限';
+
+  @override
+  String get oauthOnDemand => '按需額度';
+
+  @override
+  String get oauthQuotaAdvisory => '僅供參考：本週額度仍有效，暫時無法確認該月額度是否限制使用。';
+
+  @override
+  String oauthCreditsValue(String value) {
+    return '$value 積分';
+  }
+
+  @override
+  String oauthRemainingValue(String value) {
+    return '剩餘 $value';
+  }
 
   @override
   String get oauthPromptCachingHelp => '重用多輪對話中的上下文，可設定快取保留時間。';
@@ -42794,20 +43275,21 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get recoveryMissingDataBody =>
-      '目前資料庫遺失，但裝置上仍有舊資料。Kelivo 已暫停啟動，沒有建立空資料庫，並保留現有檔案與副本。';
+      '暫時找不到目前的聊天資料庫，Kelivo 已暫停載入，沒有建立空資料庫。我們會在下方尋找舊副本，現有檔案會保留。';
 
   @override
   String get recoveryEmptyDataTitle => '目前聊天記錄為空';
 
   @override
   String get recoveryEmptyDataBody =>
-      '目前資料庫沒有對話，但發現了歷史副本。Kelivo 已暫停啟動，你可以還原副本，也可以明確選擇保留目前資料。應用程式不會自動覆寫資料。';
+      '目前的聊天清單為空，但找到了舊副本。可以從下方選擇副本找回聊天記錄，現有檔案會保留。';
 
   @override
-  String get recoveryKeepCurrent => '保留目前資料並繼續';
+  String get recoveryKeepCurrent => '繼續使用空聊天清單';
 
   @override
-  String get recoveryKeepCurrentConfirm => '繼續使用目前的空資料庫？歷史副本仍會保留，可稍後還原。';
+  String get recoveryKeepCurrentConfirm =>
+      '此操作不會找回之前的聊天，目前的聊天清單將保持為空，舊副本會繼續保留。如果想找回聊天，請取消並選擇本機副本還原。';
 
   @override
   String get recoverySearchingCopies => '正在尋找並驗證本機資料副本…';
@@ -42834,7 +43316,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get recoveryStorageFailureBody =>
-      'Kelivo 未能啟用受保護的資料儲存，已暫停啟動並保留原資料。可匯出資料副本或重試，應用程式不會因此建立空資料庫。';
+      '資料更新暫時未能完成，原資料已保留。可以嘗試重新開啟 Kelivo，或選擇下方的本機副本還原。';
 
   @override
   String get recoveryProtectingTitle => '正在保護聊天資料庫';
@@ -42858,7 +43340,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get recoveryStorageInsufficientSpaceBody =>
-      '剩餘空間不足，無法在保留原資料庫的同時建立經過驗證的內部副本。現有資料和快照均未更動，請釋放一些空間後重試。';
+      '儲存空間不足，暫時無法安全地準備資料。請到系統設定釋放一些空間，再重新開啟 Kelivo，或重新檢查下方的副本。請保留 Kelivo，不要刪除它的資料和本機副本。';
 
   @override
   String get migrationFreshStartTitle => '已重新開始';
@@ -45007,4 +45489,41 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get retry => '重試';
+
+  @override
+  String get recoveryGuideTitle => '幫你找回聊天記錄';
+
+  @override
+  String get recoveryGuideBody =>
+      'Kelivo 暫時無法載入資料，已暫停操作。我們會尋找本機副本，供你選擇還原。現有檔案會保留。';
+
+  @override
+  String get recoverySpaceTitle => '需要一些儲存空間';
+
+  @override
+  String get recoveryChecksNeedSpace =>
+      '找到了本機副本，但空間不足，暫時無法檢查。這不代表副本已損壞。釋放一些空間後，可以重新檢查。';
+
+  @override
+  String get recoveryChecksUnavailable =>
+      '部分本機副本暫時無法檢查，檔案仍然保留。可以重新檢查，或匯出資料副本尋求協助。';
+
+  @override
+  String get recoveryRecheckCopies => '重新檢查本機副本';
+
+  @override
+  String get recoveryCopyPreview => '副本預覽';
+
+  @override
+  String get recoveryRestoreRetryBody =>
+      '這次還原尚未完成，選取的副本已保留。可以重新檢查本機副本，或重新開啟 Kelivo 繼續。';
+
+  @override
+  String recoverySpaceAmount(String required, String available) {
+    return '上次檢查：可用空間 $available，安全準備資料至少需要預留 $required。';
+  }
+
+  @override
+  String get recoveryCopiesNeedUpdate =>
+      '部分副本來自更新版本的 Kelivo，請升級 App 後再還原。這些副本仍然保留。';
 }
