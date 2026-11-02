@@ -4566,11 +4566,8 @@ class ToolUIPart {
   int get cacheToken => memoToken ?? identityHashCode(this);
 }
 
-final _workspacePartMemo = Expando<WorkspaceToolPart>('workspace tool');
-final _producedPartsMemo = Expando<List<WorkspaceToolPart>>('produced tools');
-
 WorkspaceToolPart _workspacePartFromUi(ToolUIPart part) {
-  return _workspacePartMemo[part] ??= WorkspaceToolPart(
+  return WorkspaceToolPart(
     id: part.id,
     toolName: part.toolName,
     arguments: part.arguments,
@@ -4582,10 +4579,10 @@ WorkspaceToolPart _workspacePartFromUi(ToolUIPart part) {
 
 List<WorkspaceToolPart> _producedWorkspaceParts(List<ToolUIPart>? parts) {
   if (parts == null || parts.isEmpty) return const <WorkspaceToolPart>[];
-  return _producedPartsMemo[parts] ??= List.unmodifiable([
+  return [
     for (final part in parts)
       if (isWorkspaceToolName(part.toolName)) _workspacePartFromUi(part),
-  ]);
+  ];
 }
 
 // Data for a reasoning segment (for mixed display)

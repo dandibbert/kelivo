@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'shell_output_buffer.dart';
-import 'output_buffer.dart' show utf16SafeCut;
 
 enum ToolRunStatus { running, succeeded, failed, cancelled, timedOut }
 
@@ -16,7 +15,6 @@ class ToolRun extends ChangeNotifier {
     this.command,
     String? runtimeRunId,
     DateTime? startedAt,
-    this.onSettled,
   }) : runtimeRunId = runtimeRunId ?? toolCallId,
        startedAt = startedAt ?? DateTime.now();
 
@@ -25,17 +23,15 @@ class ToolRun extends ChangeNotifier {
   final String toolName;
   final DateTime startedAt;
   final String? command;
-  final VoidCallback? onSettled;
-  bool awaitingHandoff = false;
 
   ToolRunStatus status = ToolRunStatus.running;
   int? exitCode;
   int totalBytes = 0;
 
-  late ShellOutputBuffer? _stdout = ShellOutputBuffer(
+  late final ShellOutputBuffer _stdout = ShellOutputBuffer(
     onLine: (line) => _updateTail(line, stderr: false, complete: true),
   );
-  late ShellOutputBuffer? _stderr = ShellOutputBuffer(
+  late final ShellOutputBuffer _stderr = ShellOutputBuffer(
     onLine: (line) => _updateTail(line, stderr: true, complete: true),
   );
   final List<_TailLine> _tailLines = [];
@@ -44,78 +40,47 @@ class ToolRun extends ChangeNotifier {
   Timer? _notifyTimer;
 
   static const int maxTailLines = 200;
-  static const int maxTailBytes = 32 * 1024;
-  int _tailBytes = 0;
-  String _finishedStdout = '';
-  String _finishedStderr = '';
-  bool _stdoutTruncated = false;
-  bool _stderrTruncated = false;
-
-  int get retainedBytes =>
-      _tailBytes +
-      (_stdout?.retainedBytes ?? _finishedStdout.length * 2) +
-      (_stderr?.retainedBytes ?? _finishedStderr.length * 2);
-  int get tailBytes => _tailBytes;
-  bool get hasOutputBuffers => _stdout != null || _stderr != null;
   static const Duration notifyInterval = Duration(milliseconds: 50);
 
   List<String> get tailLines =>
       List<String>.unmodifiable(_tailLines.map((line) => line.text));
 
-  String get stdoutSoFar => _stdout?.text ?? _finishedStdout;
+  String get stdoutSoFar => _stdout.text;
 
-  String get stderrSoFar => _stderr?.text ?? _finishedStderr;
+  String get stderrSoFar => _stderr.text;
 
-  bool get stdoutTruncated => _stdout?.truncated ?? _stdoutTruncated;
+  bool get stdoutTruncated => _stdout.truncated;
 
-  bool get stderrTruncated => _stderr?.truncated ?? _stderrTruncated;
+  bool get stderrTruncated => _stderr.truncated;
 
   void appendStdout(Uint8List bytes) {
-    final emittedText = _stdout!.add(bytes);
+    final emittedText = _stdout.add(bytes);
     totalBytes += bytes.length;
     if (emittedText) _updatePendingTail(stderr: false);
     _scheduleNotify();
   }
 
   void appendStderr(Uint8List bytes) {
-    final emittedText = _stderr!.add(bytes);
+    final emittedText = _stderr.add(bytes);
     totalBytes += bytes.length;
     if (emittedText) _updatePendingTail(stderr: true);
     _scheduleNotify();
   }
 
-  void complete({
-    required ToolRunStatus status,
-    int? exitCode,
-    bool retainUntilHandoff = false,
-  }) {
-    if (this.status != ToolRunStatus.running) return;
-    awaitingHandoff = retainUntilHandoff;
+  void complete({required ToolRunStatus status, int? exitCode}) {
     // Only newly decoded text can bring an evicted progress line back.
-    if (_stdout!.close()) _updatePendingTail(stderr: false);
-    if (_stderr!.close()) _updatePendingTail(stderr: true);
+    if (_stdout.close()) _updatePendingTail(stderr: false);
+    if (_stderr.close()) _updatePendingTail(stderr: true);
     _notifyTimer?.cancel();
     _notifyTimer = null;
-    _finishedStdout = _stdout!.text;
-    _finishedStderr = _stderr!.text;
-    _stdoutTruncated = _stdout!.truncated;
-    _stderrTruncated = _stderr!.truncated;
-    for (final line in _tailLines) {
-      line.freeze();
-    }
-    _stdoutTail = null;
-    _stderrTail = null;
-    _stdout = null;
-    _stderr = null;
     this.status = status;
     this.exitCode = exitCode;
     notifyListeners();
-    onSettled?.call();
   }
 
   void _updatePendingTail({required bool stderr}) {
     final output = stderr ? _stderr : _stdout;
-    if (output!.hasCurrentLine) {
+    if (output.hasCurrentLine) {
       _updateTail(null, stderr: stderr, complete: false);
     }
   }
@@ -127,35 +92,21 @@ class ToolRun extends ChangeNotifier {
   }) {
     var line = stderr ? _stderrTail : _stdoutTail;
     if (line == null) {
-      line = _TailLine(stderr ? _stderr! : _stdout!);
+      line = _TailLine(text, stderr ? _stderr : _stdout);
       _tailLines.add(line);
+      if (_tailLines.length > maxTailLines) {
+        final removed = _tailLines.removeAt(0);
+        if (identical(removed, _stdoutTail)) _stdoutTail = null;
+        if (identical(removed, _stderrTail)) _stderrTail = null;
+      }
     } else {
-      _tailBytes -= line.retainedBytes;
+      line.completedText = text;
     }
-    line.update(text);
-    _tailBytes += line.retainedBytes;
     if (stderr) {
       _stderrTail = complete ? null : line;
     } else {
       _stdoutTail = complete ? null : line;
     }
-    while (_tailLines.length > maxTailLines || _tailBytes > maxTailBytes) {
-      final removed = _tailLines.removeAt(0);
-      _tailBytes -= removed.retainedBytes;
-      if (identical(removed, _stdoutTail)) _stdoutTail = null;
-      if (identical(removed, _stderrTail)) _stderrTail = null;
-    }
-  }
-
-  void finishHandoff() {
-    awaitingHandoff = false;
-    onSettled?.call();
-  }
-
-  @override
-  void removeListener(VoidCallback listener) {
-    super.removeListener(listener);
-    if (!hasListeners) onSettled?.call();
   }
 
   void _scheduleNotify() {
@@ -175,34 +126,14 @@ class ToolRun extends ChangeNotifier {
 }
 
 class _TailLine {
-  _TailLine(this.output);
+  _TailLine(this.completedText, this.output);
 
   String? completedText;
-  ShellOutputBuffer? output;
-  int retainedBytes = 0;
+  final ShellOutputBuffer output;
 
-  void update(String? value) {
-    completedText = value == null
-        ? null
-        : utf16SafeCut(value, ToolRun.maxTailBytes ~/ 2, keepTail: true);
-    retainedBytes = completedText != null
-        ? completedText!.length * 2
-        : (output!.currentLineRetainedBytes * 2).clamp(0, ToolRun.maxTailBytes);
-    if (value != null) output = null;
-  }
-
-  String get text =>
-      completedText ??
-      utf16SafeCut(
-        output!.currentLine,
-        ToolRun.maxTailBytes ~/ 2,
-        keepTail: true,
-      );
-
-  void freeze() {
-    completedText = text;
-    output = null;
-  }
+  // Resolve an unfinished line only when the UI reads it. Completed lines
+  // freeze their text before the decoder advances to the next line.
+  String get text => completedText ?? output.currentLine;
 }
 
 /// Process-lifetime registry of tool runs. Finished runs are kept until the
@@ -211,9 +142,6 @@ typedef _RunKey = (String?, String);
 
 class ToolRunRegistry extends ChangeNotifier {
   static const int maxEntries = 200;
-  static const int maxRetainedBytes = 8 * 1024 * 1024;
-  int get retainedBytes =>
-      _runs.values.fold(0, (sum, run) => sum + run.retainedBytes);
 
   final Map<_RunKey, ToolRun> _runs = {};
   final List<_RunKey> _lru = [];
@@ -234,7 +162,6 @@ class ToolRunRegistry extends ChangeNotifier {
       toolName: toolName,
       runtimeRunId: runtimeRunId,
       command: command,
-      onSettled: _evictOverflow,
     );
     _runs[key] = run;
     _lru.add(key);
@@ -263,35 +190,22 @@ class ToolRunRegistry extends ChangeNotifier {
 
   Iterable<ToolRun> get all => _runs.values;
 
-  @override
-  void dispose() {
-    for (final run in _runs.values) {
-      run.dispose();
-    }
-    _runs.clear();
-    _lru.clear();
-    super.dispose();
-  }
-
   void _touch(_RunKey id) {
     _lru.remove(id);
     _lru.add(id);
   }
 
   void _evictOverflow() {
-    while (_runs.length > maxEntries || retainedBytes > maxRetainedBytes) {
+    while (_runs.length > maxEntries) {
       _RunKey? victim;
       for (final id in _lru) {
         final run = _runs[id];
-        if (run != null &&
-            run.status != ToolRunStatus.running &&
-            !run.awaitingHandoff &&
-            !run.hasListeners) {
+        if (run != null && run.status != ToolRunStatus.running) {
           victim = id;
           break;
         }
       }
-      if (victim == null) break;
+      victim ??= _lru.first;
       final run = _runs.remove(victim);
       _lru.remove(victim);
       run?.dispose();
