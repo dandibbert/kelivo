@@ -1,3 +1,4 @@
+import '../diagnostics/breadcrumbs.dart';
 import '../../models/image_context.dart';
 import '../../utils/chat_image_result.dart';
 import '../../models/quote_ref.dart';
@@ -3713,6 +3714,12 @@ class ChatService extends ChangeNotifier {
     String? generationRunId,
     int? checkpointSeq,
   }) async {
+    Breadcrumbs.markSampled(
+      'checkpoint',
+      'svc:checkpoint parts=${message.parts.length}',
+      first: 4,
+      every: 30,
+    );
     if (!_initialized) return;
 
     if (_discardedTemporaryConversationIds.contains(message.conversationId)) {

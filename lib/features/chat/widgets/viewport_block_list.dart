@@ -1,3 +1,4 @@
+import '../../../core/services/diagnostics/breadcrumbs.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -247,6 +248,12 @@ class _ViewportBlockListState extends State<ViewportBlockList> {
 
   @override
   Widget build(BuildContext context) {
+    Breadcrumbs.markSampled(
+      'ui-vbl',
+      'ui:viewportList items=${widget.itemCount} threshold=${widget.threshold}',
+      first: 4,
+      every: 100,
+    );
     if (widget.itemCount <= widget.threshold ||
         _position == null ||
         ExportCaptureScope.of(context)) {

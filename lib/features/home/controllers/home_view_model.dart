@@ -1,3 +1,4 @@
+import '../../../core/services/diagnostics/breadcrumbs.dart';
 import '../../../core/services/scheduled_tasks_service.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -601,6 +602,7 @@ class HomeViewModel extends ChangeNotifier {
       return false;
     }
 
+    Breadcrumbs.mark('vm:sendToConversation');
     _chatActions.onScheduleImageSanitize = onScheduleImageSanitize;
 
     final sourceAssistant = _contextProvider
@@ -608,7 +610,9 @@ class HomeViewModel extends ChangeNotifier {
         .resolveConversationAssistant(conversation.assistantId);
     await _clearSuggestionsFor(conversation.id);
 
+    Breadcrumbs.mark('vm:haptic');
     onHapticFeedback?.call();
+    Breadcrumbs.mark('vm:haptic done');
 
     // The indicator is raised by the generation itself, once the assistant
     // message it belongs to exists — nothing to raise or leak here.
@@ -618,6 +622,9 @@ class HomeViewModel extends ChangeNotifier {
       assistantOverride: sourceAssistant,
     );
 
+    Breadcrumbs.mark(
+      'vm:chatActions returned success=${result.success} err=${result.errorMessage}',
+    );
     if (input.draftSubmission != null &&
         _chatService.composerDrafts != null &&
         await _chatService.composerDrafts!.wasSubmitted(

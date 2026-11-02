@@ -1,3 +1,4 @@
+import '../../../core/services/diagnostics/breadcrumbs.dart';
 import '../../../core/models/context_compression_task.dart';
 import '../../../core/services/auth/provider_oauth_service.dart';
 import 'dart:async';
@@ -1108,6 +1109,7 @@ class ChatActions {
     bool scheduledPreview = true,
   }) async {
     final claimToken = ++_sendInFlightClaimSerial;
+    Breadcrumbs.mark('ca:sendMessage');
     if (isSendInFlight(conversation.id) ||
         chatService.contextCompression.blocksSending(conversation.id)) {
       return ChatActionResult.inFlight();
@@ -1709,7 +1711,9 @@ class ChatActions {
     // The loading guard now owns re-entry exclusion for this conversation.
     _sendInFlightClaims.remove(conversation.id);
 
+    Breadcrumbs.mark('ca:messages created, generate() next');
     Future<ChatActionResult> generate() async {
+      Breadcrumbs.mark('ca:generate begin');
       // Initialize reasoning
       final supportsReasoning = _isReasoningModel(providerKey, modelId);
       final enableReasoning =
@@ -2158,6 +2162,9 @@ class ChatActions {
 
   /// Execute generation with the given context.
   Future<void> _executeGeneration(stream_ctrl.GenerationContext ctx) async {
+    Breadcrumbs.mark(
+      'ca:executeGeneration begin provider=${ctx.providerKey} model=${ctx.modelId} stream=${ctx.streamOutput}',
+    );
     final state = stream_ctrl.StreamingState(
       ctx,
       responsesTurnPrefix: chatService.getProviderArtifactForMessage(
@@ -2184,6 +2191,7 @@ class ChatActions {
     }
     // Mark this message as actively streaming to suppress UI rebuilds
     streamController.markStreamingStarted(state.messageId);
+    Breadcrumbs.mark('ca:streamingStarted');
     _activeAssistantMessages.put(state.ctx.assistantMessage);
     _streamingToolEvents[state.messageId] = chatService
         .getToolEventsForMessage(ctx.assistantMessage)
@@ -2289,6 +2297,10 @@ class ChatActions {
         // HTTP JSON responses still emit tool rounds. Consume them as they
         // arrive so a paused tool has a durable transcript before it resumes.
         await for (final chunk in stream) {
+          Breadcrumbs.markSampled(
+            'chunk',
+            'ca:chunk(nonstream) ${chunk.runtimeType}',
+          );
           await _handleStreamChunk(chunk, state);
         }
         await _handleStreamDone(state);
@@ -2317,6 +2329,12 @@ class ChatActions {
     StreamChunk chunk,
     stream_ctrl.StreamingState state,
   ) async {
+    Breadcrumbs.markSampled(
+      'chunk',
+      'ca:chunk ${chunk.runtimeType}',
+      first: 6,
+      every: 40,
+    );
     if (chunk is RetryPending) {
       _setRetryStatus(state, chunk);
     } else {

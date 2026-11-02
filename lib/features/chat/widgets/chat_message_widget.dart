@@ -1,3 +1,4 @@
+import '../../../core/services/diagnostics/breadcrumbs.dart';
 import 'package:Kelivo/desktop/desktop_overlay_backdrop.dart';
 import '../utils/message_reasoning_source.dart';
 import '../../intelligent_ui/host/ui_copy_actions.dart';
@@ -4258,6 +4259,12 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   @override
   Widget build(BuildContext context) {
     final isUser = widget.message.role == 'user';
+    Breadcrumbs.markSampled(
+      'ui-msg-${widget.message.id}',
+      'ui:message build role=${widget.message.role} stream=${widget.message.isStreaming} parts=${widget.message.parts.length}',
+      first: 3,
+      every: 100,
+    );
     final palette = computeChatSurfaceForegroundPalette(
       context,
       isUser: isUser,

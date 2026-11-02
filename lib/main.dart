@@ -1,3 +1,4 @@
+import 'core/services/diagnostics/breadcrumbs.dart';
 import 'features/side_panel/desktop_side_panel_controller.dart';
 import 'core/services/scheduled_tasks_service.dart';
 import 'core/services/auth/provider_oauth_service.dart';
@@ -221,6 +222,7 @@ Future<void> main() async {
   await runZoned(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      await Breadcrumbs.start();
       WindowsPasteFix.instance.install();
       AndroidImeSelection.instance.install();
       // Register notification tap handling for every Android launch. This is

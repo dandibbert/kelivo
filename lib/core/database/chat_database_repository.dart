@@ -1,3 +1,4 @@
+import '../services/diagnostics/breadcrumbs.dart';
 import '../models/image_context.dart';
 import '../utils/chat_image_result.dart';
 import '../models/quote_ref.dart';
@@ -5380,6 +5381,12 @@ class ChatDatabaseRepository {
     List<Map<String, dynamic>>? toolEvents,
     bool streamingCheckpoint = false,
   }) async {
+    Breadcrumbs.markSampled(
+      streamingCheckpoint ? 'db-parts-stream' : 'db-parts',
+      'db:replaceParts stream=$streamingCheckpoint parts=${message.parts.length}',
+      first: 4,
+      every: 30,
+    );
     // Other writers (edits, imports, recovery) invalidate the streaming base
     // immediately. A rollback only costs a cache miss, never skipped writes.
     if (!streamingCheckpoint) {
