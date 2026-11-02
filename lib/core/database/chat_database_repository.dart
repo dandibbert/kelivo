@@ -5387,6 +5387,9 @@ class ChatDatabaseRepository {
       first: 4,
       every: 30,
     );
+    Breadcrumbs.mark(
+      'db:replaceParts caller: ${Breadcrumbs.callers(skip: 1, count: 7)}',
+    );
     // Other writers (edits, imports, recovery) invalidate the streaming base
     // immediately. A rollback only costs a cache miss, never skipped writes.
     if (!streamingCheckpoint) {
@@ -5417,9 +5420,12 @@ class ChatDatabaseRepository {
     if (effectiveReasoningText != null && effectiveReasoningText.isNotEmpty) {
       message = message.copyWith(reasoningText: effectiveReasoningText);
     }
+    Breadcrumbs.mark('db:replaceParts persistence');
     final parts = _partsForPersistence(message, toolEvents);
     final canonical = message.copyWith(parts: parts);
+    Breadcrumbs.mark('db:replaceParts reconcile');
     await genUiStates.reconcileSource(canonical);
+    Breadcrumbs.mark('db:replaceParts reconciled');
     if (UiMessageSource.of(parts).hasCandidate) {
       // Validate/copy before COMMIT. Publishing cannot throw after durability.
       final publishParts = originalMessage.prepareStorageParts(parts);
@@ -5442,6 +5448,7 @@ class ChatDatabaseRepository {
     final now = DateTime.now().toUtc();
     final updatedAt = now.isBefore(message.timestamp) ? message.timestamp : now;
     final roundPayloads = <int, String>{};
+    Breadcrumbs.mark('db:replaceParts batch');
     await _db.batch((batch) {
       for (var ordinal = 0; ordinal < parts.length; ordinal++) {
         final part = parts[ordinal];
@@ -5509,6 +5516,7 @@ class ChatDatabaseRepository {
         }
       });
     }
+    Breadcrumbs.mark('db:replaceParts done');
     if (!message.isStreaming && UiMessageSource.of(parts).hasCandidate) {
       await _sealGenUiSearch([message.id]);
     }

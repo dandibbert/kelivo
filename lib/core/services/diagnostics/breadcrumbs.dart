@@ -35,8 +35,8 @@ class Breadcrumbs with WidgetsBindingObserver {
             lines.isNotEmpty &&
             (lines.last.endsWith(' PAUSED') || lines.last.endsWith(' EXIT'));
         if (lines.isNotEmpty && !clean) {
-          _previous = lines.length > 60
-              ? lines.sublist(lines.length - 60)
+          _previous = lines.length > 100
+              ? lines.sublist(lines.length - 100)
               : lines;
         }
       }
@@ -111,9 +111,26 @@ class Breadcrumbs with WidgetsBindingObserver {
 
   static void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = Timer.periodic(const Duration(seconds: 1), (_) {
+    _heartbeat = Timer.periodic(const Duration(milliseconds: 500), (_) {
       mark('tick rss=${(ProcessInfo.currentRss / 1048576).round()}MB');
     });
+  }
+
+  @override
+  void didHaveMemoryPressure() => mark('MEMORY_PRESSURE');
+
+  /// The innermost [count] frames of the caller, one short token each.
+  static String callers({int skip = 1, int count = 8}) {
+    final frames = StackTrace.current
+        .toString()
+        .split('\n')
+        .where((line) => line.trim().isNotEmpty)
+        .skip(skip)
+        .take(count);
+    return frames
+        .map((line) => line.replaceFirst(RegExp(r'^#\d+\s+'), '').trim())
+        .map((line) => line.length > 90 ? line.substring(0, 90) : line)
+        .join(' < ');
   }
 
   @override

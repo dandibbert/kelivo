@@ -4262,7 +4262,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     Breadcrumbs.markSampled(
       'ui-msg-${widget.message.id}',
       'ui:message build role=${widget.message.role} stream=${widget.message.isStreaming} parts=${widget.message.parts.length}',
-      first: 3,
+      first: 12,
       every: 100,
     );
     final palette = computeChatSurfaceForegroundPalette(
