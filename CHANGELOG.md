@@ -8,7 +8,8 @@ All notable changes to this project will be documented in this file.
 - Rebase onto upstream Kelivo: integrated browser and browser agent tools, per-conversation tool permissions, password-encrypted backups, grouped MCP management, iOS native selection menus, world book entry copy and batch transfer, Windows restore recovery, and more. The iOS `kelivo://v1` deep links are kept.
 - Sync upstream (long-session performance, Android native selection menus, scoped assistant copy, OAuth fixes, Linux NoImpeller variants).
 - Add crash breadcrumbs: every step of sending a message is written to disk, and after an unexpected exit the next launch shows the last steps in a dialog (temporary diagnostics).
-- Bump version to 1.3.5+96.
+- Revert upstream's long-session performance changes (streaming checkpoint cache, incremental/virtualized timeline, long-session state), which crash the iOS app when a new chat's first messages are written. Everything else from upstream is kept.
+- Bump version to 1.3.5+97.
 
 ### Fixed
 - The iOS Share extension no longer shows one generic "could not save" message for every failure. It now says when Kelivo's shared storage (App Group) is unavailable, and otherwise shows the underlying error.
