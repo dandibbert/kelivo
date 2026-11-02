@@ -40,7 +40,6 @@ import 'chat_controller.dart';
 import 'generation_controller.dart';
 import 'home_view_model.dart';
 import 'latest_wins_checkpoint_writer.dart';
-import '../../../core/models/tool_event_snapshot.dart';
 import 'stream_controller.dart' as stream_ctrl;
 
 final class _BarrierStreamSubscription<T> implements StreamSubscription<T> {
@@ -479,12 +478,10 @@ class ChatActions {
   }
 
   List<Map<String, dynamic>> _copyToolEvents(String messageId) {
-    return _toolEventSnapshots[messageId] ??= ToolEventSnapshot(
-      _streamingToolEvents[messageId] ?? const <Map<String, dynamic>>[],
-    );
+    return (_streamingToolEvents[messageId] ?? const <Map<String, dynamic>>[])
+        .map((event) => Map<String, dynamic>.from(event))
+        .toList(growable: false);
   }
-
-  final _toolEventSnapshots = <String, List<Map<String, dynamic>>>{};
 
   ChatMessage _messageWithCurrentReasoning(ChatMessage message) {
     final messageId = message.id;
@@ -611,7 +608,6 @@ class ChatActions {
   void _clearGenerationRuntimeState(ChatMessage message) {
     _generationCheckpointCursors.remove(message.id);
     _streamingToolEvents.remove(message.id);
-    _toolEventSnapshots.remove(message.id);
     _streamingStates.remove(message.id);
     _activeAssistantMessages.removeIfMatches(message);
   }
@@ -672,7 +668,6 @@ class ChatActions {
     String? content,
     Map<String, dynamic>? metadata,
   }) {
-    _toolEventSnapshots.remove(messageId);
     final events = _streamingToolEvents.putIfAbsent(
       messageId,
       () => <Map<String, dynamic>>[],
@@ -1042,9 +1037,16 @@ class ChatActions {
         TextPart(visibleText ?? _transformAssistantContent(state)),
       ];
     }
-    return state.partSnapshots.update(
-      parts,
-      transform: (text) => _transformAssistantContent(state, text),
+    final transformed = [
+      for (final part in parts)
+        if (part is TextPart)
+          TextPart(_transformAssistantContent(state, part.text))
+        else if (part is! ImagePart || !isBlankImageUri(part.uri))
+          part,
+    ];
+    if (visibleText == null) return transformed;
+    return assistantPartsForVisibleText(
+      parts: transformed,
       visibleText: visibleText,
     );
   }
@@ -2197,7 +2199,6 @@ class ChatActions {
         .getToolEventsForMessage(ctx.assistantMessage)
         .map((event) => Map<String, dynamic>.from(event))
         .toList();
-    _toolEventSnapshots.remove(state.messageId);
     _checkpointWriters[state.messageId] =
         LatestWinsCheckpointWriter<_StreamingCheckpoint>(
           write: (checkpoint) => chatService.updateStreamingCheckpointSilent(
@@ -2477,7 +2478,6 @@ class ChatActions {
       },
       setToolEventsInDb:
           (String messageId, List<Map<String, dynamic>> events) async {
-            _toolEventSnapshots.remove(messageId);
             _streamingToolEvents[messageId] = events
                 .map((event) => Map<String, dynamic>.from(event))
                 .toList();

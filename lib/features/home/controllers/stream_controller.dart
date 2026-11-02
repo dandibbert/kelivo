@@ -10,7 +10,6 @@ import '../../../core/providers/settings_provider.dart';
 import '../../../core/services/api/chat_api_service.dart';
 import '../../../core/services/api/stream/stream_chunk.dart';
 import '../../../core/services/api/stream/stream_chunk_handler.dart';
-import 'assistant_part_snapshots.dart';
 import '../../../core/services/api/stream/stream_text_buffer.dart';
 import '../../chat/widgets/chat_message_widget.dart';
 import '../../chat/utils/tool_event_deduplication.dart';
@@ -247,7 +246,7 @@ class StreamController {
 
   /// Set tool parts for a message.
   void setToolParts(String messageId, List<ToolUIPart> parts) {
-    _toolParts[messageId] = ToolPartSnapshot(parts);
+    _toolParts[messageId] = parts;
   }
 
   /// Remove tool parts for a message.
@@ -874,7 +873,7 @@ class StreamController {
         loading: true,
       ),
     );
-    _toolParts[messageId] = ToolPartSnapshot(dedupeToolPartsList(existing));
+    _toolParts[messageId] = dedupeToolPartsList(existing);
     if (getCurrentConversationId() == conversationId) {
       streamingContentNotifier.notifyToolPartsUpdated(
         messageId,
@@ -978,7 +977,7 @@ class StreamController {
         metadata: result.metadata,
       );
     } catch (_) {}
-    _toolParts[messageId] = ToolPartSnapshot(dedupeToolPartsList(parts));
+    _toolParts[messageId] = dedupeToolPartsList(parts);
     if (getCurrentConversationId() == conversationId) {
       final splits = _contentSplits[messageId];
       streamingContentNotifier.notifyToolPartsUpdated(
@@ -1439,26 +1438,24 @@ class StreamController {
     try {
       final events = dedupeToolEvents(getToolEventsFromDb(messageId));
       if (events.isNotEmpty) {
-        _toolParts[messageId] = ToolPartSnapshot(
-          events
-              .map(
-                (e) => ToolUIPart(
-                  id: (e['id'] ?? '').toString(),
-                  toolName: (e['name'] ?? '').toString(),
-                  arguments:
-                      (e['arguments'] as Map?)?.cast<String, dynamic>() ??
-                      const <String, dynamic>{},
-                  content: (e['content']?.toString().isNotEmpty == true)
-                      ? e['content'].toString()
-                      : null,
-                  metadata: e['metadata'] is Map
-                      ? Map<String, dynamic>.from(e['metadata'] as Map)
-                      : null,
-                  loading: !(e['content']?.toString().isNotEmpty == true),
-                ),
-              )
-              .toList(),
-        );
+        _toolParts[messageId] = events
+            .map(
+              (e) => ToolUIPart(
+                id: (e['id'] ?? '').toString(),
+                toolName: (e['name'] ?? '').toString(),
+                arguments:
+                    (e['arguments'] as Map?)?.cast<String, dynamic>() ??
+                    const <String, dynamic>{},
+                content: (e['content']?.toString().isNotEmpty == true)
+                    ? e['content'].toString()
+                    : null,
+                metadata: e['metadata'] is Map
+                    ? Map<String, dynamic>.from(e['metadata'] as Map)
+                    : null,
+                loading: !(e['content']?.toString().isNotEmpty == true),
+              ),
+            )
+            .toList();
       }
     } catch (_) {}
 
@@ -1671,7 +1668,6 @@ class StreamingState {
   List<int> reasoningCountAtSplit = <int>[];
   List<int> toolCountAtSplit = <int>[];
   final StreamChunkHandler partsHandler;
-  final partSnapshots = AssistantPartSnapshots();
   RetryStatus? retryStatus;
 
   String get messageId => ctx.assistantMessage.id;

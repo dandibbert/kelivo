@@ -36,8 +36,6 @@ import '../models/token_usage.dart';
 import '../models/conversation.dart';
 import '../models/conversation_mcp_settings.dart';
 import '../models/message_part.dart';
-import '../models/message_part_snapshot.dart';
-import '../models/tool_event_snapshot.dart';
 import '../utils/multimodal_input_utils.dart';
 import '../../utils/sandbox_path_resolver.dart';
 import '../../utils/kelivo_file_uri.dart';
@@ -5392,13 +5390,8 @@ class ChatDatabaseRepository {
     );
     // Other writers (edits, imports, recovery) invalidate the streaming base
     // immediately. A rollback only costs a cache miss, never skipped writes.
-    if (!streamingCheckpoint) {
-      _checkpointParts.remove(message.id);
-      _checkpointRoundPayloads.remove(message.id);
-      _checkpointProjections.remove(message.id);
-    }
+    if (!streamingCheckpoint) _checkpointParts.remove(message.id);
     final baseline = _checkpointParts[message.id];
-    final baselineRounds = _checkpointRoundPayloads[message.id];
     final originalMessage = message;
     // A mid-stream reasoning pause is not a reasoning removal: the checkpoint
     // snapshot still carries the pre-allocated reasoningStartAt timestamp, so
@@ -5447,24 +5440,15 @@ class ChatDatabaseRepository {
         .go();
     final now = DateTime.now().toUtc();
     final updatedAt = now.isBefore(message.timestamp) ? message.timestamp : now;
-    final roundPayloads = <int, String>{};
     Breadcrumbs.mark('db:replaceParts batch');
     await _db.batch((batch) {
       for (var ordinal = 0; ordinal < parts.length; ordinal++) {
         final part = parts[ordinal];
-        // Provider replay details can hold a live nested list until Finish.
-        // Compare with the bytes submitted, never a shared mutable list.
-        final roundPayload = part is AssistantRoundEndPart
-            ? part.encodePayload()
-            : null;
-        if (roundPayload != null) roundPayloads[ordinal] = roundPayload;
         if (baseline != null &&
             baseline.conversationId == message.conversationId &&
             baseline.timestamp == message.timestamp &&
             ordinal < baseline.parts.length &&
-            baseline.parts[ordinal] == part &&
-            (roundPayload == null ||
-                baselineRounds?[ordinal] == roundPayload)) {
+            baseline.parts[ordinal] == part) {
           continue;
         }
         batch.insert(
@@ -5474,7 +5458,7 @@ class ChatDatabaseRepository {
             revisionId: message.id,
             ordinal: ordinal,
             kind: part.kind,
-            payload: roundPayload ?? part.encodePayload(),
+            payload: part.encodePayload(),
             createdAt: message.timestamp,
             updatedAt: updatedAt,
           ),
@@ -5502,16 +5486,11 @@ class ChatDatabaseRepository {
     if (streamingCheckpoint) {
       genUiStates.afterCommit(() {
         _checkpointParts.remove(message.id);
-        _checkpointRoundPayloads.remove(message.id);
-        if (!message.isStreaming) _checkpointProjections.remove(message.id);
         if (message.isStreaming) {
           _checkpointParts[message.id] = message.copyWith(parts: parts);
-          _checkpointRoundPayloads[message.id] = roundPayloads;
           // Bounded acceleration only; an evicted base is written in full.
           while (_checkpointParts.length > 16) {
-            final oldest = _checkpointParts.keys.first;
-            _checkpointParts.remove(oldest);
-            _checkpointRoundPayloads.remove(oldest);
+            _checkpointParts.remove(_checkpointParts.keys.first);
           }
         }
       });
@@ -6972,7 +6951,6 @@ class ChatDatabaseRepository {
   }
 
   final _checkpointParts = <String, ChatMessage>{};
-  final _checkpointRoundPayloads = <String, Map<int, String>>{};
 
   @Deprecated('legacy/test only; rewrites the complete conversation order')
   Future<void> updateConversationMessages({
@@ -8030,33 +8008,6 @@ class ChatDatabaseRepository {
     ChatMessage message,
     List<Map<String, dynamic>>? toolEvents,
   ) {
-    final source = message.parts;
-    final cached = _checkpointProjections[message.id];
-    if (source is MessagePartSnapshot &&
-        (toolEvents == null || toolEvents is ToolEventSnapshot) &&
-        cached != null &&
-        identical(cached.events, toolEvents) &&
-        cached.reasoningText == message.reasoningText &&
-        source.length == cached.source.length) {
-      final changed = source.changesSince(cached.source);
-      if (changed != null &&
-          changed.every(
-            (index) =>
-                source[index] is TextPart && cached.source[index] is TextPart,
-          )) {
-        final result = List<MessagePart>.of(cached.parts);
-        for (final index in changed) {
-          result[index] = source[index];
-        }
-        _checkpointProjections[message.id] = (
-          source: source,
-          events: toolEvents,
-          reasoningText: message.reasoningText,
-          parts: result,
-        );
-        return result;
-      }
-    }
     var parts = List<MessagePart>.of(message.parts);
     if (!parts.any((part) => part is ReasoningPart)) {
       final reasoning = message.reasoningText;
@@ -8077,31 +8028,8 @@ class ChatDatabaseRepository {
     if (parts.isEmpty) {
       return <MessagePart>[TextPart(message.content)];
     }
-    if (source is MessagePartSnapshot && parts.length == source.length) {
-      _checkpointProjections.remove(message.id);
-      _checkpointProjections[message.id] = (
-        source: source,
-        events: toolEvents,
-        reasoningText: message.reasoningText,
-        parts: parts,
-      );
-      while (_checkpointProjections.length > 16) {
-        _checkpointProjections.remove(_checkpointProjections.keys.first);
-      }
-    }
     return parts;
   }
-
-  final _checkpointProjections =
-      <
-        String,
-        ({
-          MessagePartSnapshot source,
-          List<Map<String, dynamic>>? events,
-          String? reasoningText,
-          List<MessagePart> parts,
-        })
-      >{};
 
   List<MessagePart> _applyToolEventsToParts(
     List<MessagePart> parts,
