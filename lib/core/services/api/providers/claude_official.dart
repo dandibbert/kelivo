@@ -1,3 +1,4 @@
+import '../request_image_context.dart';
 import '../../../utils/provider_url.dart';
 import '../../custom_request_merger.dart';
 import '../../../models/provider_oauth.dart';
@@ -31,10 +32,7 @@ import 'claude/claude_history.dart';
 import 'claude/claude_thinking_recovery.dart';
 
 export 'claude/claude_history.dart'
-    show
-        normalizeClaudeImageMime,
-        isClaudeSupportedImageMime,
-        claudeToolResultContent;
+    show isClaudeSupportedImageMime, claudeToolResultContent;
 
 Stream<StreamChunk> sendClaudeStream(
   http.Client client,
@@ -397,17 +395,17 @@ Stream<StreamChunk> sendClaudeStream(
         return body;
       }
 
-      http.Request buildRequest(Map<String, dynamic> body) {
+      Future<http.Request> buildRequest(Map<String, dynamic> body) async {
         final request = http.Request('POST', url);
         request.headers.addAll(baseHeaders);
-        request.body = jsonEncode(body);
+        request.body = await RequestImageContext.encodeBody(body);
         return request;
       }
 
       late http.StreamedResponse response;
       while (true) {
         final body = buildBody();
-        response = await client.send(buildRequest(body));
+        response = await client.send(await buildRequest(body));
         if (response.statusCode >= 200 && response.statusCode < 300) break;
         final errorBody = await response.stream.bytesToString();
         if (!recoveredThinking &&
@@ -692,6 +690,7 @@ Stream<StreamChunk> sendClaudeStream(
             tool.name,
             res?.content ?? '',
             metadata: res?.metadata,
+            toolCallId: tool.id,
             canImageInput: canImageInput,
           )).claudeContent,
         });
@@ -721,6 +720,7 @@ Stream<StreamChunk> sendClaudeStream(
                     item.call.name,
                     item.content,
                     metadata: item.metadata,
+                    toolCallId: item.call.id,
                     canImageInput: canImageInput,
                   )).claudeContent,
                 },

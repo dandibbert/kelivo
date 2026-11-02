@@ -1,3 +1,5 @@
+import '../../models/image_context.dart';
+import '../../utils/chat_image_result.dart';
 import '../../models/quote_ref.dart';
 import '../../../features/intelligent_ui/host/ui_context_submission.dart';
 import '../../../features/intelligent_ui/models/ui_context_attachment.dart';
@@ -49,6 +51,7 @@ import '../storage/storage_image_usage.dart';
 import '../storage/attachment_file_lock.dart';
 
 part 'chat_context_operations.dart';
+part 'chat_image_context.dart';
 
 final class LoadedTimelineSlot {
   const LoadedTimelineSlot({required this.identity, required this.message});
@@ -362,6 +365,8 @@ class ChatService extends ChangeNotifier {
       () => ValueNotifier<int>(contextRevision(conversationId)),
     );
   }
+
+  final _temporaryImageSettings = <String, ImageContextSettings>{};
 
   void _bumpContextRevision(String conversationId) {
     if (_initialized && !_temporaryConversationIds.contains(conversationId)) {
@@ -2073,6 +2078,7 @@ class ChatService extends ChangeNotifier {
 
   void _discardTemporaryConversation(String? id) {
     if (id == null || !_temporaryConversationIds.remove(id)) return;
+    _temporaryImageSettings.remove(id);
     _contextCompression?.forget(id);
     _forgetContextRevision(id);
     _rememberDiscardedTemporaryConversation(id);
@@ -2092,6 +2098,7 @@ class ChatService extends ChangeNotifier {
   }
 
   Future<void> deleteConversation(String id) async {
+    _temporaryImageSettings.remove(id);
     if (!_initialized) return;
     _contextCompression?.forget(id);
 
@@ -2261,13 +2268,24 @@ class ChatService extends ChangeNotifier {
         fromParts['file:$fixed'] = (path: fixed, kind: 'file');
       } else if (part is ToolCallPart) {
         final uri = part.browserPreviewImage;
-        if (uri == null || !previews.add(uri)) continue;
-        final file = await McpImageSnapshot.localFile(uri);
-        if (file != null) {
-          // Keep the sandbox spelling after validating its real destination;
-          // macOS /var can resolve to /private/var outside the lexical root.
-          final path = SandboxPathResolver.resolveForIo(uri)!;
-          fromParts['image:$path'] = (path: path, kind: 'image');
+        if (uri != null && previews.add(uri)) {
+          final file = await McpImageSnapshot.localFile(uri);
+          if (file != null) {
+            // Keep the sandbox spelling after validating its real destination;
+            // macOS /var can resolve to /private/var outside the lexical root.
+            final path = SandboxPathResolver.resolveForIo(uri)!;
+            fromParts['image:$path'] = (path: path, kind: 'image');
+          }
+        }
+        for (final asset in chatImageAssetsFromPart(part)) {
+          if (!asset.directAsset &&
+              await McpImageSnapshot.localFile(asset.uri) == null) {
+            continue;
+          }
+          final path = SandboxPathResolver.resolveForIo(asset.uri);
+          if (path != null) {
+            fromParts['image:$path'] = (path: path, kind: 'image');
+          }
         }
       }
     }
@@ -2297,7 +2315,9 @@ class ChatService extends ChangeNotifier {
     (part) =>
         part is ImagePart ||
         part is FilePart ||
-        (part is ToolCallPart && part.browserPreviewImage != null) ||
+        (part is ToolCallPart &&
+            (part.browserPreviewImage != null ||
+                chatImageAssetsFromPart(part).isNotEmpty)) ||
         (part is MalformedPart && part.isAttachmentKind),
   );
 
@@ -2802,6 +2822,7 @@ class ChatService extends ChangeNotifier {
     _messagesCache.clear();
     _draftConversations.clear();
     _temporaryConversationIds.clear();
+    _temporaryImageSettings.clear();
     _temporaryToolEvents.clear();
     _temporaryProviderArtifacts.clear();
     _toolEventsCache.clear();
@@ -3754,7 +3775,9 @@ class ChatService extends ChangeNotifier {
       message.hydrateGenerationState(terminalState);
       if (_messageCanOwnAssets(message) ||
           toolEvents.any(
-            (event) => browserPreviewImageFromToolEvent(event) != null,
+            (event) =>
+                browserPreviewImageFromToolEvent(event) != null ||
+                chatImageAssetsFromToolEvent(event).isNotEmpty,
           )) {
         await _synchronizePersistedMessageAssetsBestEffort(message.id);
       }
@@ -3778,7 +3801,9 @@ class ChatService extends ChangeNotifier {
     message.hydrateGenerationState(run.state);
     if (_messageCanOwnAssets(message) ||
         toolEvents.any(
-          (event) => browserPreviewImageFromToolEvent(event) != null,
+          (event) =>
+              browserPreviewImageFromToolEvent(event) != null ||
+              chatImageAssetsFromToolEvent(event).isNotEmpty,
         )) {
       // Tool-event overlays may be ahead of the message's streaming parts.
       await _synchronizePersistedMessageAssetsBestEffort(message.id);
@@ -3861,7 +3886,9 @@ class ChatService extends ChangeNotifier {
     }
     await _repo.setToolEvents(assistantMessageId, events);
     if (events.any(
-      (event) => browserPreviewImageFromToolEvent(event) != null,
+      (event) =>
+          browserPreviewImageFromToolEvent(event) != null ||
+          chatImageAssetsFromToolEvent(event).isNotEmpty,
     )) {
       await _synchronizePersistedMessageAssetsBestEffort(assistantMessageId);
     }
@@ -4796,6 +4823,7 @@ class ChatService extends ChangeNotifier {
     _conversationsCache.clear();
     _draftConversations.clear();
     _temporaryConversationIds.clear();
+    _temporaryImageSettings.clear();
     _temporaryToolEvents.clear();
     _temporaryProviderArtifacts.clear();
     _toolEventsCache.clear();

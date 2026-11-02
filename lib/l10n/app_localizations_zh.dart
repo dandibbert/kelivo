@@ -13306,6 +13306,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get browserUnsupported => '此平台暂不支持内置浏览器。';
 
   @override
+  String get browserStorageUnsupported =>
+      '此工作区应用需要 Android System WebView 或 Microsoft Edge WebView2 Runtime 152 及以上版本，请更新浏览器内核后重试。';
+
+  @override
   String get browserLoadFailed => '无法加载此页面';
 
   @override
@@ -15199,6 +15203,37 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get recoveryCopiesNeedUpdate =>
       '部分副本来自更新版本的 Kelivo，请升级 App 后再恢复。这些副本仍然保留。';
+
+  @override
+  String get imageContextTitle => '图片上下文';
+
+  @override
+  String get imageContextAutomatic => '自动管理历史图片';
+
+  @override
+  String get imageContextDescription =>
+      '用户附件保留更久，工具截图分批淘汰。固定图片保留在原消息中，可能改变缓存前缀；再次添加会放入输入框。预览依据已有文件，待处理 OCR、远程文件和服务商限制在发送时确认。';
+
+  @override
+  String get imageContextIncluded => '将发送';
+
+  @override
+  String get imageContextOmitted => '已省略';
+
+  @override
+  String get imageContextPin => '固定图片';
+
+  @override
+  String get imageContextUnpin => '取消固定';
+
+  @override
+  String get imageContextAttachAgain => '再次添加到输入框';
+
+  @override
+  String get imageContextEmpty => '当前上下文没有图片';
+
+  @override
+  String get imageContextUnavailable => '当前上下文无法读取这张图片。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -28427,6 +28462,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get browserUnsupported => '此平台暂不支持内置浏览器。';
+
+  @override
+  String get browserStorageUnsupported =>
+      '此工作区应用需要 Android System WebView 或 Microsoft Edge WebView2 Runtime 152 及以上版本，请更新浏览器内核后重试。';
 
   @override
   String get browserLoadFailed => '无法加载此页面';
@@ -43629,6 +43668,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get browserUnsupported => '此平台暫不支援內建瀏覽器。';
+
+  @override
+  String get browserStorageUnsupported =>
+      '此工作區應用程式需要 Android System WebView 或 Microsoft Edge WebView2 Runtime 152 及以上版本，請更新瀏覽器核心後再試。';
 
   @override
   String get browserLoadFailed => '無法載入此頁面';
