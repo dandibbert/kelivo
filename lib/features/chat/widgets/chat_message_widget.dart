@@ -1414,7 +1414,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   }
 
   IncrementalTimelineProjection? _incrementalTimeline;
-  final _timelineVisibility = TimelineVisibilityCache();
   List<ToolUIPart>? _timelineToolSource;
   List<TimelineToolRef> _timelineTools = const [];
   final _timelineToolRefs = Expando<TimelineToolRef>();
@@ -2826,7 +2825,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     bool enableAssistantMarkdown,
     String? Function(String) citationIndexResolver, {
     String contentKey = '',
-    Object? detailsStateKey,
     UiTextSlice? uiSource,
     SourceTextMap? sourceMap,
   }) {
@@ -2846,7 +2844,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     if (enableAssistantMarkdown) {
       assistantContent = MarkdownWithCodeHighlight(
         text: visualContent,
-        detailsStateKey: detailsStateKey,
         highlightRanges: highlights,
         uiHost: widget.message.role != 'assistant' || uiSource == null
             ? null
@@ -2969,9 +2966,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
               SourceSpan(0, visualContent.length),
             ),
           ];
-    final detailsBlockKey = sourceMap == null
-        ? blockKey
-        : ('source', sourceMap.sourceRange(0, 0).start);
     return <Widget>[
       for (var i = 0; i < parts.length; i++)
         _buildAssistantTextBlock(
@@ -2981,7 +2975,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           enableAssistantMarkdown,
           citationIndexResolver,
           contentKey: parts.length == 1 ? '' : '$blockKey.$i',
-          detailsStateKey: (widget.message.id, detailsBlockKey, i),
           sourceMap: sourceMap == null
               ? null
               : uiSource == null
@@ -2997,7 +2990,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     bool enableAssistantMarkdown,
     String? Function(String) citationIndexResolver, {
     String contentKey = '',
-    Object? detailsStateKey,
     UiTextSlice? uiSource,
     SourceTextMap? sourceMap,
   }) {
@@ -3011,7 +3003,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           enableAssistantMarkdown,
           citationIndexResolver,
           contentKey: contentKey,
-          detailsStateKey: detailsStateKey,
           uiSource: uiSource,
           sourceMap: sourceMap,
         ),
@@ -3389,7 +3380,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                     conversationId: widget.message.conversationId,
                   ) !=
                   null;
-              final visibleBlocks = _timelineVisibility.project(
+              final visibleBlocks = visibleAssistantTimeline(
                 timelineProjection,
                 showThinkingCards: showThinkingCards,
                 showToolCards: showToolCards,
@@ -5018,7 +5009,6 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
 
   Object _reasoningStepSignature({
     required ReasoningSegment step,
-    required int sourceIndex,
     required bool isFirst,
     required bool isLast,
     required ChatSurfaceForegroundPalette fg,
@@ -5035,7 +5025,6 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
       step.startAt,
       step.finishedAt,
       step.toolStartIndex,
-      sourceIndex,
       isFirst,
       isLast,
       fg,
@@ -5237,12 +5226,9 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                       final reasoning = step.reasoning!;
                       final hasToggle = reasoning.onToggle != null;
                       return _CachedTimelineStep(
-                        key: ValueKey<String>(
-                          'reasoning-${step.sourceOrdinal}',
-                        ),
+                        key: ValueKey<String>('reasoning-$sourceIndex'),
                         signature: _reasoningStepSignature(
                           step: reasoning,
-                          sourceIndex: sourceIndex,
                           isFirst: isFirst,
                           isLast: isLast,
                           fg: fg,
@@ -5254,7 +5240,6 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                         builder: () => _ChainOfThoughtReasoningStep(
                           step: reasoning,
                           sourceIndex: sourceIndex,
-                          sourceOrdinal: step.sourceOrdinal,
                           isFirst: isFirst,
                           isLast: isLast,
                         ),
@@ -5590,14 +5575,12 @@ class _ChainOfThoughtReasoningStep extends StatefulWidget {
   const _ChainOfThoughtReasoningStep({
     required this.step,
     required this.sourceIndex,
-    required this.sourceOrdinal,
     required this.isFirst,
     required this.isLast,
   });
 
   final ReasoningSegment step;
   final int sourceIndex;
-  final int sourceOrdinal;
   final bool isFirst;
   final bool isLast;
 
@@ -5607,17 +5590,7 @@ class _ChainOfThoughtReasoningStep extends StatefulWidget {
 }
 
 class _ChainOfThoughtReasoningStepState
-    extends State<_ChainOfThoughtReasoningStep>
-    with _StoredTimelineState<_ChainOfThoughtReasoningStep> {
-  @override
-  Object get storageId => ('reasoning-expanded', widget.sourceOrdinal);
-  @override
-  Object saveViewState() => (_localExpanded,);
-  @override
-  void restoreViewState(Object value) {
-    _localExpanded = (value as (bool?,)).$1;
-  }
-
+    extends State<_ChainOfThoughtReasoningStep> {
   final ValueNotifier<int> _elapsedTick = ValueNotifier<int>(0);
   Timer? _elapsedTimer;
   final ScrollController _scroll = ScrollController();
@@ -5894,8 +5867,6 @@ class _ChainOfThoughtBrowserGroupState
   List<BrowserToolAction> _actions = const [];
   List<Object> _inputs = const [];
   List<List<String>> _images = const [];
-  List<(BrowserToolAction?, String?)> _stepContexts = const [];
-  int _structureRevision = 0;
 
   @override
   void initState() {
@@ -5939,15 +5910,8 @@ class _ChainOfThoughtBrowserGroupState
     final actions = <BrowserToolAction>[];
     final inputs = <Object>[];
     final images = <List<String>>[];
-    final contexts = <(BrowserToolAction?, String?)>[];
-    var structureChanged = widget.tools.length != _actions.length;
-    BrowserToolAction? snapshot;
-    String? previousUrl;
     for (var i = 0; i < widget.tools.length; i++) {
       final tool = widget.tools[i];
-      if (i >= _actions.length || tool.id != _actions[i].id) {
-        structureChanged = true;
-      }
       final input = (
         tool.id,
         tool.loading,
@@ -5975,18 +5939,10 @@ class _ChainOfThoughtBrowserGroupState
           parseToolResultImages(tool.content, metadata: tool.metadata).$2,
         );
       }
-      // A lazily mounted row still resolves refs and repeated-page icons
-      // against the complete preceding history, including folded rows.
-      contexts.add((snapshot, previousUrl));
-      final action = actions.last;
-      if (action.action == 'snapshot') snapshot = action;
-      if (action.hasPage && action.url.isNotEmpty) previousUrl = action.url;
     }
-    if (structureChanged) _structureRevision++;
     _actions = actions;
     _inputs = inputs;
     _images = images;
-    _stepContexts = contexts;
   }
 
   bool? _expanded;
@@ -6063,7 +6019,6 @@ class _ChainOfThoughtBrowserGroupState
     final failures = _actions.where((action) => action.failed).length;
     final expanded = _isExpanded;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final tools = widget.tools;
     final firstVisible =
         _keepSteps &&
             !_showAll &&
@@ -6177,34 +6132,19 @@ class _ChainOfThoughtBrowserGroupState
           ),
         );
       }
-      steps.add(
-        ViewportBlockList(
-          itemCount: _actions.length - firstVisible,
-          structureToken: (_structureRevision, firstVisible),
-          itemKey: (i) => timelineToolStepKey(
-            id: tools[firstVisible + i].id,
-            sourceOrdinal: firstVisible + i,
-            toolName: LocalToolNames.browser,
-          ),
-          estimateExtent: (i, width) {
-            final index = firstVisible + i;
-            final hasImages = !widget.hideImages && _images[index].isNotEmpty;
-            return 36.0 +
-                (_actions[index].failed ? 40 : 0) +
-                (hasImages ? kBrowserStepImageHeight + 8 : 0);
-          },
-          itemBuilder: (context, i) {
-            final index = firstVisible + i;
-            final preceding = _stepContexts[index];
-            return _step(
-              context,
-              index,
-              snapshot: preceding.$1,
-              previousUrl: preceding.$2,
-            );
-          },
-        ),
-      );
+      // Scan the complete prefix once so folded snapshots still resolve refs.
+      BrowserToolAction? snapshot;
+      String? previousUrl;
+      for (var i = 0; i < _actions.length; i++) {
+        final action = _actions[i];
+        if (i >= firstVisible) {
+          steps.add(
+            _step(context, i, snapshot: snapshot, previousUrl: previousUrl),
+          );
+        }
+        if (action.action == 'snapshot') snapshot = action;
+        if (action.hasPage && action.url.isNotEmpty) previousUrl = action.url;
+      }
     }
     final stepsContent = Align(
       alignment: Alignment.topLeft,
