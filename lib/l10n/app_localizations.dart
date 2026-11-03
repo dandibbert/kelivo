@@ -6214,6 +6214,24 @@ abstract class AppLocalizations {
   /// **'Computing…'**
   String get contextUsageStateComputing;
 
+  /// No description provided for @contextUsageStateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculation failed'**
+  String get contextUsageStateFailed;
+
+  /// No description provided for @contextUsageStateFailedWithPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed · previous result is stale'**
+  String get contextUsageStateFailedWithPrevious;
+
+  /// No description provided for @contextUsageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage unavailable'**
+  String get contextUsageUnavailable;
+
   /// No description provided for @contextUsageStateNone.
   ///
   /// In en, this message translates to:
@@ -10746,6 +10764,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'For Token Plan, choose Recorded audio, enter token-plan as the Workspace ID, and select the region for your key.'**
   String get asrServicesQwenTokenPlanHint;
+
+  /// No description provided for @asrServicesWorkspaceIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. token-plan'**
+  String get asrServicesWorkspaceIdHint;
 
   /// No description provided for @asrServicesEndpointOverrideLabel.
   ///
@@ -28305,7 +28329,7 @@ abstract class AppLocalizations {
   /// No description provided for @imageContextDescription.
   ///
   /// In en, this message translates to:
-  /// **'Keep user attachments longer; retire old tool screenshots in batches. Pins keep images in their original messages and may change the cached prefix. Add again places a new attachment in the composer. The preview uses saved files; pending OCR, remote files and provider limits are checked when sending.'**
+  /// **'Manage the images included in this turn. Originals stay in your chat.'**
   String get imageContextDescription;
 
   /// No description provided for @imageContextIncluded.
@@ -28317,7 +28341,7 @@ abstract class AppLocalizations {
   /// No description provided for @imageContextOmitted.
   ///
   /// In en, this message translates to:
-  /// **'Omitted'**
+  /// **'Not included'**
   String get imageContextOmitted;
 
   /// No description provided for @imageContextPin.
@@ -28341,7 +28365,7 @@ abstract class AppLocalizations {
   /// No description provided for @imageContextEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No images in the current context'**
+  /// **'No images yet'**
   String get imageContextEmpty;
 
   /// No description provided for @imageContextUnavailable.
@@ -28349,6 +28373,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This image is unavailable in the current context.'**
   String get imageContextUnavailable;
+
+  /// No description provided for @imageContextEntryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and manage images for this turn'**
+  String get imageContextEntryDescription;
+
+  /// No description provided for @imageContextAutomaticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your attachments longer and set aside older tool images.'**
+  String get imageContextAutomaticDescription;
+
+  /// No description provided for @imageContextActionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to prioritize an image, or add it to the composer again.'**
+  String get imageContextActionsHint;
+
+  /// No description provided for @imageContextEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Images you send or tools read will appear here.'**
+  String get imageContextEmptyDescription;
+
+  /// No description provided for @imageContextUserImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Your images'**
+  String get imageContextUserImages;
+
+  /// No description provided for @imageContextToolImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool images'**
+  String get imageContextToolImages;
+
+  /// No description provided for @imageContextAssistantImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated images'**
+  String get imageContextAssistantImages;
+
+  /// No description provided for @imageContextImageNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Image {index}'**
+  String imageContextImageNumber(int index);
+
+  /// No description provided for @imageContextIncludedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{included} of {total} images included'**
+  String imageContextIncludedCount(int included, int total);
+
+  /// No description provided for @imageContextMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get imageContextMissing;
+
+  /// No description provided for @imageContextLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load images. Try again.'**
+  String get imageContextLoadFailed;
+
+  /// No description provided for @imageContextUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save your changes. Try again.'**
+  String get imageContextUpdateFailed;
+
+  /// No description provided for @contextOperationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Context operations'**
+  String get contextOperationsTitle;
+
+  /// No description provided for @contextOperationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage compression tasks, summaries and context boundaries'**
+  String get contextOperationsDescription;
+
+  /// No description provided for @contextOperationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No context operations yet.'**
+  String get contextOperationsEmpty;
+
+  /// No description provided for @contextOperationsStored.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved history: {count} messages'**
+  String contextOperationsStored(int count);
+
+  /// No description provided for @contextOperationsEffective.
+  ///
+  /// In en, this message translates to:
+  /// **'History for the next request: {summaries} summaries + {messages} original messages'**
+  String contextOperationsEffective(int summaries, int messages);
+
+  /// No description provided for @contextOperationsScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the current history limit. System prompts, memory, tools and unsent input add to this context. Open a record to view its summary, original range or undo it.'**
+  String get contextOperationsScope;
+
+  /// No description provided for @contextOperationsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the context overview. Please retry.'**
+  String get contextOperationsLoadFailed;
+
+  /// No description provided for @compressNewConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Compress into a new chat'**
+  String get compressNewConversation;
+
+  /// No description provided for @compressNewConversationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new chat with the summary and retained messages. Keep the original chat unchanged. Turn off to compress in place.'**
+  String get compressNewConversationDescription;
+
+  /// No description provided for @contextViewBoundary.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to boundary'**
+  String get contextViewBoundary;
 }
 
 class _AppLocalizationsDelegate

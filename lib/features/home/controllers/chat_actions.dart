@@ -2165,6 +2165,16 @@ class ChatActions {
     Breadcrumbs.mark(
       'ca:executeGeneration begin provider=${ctx.providerKey} model=${ctx.modelId} stream=${ctx.streamOutput}',
     );
+    final toolEvents = chatService.getToolEventsForMessage(
+      ctx.assistantMessage,
+    );
+    // Background sends may never have rendered their placeholder. Restore the
+    // seed before ingesting events so a later first UI restore cannot replace
+    // live reasoning segments still owned by this generation's id map.
+    streamController.restoreMessageUiState(
+      ctx.assistantMessage,
+      getToolEventsFromDb: (_) => toolEvents,
+    );
     final state = stream_ctrl.StreamingState(
       ctx,
       responsesTurnPrefix: chatService.getProviderArtifactForMessage(
@@ -2193,8 +2203,7 @@ class ChatActions {
     streamController.markStreamingStarted(state.messageId);
     Breadcrumbs.mark('ca:streamingStarted');
     _activeAssistantMessages.put(state.ctx.assistantMessage);
-    _streamingToolEvents[state.messageId] = chatService
-        .getToolEventsForMessage(ctx.assistantMessage)
+    _streamingToolEvents[state.messageId] = toolEvents
         .map((event) => Map<String, dynamic>.from(event))
         .toList();
     _toolEventSnapshots.remove(state.messageId);
@@ -2350,12 +2359,20 @@ class ChatActions {
       case TextDelta(:final text):
         await _handleContentChunk(state, text);
         _scheduleStreamingCheckpoint(state);
-      case ReasoningDelta(:final text, :final details):
+      case ReasoningStart(:final id):
+        streamController.handleReasoningStart(id, state);
+        _publishAssistantParts(state);
+        _scheduleStreamingCheckpoint(state);
+      case ReasoningEnd(:final id):
+        streamController.handleReasoningEnd(id, state);
+        _publishAssistantParts(state);
+        _scheduleStreamingCheckpoint(state);
+      case ReasoningDelta(:final id, :final text, :final details):
         if (details != null) {
           streamController.setReasoningDetails(state.messageId, details);
         }
         if (text.isNotEmpty && state.ctx.supportsReasoning) {
-          await _handleReasoningChunk(text, state);
+          await _handleReasoningChunk(id, text, state);
         }
         _scheduleStreamingCheckpoint(state);
       case ToolCallStart(:final id, :final toolName):
@@ -2371,7 +2388,10 @@ class ChatActions {
         await _handleToolCallsChunk(chunk, state);
         _scheduleStreamingCheckpoint(state);
       case AssistantRoundEnd():
+        streamController.finishReasoningIfNeeded(state.messageId);
+        state.reasoningById.clear();
         streamController.reasoningDetails.remove(state.messageId);
+        _publishAssistantParts(state);
         _scheduleStreamingCheckpoint(state);
       case ServerToolStart(:final id, :final toolName):
         if (toolName.isNotEmpty) state.pendingToolNames[id] = toolName;
@@ -2396,8 +2416,6 @@ class ChatActions {
         _scheduleStreamingCheckpoint(state);
       case TextStart() ||
           TextEnd() ||
-          ReasoningStart() ||
-          ReasoningEnd() ||
           ServerToolInputDelta() ||
           ServerToolInputEnd():
         break;
@@ -2457,10 +2475,11 @@ class ChatActions {
 
   /// Handle reasoning chunk from stream.
   Future<void> _handleReasoningChunk(
+    String id,
     String reasoning,
     stream_ctrl.StreamingState state,
   ) async {
-    await streamController.handleReasoningChunk(reasoning, state);
+    await streamController.handleReasoningChunk(reasoning, state, id: id);
     _publishAssistantParts(state);
   }
 

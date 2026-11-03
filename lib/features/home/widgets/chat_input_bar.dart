@@ -671,6 +671,7 @@ class ChatInputBar extends StatefulWidget {
     this.onOpenWorldBook,
     this.onClearContext,
     this.onCompressContext,
+    this.onContextOperations,
     this.onLongPressLearning,
     this.learningModeActive = false,
     this.worldBookActive = false,
@@ -738,6 +739,7 @@ class ChatInputBar extends StatefulWidget {
   final VoidCallback? onOpenWorldBook;
   final VoidCallback? onClearContext;
   final VoidCallback? onCompressContext;
+  final VoidCallback? onContextOperations;
   final VoidCallback? onLongPressLearning;
   final bool learningModeActive;
   final bool worldBookActive;
@@ -3482,6 +3484,12 @@ class _ChatInputBarState extends State<ChatInputBar>
               context,
               anchorKey: _contextMgmtAnchorKey,
               items: [
+                if (widget.onContextOperations != null)
+                  DesktopContextMenuItem(
+                    icon: Lucide.History,
+                    label: l10n.contextOperationsTitle,
+                    onTap: widget.onContextOperations,
+                  ),
                 if (widget.onCompressContext != null)
                   DesktopContextMenuItem(
                     icon: Lucide.package2,
@@ -3505,13 +3513,13 @@ class _ChatInputBarState extends State<ChatInputBar>
                 child: _CompactIconButton(
                   tooltip: l10n.contextManagement,
                   icon: Lucide.Eraser,
-                  onTap: _composerLocked ? null : showContextMenu,
+                  onTap: showContextMenu,
                 ),
               ),
               menu: DesktopContextMenuItem(
                 icon: Lucide.Eraser,
                 label: l10n.contextManagement,
-                onTap: _composerLocked ? null : showContextMenu,
+                onTap: showContextMenu,
               ),
             ),
           );
@@ -4504,10 +4512,8 @@ class _ChatInputBarState extends State<ChatInputBar>
                                                               ?.isNotEmpty ??
                                                           false))
                                                     _ContextUsageInputControl(
-                                                      onTap: _composerLocked
-                                                          ? null
-                                                          : widget
-                                                                .onOpenContextUsage,
+                                                      onTap: widget
+                                                          .onOpenContextUsage,
                                                     ),
                                                   if (showVoiceInput) ...[
                                                     _CompactIconButton(

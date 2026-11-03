@@ -1,6 +1,7 @@
 import 'package:Kelivo/features/intelligent_ui/host/ui_search_navigation.dart';
 import '../../intelligent_ui/host/ui_host_scope.dart';
 import '../../chat/widgets/context_dialog.dart';
+import '../../chat/widgets/image_context_panel.dart';
 import '../../../core/models/context_compression_task.dart';
 import '../../../core/models/context_operation.dart';
 import '../services/tool_approval_service.dart';
@@ -1743,6 +1744,7 @@ class _HomePageState extends State<HomePage>
       onLongPressLearning: _showLearningPromptSheet,
       onClearContext: _clearContextWithNotice,
       onCompressContext: _handleDesktopCompressContext,
+      onContextOperations: _showContextOperations,
       backgroundImageActive: _assistantBackgroundActive(context),
     );
   }
@@ -1975,6 +1977,8 @@ class _HomePageState extends State<HomePage>
         _inputController.quotes,
         quoteMarker: AppLocalizations.of(context)!.selectionQuoteMarker,
       ),
+      onOperations: () =>
+          _showContextOperations(targetConversationId: conversationId),
     );
   }
 
@@ -2137,6 +2141,7 @@ class _HomePageState extends State<HomePage>
 
   void _showContextManagementSheet() async {
     final imageTarget = _mediaController.capture();
+    final imageConversationId = _controller.currentConversation?.id;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2148,9 +2153,29 @@ class _HomePageState extends State<HomePage>
         return SafeArea(
           top: false,
           child: ContextManagementSheet(
-            onAttachImage: (path) {
-              if (imageTarget.isValid) imageTarget.addImages([path]);
-            },
+            onOperations: imageConversationId == null
+                ? null
+                : () async {
+                    await Navigator.of(ctx).maybePop();
+                    if (mounted) {
+                      await _showContextOperations(
+                        targetConversationId: imageConversationId,
+                      );
+                    }
+                  },
+            onImages: imageConversationId == null
+                ? null
+                : () async {
+                    await Navigator.of(ctx).maybePop();
+                    if (!mounted) return;
+                    await showImageContextPanel(
+                      context,
+                      imageConversationId,
+                      onAttach: (path) {
+                        if (imageTarget.isValid) imageTarget.addImages([path]);
+                      },
+                    );
+                  },
             conversationId: _controller.currentConversation?.id,
             draftText: formatQuotedMessage(
               _inputController.text,
@@ -2175,6 +2200,49 @@ class _HomePageState extends State<HomePage>
 
   void _handleDesktopCompressContext() async {
     await _showCompressContextOptions();
+  }
+
+  Future<void> _showContextOperations({String? targetConversationId}) async {
+    final id = targetConversationId ?? _controller.currentConversation?.id;
+    if (id == null) return;
+    final chat = context.read<ChatService>();
+    final conversation = chat.getConversation(id);
+    if (conversation == null) return;
+    final assistant = context
+        .read<AssistantProvider>()
+        .resolveConversationAssistant(conversation.assistantId);
+    await showContextOperations(
+      context,
+      chat: chat,
+      conversationId: id,
+      messageLimit: assistant?.limitContextMessages == true
+          ? assistant!.contextMessageSize
+          : 0x7fffffff,
+      onOpenOperation: (operation) => showContextOperationDetails(
+        context,
+        chat: chat,
+        conversationId: id,
+        operation: operation,
+        onViewOriginal: (messageId) async {
+          if (_controller.currentConversation?.id == id) {
+            await _controller.scrollToMessageId(messageId);
+          }
+        },
+        onRecompress: () =>
+            _showCompressContextOptions(targetConversationId: id),
+        onOpenConversation: _controller.switchConversationAnimated,
+      ),
+      onRetry: (task) => _controller.compressContext(
+        options: task.options,
+        targetConversationId: id,
+      ),
+      onAdjust: (task) => _showCompressContextOptions(
+        targetConversationId: id,
+        initialOptions: task.options,
+        reviewPending: false,
+      ),
+      onOpenConversation: _controller.switchConversationAnimated,
+    );
   }
 
   Future<void> _showCompressContextOptions({

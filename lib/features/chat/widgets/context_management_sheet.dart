@@ -18,7 +18,8 @@ class ContextManagementSheet extends StatelessWidget {
     this.messageCountLabel,
     this.conversationId,
     this.draftText = '',
-    this.onAttachImage,
+    this.onImages,
+    this.onOperations,
   });
 
   final VoidCallback? onCompress;
@@ -28,7 +29,8 @@ class ContextManagementSheet extends StatelessWidget {
   final String? messageCountLabel;
   final String? conversationId;
   final String draftText;
-  final ValueChanged<String>? onAttachImage;
+  final VoidCallback? onImages;
+  final VoidCallback? onOperations;
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +74,29 @@ class ContextManagementSheet extends StatelessWidget {
                 children: [
                   ContextUsageHeader(
                     conversationId: conversationId,
-                    onAttachImage: onAttachImage,
                     draftText: draftText,
                   ),
                   const SizedBox(height: 16),
+                  if (onOperations != null) ...[
+                    _OptionRow(
+                      icon: Lucide.History,
+                      label: l10n.contextOperationsTitle,
+                      description: l10n.contextOperationsDescription,
+                      onTap: onOperations,
+                      showChevron: true,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (onImages != null) ...[
+                    _OptionRow(
+                      icon: Lucide.Image,
+                      label: l10n.imageContextTitle,
+                      description: l10n.imageContextEntryDescription,
+                      onTap: onImages,
+                      showChevron: true,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   _OptionRow(
                     icon: Lucide.package2,
                     label: l10n.compressContext,
@@ -114,6 +135,7 @@ class _OptionRow extends StatelessWidget {
     required this.description,
     this.onTap,
     this.trailing,
+    this.showChevron = false,
   });
 
   final IconData icon;
@@ -121,6 +143,7 @@ class _OptionRow extends StatelessWidget {
   final String description;
   final VoidCallback? onTap;
   final String? trailing;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +194,14 @@ class _OptionRow extends StatelessWidget {
                 fontWeight: AppFontWeights.medium,
                 color: cs.onSurface.withValues(alpha: 0.55),
               ),
+            ),
+          ],
+          if (showChevron) ...[
+            const SizedBox(width: 10),
+            Icon(
+              Lucide.ChevronRight,
+              size: 17,
+              color: cs.onSurface.withValues(alpha: 0.35),
             ),
           ],
         ],

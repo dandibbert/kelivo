@@ -32,6 +32,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/chat_message.dart';
 import '../models/context_operation.dart';
+import '../models/compress_context_options.dart';
 import '../models/token_usage.dart';
 import '../models/conversation.dart';
 import '../models/conversation_mcp_settings.dart';
@@ -3394,6 +3395,7 @@ class ChatDatabaseRepository {
     String? conversationId,
     String? excludeConversationId,
     String? assistantId,
+    Set<String> excludedConversationIds = const {},
   }) {
     return _observer.measure(
       ChatDatabaseOperation.querySearch,
@@ -3405,6 +3407,7 @@ class ChatDatabaseRepository {
         conversationId: conversationId,
         excludeConversationId: excludeConversationId,
         assistantId: assistantId,
+        excludedConversationIds: excludedConversationIds,
       ),
       resultCount: (rows) => rows.length,
     );
@@ -3418,6 +3421,7 @@ class ChatDatabaseRepository {
     String? conversationId,
     String? excludeConversationId,
     String? assistantId,
+    required Set<String> excludedConversationIds,
   }) async {
     final cleanTokens = tokens
         .map((t) => t.trim().toLowerCase())
@@ -3470,6 +3474,12 @@ class ChatDatabaseRepository {
       if (assistantId != null && assistantId.isNotEmpty) {
         scopeSql += ' AND (c.assistant_id = ? OR c.assistant_id IS NULL)';
         scopeArgs.add(Variable<String>(assistantId));
+      }
+      if (excludedConversationIds.isNotEmpty) {
+        scopeSql += ' AND c.id NOT IN (SELECT value FROM json_each(?))';
+        scopeArgs.add(
+          Variable<String>(jsonEncode(excludedConversationIds.toList())),
+        );
       }
       final candidateLimit = (limit * candidateMultiplier)
           .clamp(limit, 2000)
@@ -5449,6 +5459,14 @@ class ChatDatabaseRepository {
     final updatedAt = now.isBefore(message.timestamp) ? message.timestamp : now;
     final roundPayloads = <int, String>{};
     Breadcrumbs.mark('db:replaceParts batch');
+    // Resolve the nullable snapshot outside the loop: AOT can otherwise hoist
+    // the inlined DateTime comparison above its null check (#1342).
+    final baselineParts =
+        baseline != null &&
+            baseline.conversationId == message.conversationId &&
+            baseline.timestamp == message.timestamp
+        ? baseline.parts
+        : const <MessagePart>[];
     await _db.batch((batch) {
       for (var ordinal = 0; ordinal < parts.length; ordinal++) {
         final part = parts[ordinal];
@@ -5458,11 +5476,8 @@ class ChatDatabaseRepository {
             ? part.encodePayload()
             : null;
         if (roundPayload != null) roundPayloads[ordinal] = roundPayload;
-        if (baseline != null &&
-            baseline.conversationId == message.conversationId &&
-            baseline.timestamp == message.timestamp &&
-            ordinal < baseline.parts.length &&
-            baseline.parts[ordinal] == part &&
+        if (ordinal < baselineParts.length &&
+            baselineParts[ordinal] == part &&
             (roundPayload == null ||
                 baselineRounds?[ordinal] == roundPayload)) {
           continue;

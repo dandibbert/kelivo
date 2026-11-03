@@ -3247,6 +3247,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contextUsageStateComputing => '计算中…';
 
   @override
+  String get contextUsageStateFailed => '计算失败';
+
+  @override
+  String get contextUsageStateFailedWithPrevious => '更新失败，上次结果已过时';
+
+  @override
+  String get contextUsageUnavailable => '用量不可用';
+
+  @override
   String get contextUsageStateNone => '暂无数据';
 
   @override
@@ -5657,6 +5666,9 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get asrServicesQwenTokenPlanHint =>
       '使用 Token Plan 时，选择录音转写，业务空间 ID 填 token-plan，并选择与密钥对应的地域。';
+
+  @override
+  String get asrServicesWorkspaceIdHint => '例如：token-plan';
 
   @override
   String get asrServicesEndpointOverrideLabel => '自定义端点（可选）';
@@ -15211,14 +15223,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageContextAutomatic => '自动管理历史图片';
 
   @override
-  String get imageContextDescription =>
-      '用户附件保留更久，工具截图分批淘汰。固定图片保留在原消息中，可能改变缓存前缀；再次添加会放入输入框。预览依据已有文件，待处理 OCR、远程文件和服务商限制在发送时确认。';
+  String get imageContextDescription => '管理本轮使用的图片，原图仍保留在聊天中。';
 
   @override
-  String get imageContextIncluded => '将发送';
+  String get imageContextIncluded => '本轮发送';
 
   @override
-  String get imageContextOmitted => '已省略';
+  String get imageContextOmitted => '本轮不发送';
 
   @override
   String get imageContextPin => '固定图片';
@@ -15230,10 +15241,86 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageContextAttachAgain => '再次添加到输入框';
 
   @override
-  String get imageContextEmpty => '当前上下文没有图片';
+  String get imageContextEmpty => '还没有图片';
 
   @override
   String get imageContextUnavailable => '当前上下文无法读取这张图片。';
+
+  @override
+  String get imageContextEntryDescription => '查看和管理本轮使用的图片';
+
+  @override
+  String get imageContextAutomaticDescription => '优先保留你上传的图片，分批收起较早的工具图片。';
+
+  @override
+  String get imageContextActionsHint => '固定以优先保留，或再次添加到输入框。';
+
+  @override
+  String get imageContextEmptyDescription => '发送图片或让工具读取图片后，会显示在这里。';
+
+  @override
+  String get imageContextUserImages => '你上传的图片';
+
+  @override
+  String get imageContextToolImages => '工具图片';
+
+  @override
+  String get imageContextAssistantImages => '生成的图片';
+
+  @override
+  String imageContextImageNumber(int index) {
+    return '图片 $index';
+  }
+
+  @override
+  String imageContextIncludedCount(int included, int total) {
+    return '本轮发送 $included / $total 张';
+  }
+
+  @override
+  String get imageContextMissing => '图片不可用';
+
+  @override
+  String get imageContextLoadFailed => '暂时无法加载图片，请重试。';
+
+  @override
+  String get imageContextUpdateFailed => '未能保存修改，请重试。';
+
+  @override
+  String get contextOperationsTitle => '上下文操作记录';
+
+  @override
+  String get contextOperationsDescription => '管理压缩任务、摘要和上下文分界';
+
+  @override
+  String get contextOperationsEmpty => '暂无上下文操作记录。';
+
+  @override
+  String contextOperationsStored(int count) {
+    return '已保存历史：$count 条消息';
+  }
+
+  @override
+  String contextOperationsEffective(int summaries, int messages) {
+    return '下次请求的历史部分：$summaries 条摘要 + $messages 条原始消息';
+  }
+
+  @override
+  String get contextOperationsScope =>
+      '已应用当前历史消息数量限制。系统提示、记忆、工具和未发送输入会额外加入上下文。点击记录可查看摘要、原始范围或撤销操作。';
+
+  @override
+  String get contextOperationsLoadFailed => '无法加载上下文概览，请重试。';
+
+  @override
+  String get compressNewConversation => '压缩并新建会话';
+
+  @override
+  String get compressNewConversationDescription =>
+      '新会话包含摘要和保留的消息，原会话保持不变。关闭后将在当前会话原位压缩。';
+
+  @override
+  String get contextViewBoundary => '跳转到分界位置';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -18479,6 +18566,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get contextUsageStateComputing => '计算中…';
 
   @override
+  String get contextUsageStateFailed => '计算失败';
+
+  @override
+  String get contextUsageStateFailedWithPrevious => '更新失败，上次结果已过时';
+
+  @override
+  String get contextUsageUnavailable => '用量不可用';
+
+  @override
   String get contextUsageStateNone => '暂无数据';
 
   @override
@@ -20889,6 +20985,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get asrServicesQwenTokenPlanHint =>
       '使用 Token Plan 时，选择录音转写，业务空间 ID 填 token-plan，并选择与密钥对应的地域。';
+
+  @override
+  String get asrServicesWorkspaceIdHint => '例如：token-plan';
 
   @override
   String get asrServicesEndpointOverrideLabel => '自定义端点（可选）';
@@ -30361,6 +30460,42 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get recoveryCopiesNeedUpdate =>
       '部分副本来自更新版本的 Kelivo，请升级 App 后再恢复。这些副本仍然保留。';
+
+  @override
+  String get contextOperationsTitle => '上下文操作记录';
+
+  @override
+  String get contextOperationsDescription => '管理压缩任务、摘要和上下文分界';
+
+  @override
+  String get contextOperationsEmpty => '暂无上下文操作记录。';
+
+  @override
+  String contextOperationsStored(int count) {
+    return '已保存历史：$count 条消息';
+  }
+
+  @override
+  String contextOperationsEffective(int summaries, int messages) {
+    return '下次请求的历史部分：$summaries 条摘要 + $messages 条原始消息';
+  }
+
+  @override
+  String get contextOperationsScope =>
+      '已应用当前历史消息数量限制。系统提示、记忆、工具和未发送输入会额外加入上下文。点击记录可查看摘要、原始范围或撤销操作。';
+
+  @override
+  String get contextOperationsLoadFailed => '无法加载上下文概览，请重试。';
+
+  @override
+  String get compressNewConversation => '压缩并新建会话';
+
+  @override
+  String get compressNewConversationDescription =>
+      '新会话包含摘要和保留的消息，原会话保持不变。关闭后将在当前会话原位压缩。';
+
+  @override
+  String get contextViewBoundary => '跳转到分界位置';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -33606,6 +33741,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get contextUsageStateComputing => '計算中…';
 
   @override
+  String get contextUsageStateFailed => '計算失敗';
+
+  @override
+  String get contextUsageStateFailedWithPrevious => '更新失敗，上次結果已過時';
+
+  @override
+  String get contextUsageUnavailable => '用量不可用';
+
+  @override
   String get contextUsageStateNone => '暫無資料';
 
   @override
@@ -36015,6 +36159,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get asrServicesQwenTokenPlanHint =>
       '使用 Token Plan 時，選擇錄音轉寫，業務空間 ID 填 token-plan，並選擇與金鑰對應的地域。';
+
+  @override
+  String get asrServicesWorkspaceIdHint => '例如：token-plan';
 
   @override
   String get asrServicesEndpointOverrideLabel => '自訂端點（選填）';
@@ -45569,4 +45716,40 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get recoveryCopiesNeedUpdate =>
       '部分副本來自更新版本的 Kelivo，請升級 App 後再還原。這些副本仍然保留。';
+
+  @override
+  String get contextOperationsTitle => '上下文操作記錄';
+
+  @override
+  String get contextOperationsDescription => '管理壓縮任務、摘要和上下文分界';
+
+  @override
+  String get contextOperationsEmpty => '尚無上下文操作記錄。';
+
+  @override
+  String contextOperationsStored(int count) {
+    return '已儲存歷史：$count 則訊息';
+  }
+
+  @override
+  String contextOperationsEffective(int summaries, int messages) {
+    return '下次請求的歷史部分：$summaries 則摘要 + $messages 則原始訊息';
+  }
+
+  @override
+  String get contextOperationsScope =>
+      '已套用目前歷史訊息數量限制。系統提示、記憶、工具和未傳送輸入會額外加入上下文。點擊記錄可查看摘要、原始範圍或復原操作。';
+
+  @override
+  String get contextOperationsLoadFailed => '無法載入上下文概覽，請重試。';
+
+  @override
+  String get compressNewConversation => '壓縮並建立新對話';
+
+  @override
+  String get compressNewConversationDescription =>
+      '新對話包含摘要和保留的訊息，原對話保持不變。關閉後將在目前對話原位壓縮。';
+
+  @override
+  String get contextViewBoundary => '跳至分界位置';
 }

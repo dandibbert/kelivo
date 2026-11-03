@@ -3375,6 +3375,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contextUsageStateComputing => 'Computing…';
 
   @override
+  String get contextUsageStateFailed => 'Calculation failed';
+
+  @override
+  String get contextUsageStateFailedWithPrevious =>
+      'Update failed · previous result is stale';
+
+  @override
+  String get contextUsageUnavailable => 'Usage unavailable';
+
+  @override
   String get contextUsageStateNone => 'No data yet';
 
   @override
@@ -5893,6 +5903,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get asrServicesQwenTokenPlanHint =>
       'For Token Plan, choose Recorded audio, enter token-plan as the Workspace ID, and select the region for your key.';
+
+  @override
+  String get asrServicesWorkspaceIdHint => 'e.g. token-plan';
 
   @override
   String get asrServicesEndpointOverrideLabel => 'Custom endpoint (optional)';
@@ -16029,13 +16042,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get imageContextDescription =>
-      'Keep user attachments longer; retire old tool screenshots in batches. Pins keep images in their original messages and may change the cached prefix. Add again places a new attachment in the composer. The preview uses saved files; pending OCR, remote files and provider limits are checked when sending.';
+      'Manage the images included in this turn. Originals stay in your chat.';
 
   @override
   String get imageContextIncluded => 'Included';
 
   @override
-  String get imageContextOmitted => 'Omitted';
+  String get imageContextOmitted => 'Not included';
 
   @override
   String get imageContextPin => 'Pin image';
@@ -16047,9 +16060,92 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageContextAttachAgain => 'Add to composer again';
 
   @override
-  String get imageContextEmpty => 'No images in the current context';
+  String get imageContextEmpty => 'No images yet';
 
   @override
   String get imageContextUnavailable =>
       'This image is unavailable in the current context.';
+
+  @override
+  String get imageContextEntryDescription =>
+      'Review and manage images for this turn';
+
+  @override
+  String get imageContextAutomaticDescription =>
+      'Keep your attachments longer and set aside older tool images.';
+
+  @override
+  String get imageContextActionsHint =>
+      'Pin to prioritize an image, or add it to the composer again.';
+
+  @override
+  String get imageContextEmptyDescription =>
+      'Images you send or tools read will appear here.';
+
+  @override
+  String get imageContextUserImages => 'Your images';
+
+  @override
+  String get imageContextToolImages => 'Tool images';
+
+  @override
+  String get imageContextAssistantImages => 'Generated images';
+
+  @override
+  String imageContextImageNumber(int index) {
+    return 'Image $index';
+  }
+
+  @override
+  String imageContextIncludedCount(int included, int total) {
+    return '$included of $total images included';
+  }
+
+  @override
+  String get imageContextMissing => 'Unavailable';
+
+  @override
+  String get imageContextLoadFailed => 'Could not load images. Try again.';
+
+  @override
+  String get imageContextUpdateFailed =>
+      'Could not save your changes. Try again.';
+
+  @override
+  String get contextOperationsTitle => 'Context operations';
+
+  @override
+  String get contextOperationsDescription =>
+      'Manage compression tasks, summaries and context boundaries';
+
+  @override
+  String get contextOperationsEmpty => 'No context operations yet.';
+
+  @override
+  String contextOperationsStored(int count) {
+    return 'Saved history: $count messages';
+  }
+
+  @override
+  String contextOperationsEffective(int summaries, int messages) {
+    return 'History for the next request: $summaries summaries + $messages original messages';
+  }
+
+  @override
+  String get contextOperationsScope =>
+      'Uses the current history limit. System prompts, memory, tools and unsent input add to this context. Open a record to view its summary, original range or undo it.';
+
+  @override
+  String get contextOperationsLoadFailed =>
+      'Could not load the context overview. Please retry.';
+
+  @override
+  String get compressNewConversation => 'Compress into a new chat';
+
+  @override
+  String get compressNewConversationDescription =>
+      'Create a new chat with the summary and retained messages. Keep the original chat unchanged. Turn off to compress in place.';
+
+  @override
+  String get contextViewBoundary => 'Jump to boundary';
 }
