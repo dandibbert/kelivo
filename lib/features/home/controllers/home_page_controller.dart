@@ -1,4 +1,3 @@
-import '../../../core/services/diagnostics/breadcrumbs.dart';
 import '../../chat/controllers/quote_editing_controller.dart';
 import '../../side_panel/desktop_side_panel_controller.dart';
 import 'package:Kelivo/features/intelligent_ui/host/ui_search_navigation.dart';
@@ -1470,9 +1469,6 @@ class HomePageController extends ChangeNotifier {
   }
 
   Future<ChatInputSubmissionResult> sendMessage(ChatInputData input) async {
-    Breadcrumbs.mark(
-      'send:begin textLen=${input.text.length} images=${input.imagePaths.length} docs=${input.documents.length}',
-    );
     final submission = input.draftSubmission;
     final drafts = _composerDrafts;
     if (submission == null || drafts == null) {
@@ -1605,9 +1601,7 @@ class HomePageController extends ChangeNotifier {
       await _createNewConversation();
     }
 
-    Breadcrumbs.mark('send:composer->viewmodel');
     final result = await _viewModel.sendMessage(input);
-    Breadcrumbs.mark('send:viewmodel returned $result');
     if (result != ChatInputSubmissionResult.rejected) {
       notifyListeners();
     }

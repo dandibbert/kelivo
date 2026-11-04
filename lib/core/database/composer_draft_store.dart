@@ -1,4 +1,3 @@
-import '../services/diagnostics/breadcrumbs.dart';
 import '../../features/intelligent_ui/models/ui_context_attachment.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -550,7 +549,6 @@ class ComposerDraftStore extends ChangeNotifier {
   }
 
   Future<DraftSubmission> beginSubmission(String id, ComposerDraftInput input) {
-    Breadcrumbs.mark('drafts:beginSubmission');
     final draft = _drafts[id];
     if (draft == null || suspended || _deleted.contains(id)) {
       throw StateError('composer_owner_deleted');

@@ -1,4 +1,3 @@
-import '../../../core/services/diagnostics/breadcrumbs.dart';
 import '../../chat/controllers/quote_editing_controller.dart';
 import '../../intelligent_ui/models/ui_context_attachment.dart';
 import '../../intelligent_ui/host/ui_composer_context_chip.dart';
@@ -2083,9 +2082,6 @@ class _ChatInputBarState extends State<ChatInputBar>
   }
 
   Future<void> _handleSend({TextEditingValue? orderedValue}) async {
-    Breadcrumbs.mark(
-      'input:handleSend native=${_controller is MessageEditingController && (_controller as MessageEditingController).hasNativeInput}',
-    );
     final controller = _controller;
     if (orderedValue == null && controller is MessageEditingController) {
       if (controller.isInputPaused) return;
@@ -2125,9 +2121,6 @@ class _ChatInputBarState extends State<ChatInputBar>
       return;
     }
     final submittedText = submittedValue.text;
-    Breadcrumbs.mark(
-      'input:handleSend validated textLen=${submittedText.length} images=${_images.length} docs=${_docs.length}',
-    );
     final send = widget.onSend;
     final text = submittedText.trim();
     if (text.isEmpty &&
@@ -2157,9 +2150,6 @@ class _ChatInputBarState extends State<ChatInputBar>
       _isSubmitting = false;
       return;
     }
-    Breadcrumbs.mark(
-      'input:beginSubmission requested persistent=$persistentSubmission',
-    );
     // Attachments leave the composer with the text, not when the send future
     // completes: that future now resolves at send time, but the draft must not
     // depend on it at all. A rejected send puts everything back below.
@@ -2199,9 +2189,7 @@ class _ChatInputBarState extends State<ChatInputBar>
     try {
       final ChatInputSubmissionResult result;
       try {
-        Breadcrumbs.mark('input:awaiting beginSubmission');
         final draftSubmission = await pendingSubmission;
-        Breadcrumbs.mark('input:beginSubmission done, calling onSend');
         result =
             await send?.call(
               ChatInputData(

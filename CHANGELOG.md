@@ -2,14 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.6] - 2026-11-04
+
+### Changed
+- Sync upstream: long-session performance (streaming checkpoint cache, incremental and virtualized timeline), Android native selection menus, scoped assistant copy, image context limits, OAuth and Gemini fixes, Linux NoImpeller variants.
+- Bump version to 1.3.6+99.
+
+### Fixed
+- iOS: the app no longer crashes when the first messages of a new chat are written. A Dart AOT optimization read a timestamp before its null check (upstream issue 1342).
+
 ## [1.3.5] - 2026-10-24
 
 ### Changed
 - Rebase onto upstream Kelivo: integrated browser and browser agent tools, per-conversation tool permissions, password-encrypted backups, grouped MCP management, iOS native selection menus, world book entry copy and batch transfer, Windows restore recovery, and more. The iOS `kelivo://v1` deep links are kept.
-- Sync upstream (long-session performance, Android native selection menus, scoped assistant copy, OAuth fixes, Linux NoImpeller variants).
-- Add crash breadcrumbs: every step of sending a message is written to disk, and after an unexpected exit the next launch shows the last steps in a dialog (temporary diagnostics).
-- Include upstream's fix for the Dart AOT crash that closed the iOS app when a new chat's first messages were written (upstream issue 1342).
-- Bump version to 1.3.5+98.
 
 ### Fixed
 - The iOS Share extension no longer shows one generic "could not save" message for every failure. It now says when Kelivo's shared storage (App Group) is unavailable, and otherwise shows the underlying error.
