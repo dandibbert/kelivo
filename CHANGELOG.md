@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Sync upstream: long-session performance (streaming checkpoint cache, incremental and virtualized timeline), Android native selection menus, scoped assistant copy, image context limits, OAuth and Gemini fixes, Linux NoImpeller variants.
-- Bump version to 1.3.6+99.
+- Sync upstream again: per-conversation image recall, quoting selected reasoning text, Markdown and LaTeX in translations, legacy code block style, custom model icons, full model names, provider custom balance requests and keyboard fixes.
+- Bump version to 1.3.6+100.
 
 ### Fixed
 - iOS: the app no longer crashes when the first messages of a new chat are written. A Dart AOT optimization read a timestamp before its null check (upstream issue 1342).
