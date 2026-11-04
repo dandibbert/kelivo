@@ -257,6 +257,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<bool> _jumpToQuote(QuoteRef quote) async {
+    if (!quote.hasSourceRange) return false;
     final source = (await context.read<ChatService>().loadMessagesByIds([
       quote.messageId,
     ])).firstOrNull;
@@ -1200,6 +1201,8 @@ class _HomePageState extends State<HomePage>
       title: title,
       providerName: providerName,
       modelDisplay: modelDisplay,
+      modelProviderKey: _resolvedChatModel().providerKey,
+      modelId: _resolvedChatModel().modelId,
       compact:
           _controller.isDesktopPlatform &&
           MediaQuery.sizeOf(context).width < AppBreakpoints.tablet,
