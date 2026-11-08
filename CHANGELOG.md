@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.7] - 2026-11-08
+
+### Changed
+- Sync upstream: Russian, Korean, and Turkish; automatic and OpenAI-native context compaction; per-assistant memory injection; Ollama capability discovery; model icons; message action menus; image recall; reasoning quotes; translation Markdown; and backup, OAuth, browser, and timeline fixes.
+- Bump version to 1.3.7+100.
+- Keep the iOS `kelivo://v1` deep links, URL scheme generator, and Share extension App Group errors. Those strings are translated for the new languages.
+
 ## [1.3.6] - 2026-11-04
 
 ### Changed

@@ -1,3 +1,9 @@
+import 'package:Kelivo/core/database/app_database.dart';
+import 'package:Kelivo/core/database/compression_repository.dart';
+import 'package:Kelivo/shared/widgets/snackbar.dart';
+import 'package:Kelivo/core/models/compression_config.dart';
+import 'package:Kelivo/core/services/api/generation/text_generation_result.dart';
+import 'package:Kelivo/core/models/context_operation.dart';
 import 'package:Kelivo/l10n/app_localizations_en.dart';
 import 'package:Kelivo/core/models/quote_ref.dart';
 import 'package:Kelivo/features/intelligent_ui/host/ui_context_submission.dart';
@@ -46,6 +52,32 @@ import 'package:Kelivo/features/home/widgets/chat_input_bar.dart';
 import 'package:Kelivo/features/search/services/global_session_search_service.dart';
 import 'package:Kelivo/l10n/app_localizations.dart';
 import 'package:Kelivo/icons/lucide_adapter.dart';
+
+class _GatedCompressionRepository extends CompressionRepository {
+  _GatedCompressionRepository(super.store);
+  Completer<void>? readHold;
+  final readEntered = Completer<void>();
+  int readsToSkip = 0;
+
+  @override
+  Future<Map<String, dynamic>> overrides(String id) async {
+    final values = await super.overrides(id);
+    if (readHold != null && readsToSkip-- <= 0 && !readEntered.isCompleted) {
+      readEntered.complete();
+      await readHold!.future;
+    }
+    return values;
+  }
+}
+
+class _GatedChatRepository extends ChatDatabaseRepository {
+  _GatedChatRepository(super.db, File file) : super(databaseFile: file);
+  late final _gatedCompression = _GatedCompressionRepository(
+    super.compression.store,
+  );
+  @override
+  _GatedCompressionRepository get compression => _gatedCompression;
+}
 
 class _GatedChatService extends ChatService {
   _GatedChatService({required super.existingRepository});
@@ -205,7 +237,7 @@ void main() {
 
   late Directory directory;
   late PathProviderPlatform previousPathProvider;
-  late ChatDatabaseRepository repository;
+  late _GatedChatRepository repository;
   late _GatedChatService service;
   late HttpServer server;
   late SettingsProvider settings;
@@ -323,9 +355,8 @@ void main() {
     // The widget-test binding replaces HttpClient with a 400-only mock; the
     // loopback API server below needs real networking.
     HttpOverrides.global = null;
-    repository = ChatDatabaseRepository.open(
-      file: File('${directory.path}/kelivo.db'),
-    );
+    final dbFile = File('${directory.path}/kelivo.db');
+    repository = _GatedChatRepository(AppDatabase.open(file: dbFile), dbFile);
     await repository.ensureReady();
     service = _GatedChatService(existingRepository: repository);
     await service.init();
@@ -1888,9 +1919,11 @@ void main() {
                 mode: CompressContextLimitMode.unlimited,
               ),
               model: 'test-model',
-              generate: (_, _) {
+              generate: (_, _, _, _) async {
                 entered = true;
-                return hold.future;
+                return TextGenerationResult(
+                  parts: [TextPart(await hold.future)],
+                );
               },
               quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
             ),
@@ -1961,9 +1994,9 @@ void main() {
             mode: CompressContextLimitMode.unlimited,
           ),
           model: 'test',
-          generate: (_, _) {
+          generate: (_, _, _, _) async {
             aEntered = true;
-            return aHold.future;
+            return TextGenerationResult(parts: [TextPart(await aHold.future)]);
           },
           quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
         ),
@@ -1993,9 +2026,9 @@ void main() {
             mode: CompressContextLimitMode.unlimited,
           ),
           model: 'test',
-          generate: (_, _) {
+          generate: (_, _, _, _) async {
             bEntered = true;
-            return bHold.future;
+            return TextGenerationResult(parts: [TextPart(await bHold.future)]);
           },
           quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
         ),
@@ -2051,9 +2084,9 @@ void main() {
               mode: CompressContextLimitMode.unlimited,
             ),
             model: 'test',
-            generate: (_, _) {
+            generate: (_, _, _, _) async {
               entered = true;
-              return hold.future;
+              return TextGenerationResult(parts: [TextPart(await hold.future)]);
             },
             quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
           ),
@@ -2097,7 +2130,7 @@ void main() {
               mode: CompressContextLimitMode.unlimited,
             ),
             model: 'test',
-            generate: (text, _) {
+            generate: (text, _, _, _) async {
               expect(
                 controller.chatController.isConversationLoading(
                   conversation.id,
@@ -2106,7 +2139,9 @@ void main() {
               );
               expect(text, contains('Assistant: ok'));
               entered = true;
-              return generated.future;
+              return TextGenerationResult(
+                parts: [TextPart(await generated.future)],
+              );
             },
             quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
           ),
@@ -2162,9 +2197,11 @@ void main() {
               mode: CompressContextLimitMode.unlimited,
             ),
             model: 'test',
-            generate: (_, _) {
+            generate: (_, _, _, _) async {
               entered = true;
-              return generated.future;
+              return TextGenerationResult(
+                parts: [TextPart(await generated.future)],
+              );
             },
             quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
           ),
@@ -2235,9 +2272,11 @@ void main() {
               mode: CompressContextLimitMode.unlimited,
             ),
             model: 'test',
-            generate: (_, _) {
+            generate: (_, _, _, _) async {
               entered = true;
-              return generated.future;
+              return TextGenerationResult(
+                parts: [TextPart(await generated.future)],
+              );
             },
             quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
           ),
@@ -2398,6 +2437,253 @@ void main() {
     });
     expect(tester.takeException(), isNull);
   });
+
+  for (final limit in [1, 10, 11]) {
+    for (final temporary in [false, true]) {
+      testWidgets(
+        'context window stays identical on regeneration: limit=$limit temporary=$temporary',
+        (tester) async {
+          final controller = await pumpHarness(tester);
+          await tester.runAsync(() async {
+            await assistantProvider.updateAssistant(
+              assistantProvider.currentAssistant!.copyWith(
+                limitContextMessages: true,
+                contextMessageSize: limit,
+              ),
+            );
+            final convo = temporary
+                ? await service.createDraftConversation(
+                    title: 'Window test',
+                    temporary: true,
+                  )
+                : await openConversation(controller);
+            if (temporary) {
+              await controller.chatController.setCurrentConversationAndLoad(
+                convo,
+              );
+            }
+            for (var i = 0; i < 9; i++) {
+              await service.addMessage(
+                conversationId: convo.id,
+                role: 'user',
+                content: 'question $i',
+              );
+              await service.addMessage(
+                conversationId: convo.id,
+                role: 'assistant',
+                content: 'answer $i',
+              );
+            }
+            await controller.sendMessage(ChatInputData(text: 'last question'));
+            await waitFor(
+              () =>
+                  streamRequests.length == 1 &&
+                  !controller.chatController.isConversationLoading(convo.id),
+              'send completion',
+            );
+            final first = streamRequests.single['messages'];
+            for (var version = 1; version <= 2; version++) {
+              final selected = await service.loadSelectedContextMessages(
+                convo.id,
+                limit: 100,
+              );
+              await controller.regenerateAtMessage(selected.last);
+              await waitFor(
+                () =>
+                    streamRequests.length == version + 1 &&
+                    !controller.chatController.isConversationLoading(convo.id),
+                'regeneration completion',
+              );
+              expect(streamRequests.last['messages'], first);
+            }
+            final all = await service.loadMessages(convo.id);
+            expect(all, hasLength(22));
+            expect(all.where((m) => m.content == 'answer 0'), hasLength(1));
+          });
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
+  for (final temporary in [false, true]) {
+    testWidgets(
+      'regenerating assistant fixed start is rejected before creating a version: temporary=$temporary',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          final convo = temporary
+              ? await service.createDraftConversation(
+                  title: 'Assistant start',
+                  temporary: true,
+                )
+              : await openConversation(controller);
+          if (temporary) {
+            await controller.chatController.setCurrentConversationAndLoad(
+              convo,
+            );
+          }
+          await service.addMessage(
+            conversationId: convo.id,
+            role: 'user',
+            content: 'Question',
+          );
+          final reply = await service.addMessage(
+            conversationId: convo.id,
+            role: 'assistant',
+            content: 'Answer',
+          );
+          await service.setConversationContextStart(convo.id, reply.id);
+          final selections = Map<String, int>.from(
+            service.getVersionSelections(convo.id),
+          );
+          final errors = <String>[];
+          controller.debugViewModel.onError = errors.add;
+          expect(
+            await controller.debugViewModel.regenerateAtMessage(reply),
+            isFalse,
+          );
+          expect(errors.single, contains('its question is excluded'));
+          expect(streamRequests, isEmpty);
+          expect((await service.loadMessages(convo.id)).map((m) => m.content), [
+            'Question',
+            'Answer',
+          ]);
+          expect(service.getVersionSelections(convo.id), selections);
+          await controller.sendMessage(
+            ChatInputData(text: 'A follow-up question'),
+          );
+          await waitFor(
+            () =>
+                streamRequests.length == 1 &&
+                !controller.chatController.isConversationLoading(convo.id),
+            'follow-up after rejected regeneration',
+          );
+          final history = (streamRequests.single['messages'] as List)
+              .where((m) => m['role'] != 'system')
+              .toList();
+          expect(history.first['content'], 'Answer');
+        });
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final temporary in [false, true]) {
+    testWidgets(
+      'fixed context start survives sends, regeneration, moving and cancellation: temporary=$temporary',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          await assistantProvider.updateAssistant(
+            assistantProvider.currentAssistant!.copyWith(
+              limitContextMessages: true,
+              contextMessageSize: 2,
+            ),
+          );
+          final convo = temporary
+              ? await service.createDraftConversation(
+                  title: 'Pinned temporary',
+                  temporary: true,
+                )
+              : await openConversation(controller);
+          if (temporary) {
+            await controller.chatController.setCurrentConversationAndLoad(
+              convo,
+            );
+          }
+          final users = <ChatMessage>[];
+          for (var i = 0; i < 6; i++) {
+            users.add(
+              await service.addMessage(
+                conversationId: convo.id,
+                role: 'user',
+                content: 'question $i',
+              ),
+            );
+            await service.addMessage(
+              conversationId: convo.id,
+              role: 'assistant',
+              content: 'answer $i',
+            );
+          }
+          users[0] = (await service.appendMessageVersion(
+            messageId: users.first.id,
+            content: 'edited old question',
+          ))!;
+          final errors = <String>[];
+          controller.debugViewModel.onError = errors.add;
+          await service.setConversationContextStart(convo.id, users[2].id);
+          expect(service.getContextStartIndex(convo.id), 4);
+          final beforeCount = (await service.loadMessages(convo.id)).length;
+          expect(
+            await controller.debugViewModel.regenerateAtMessage(users.first),
+            isFalse,
+          );
+          expect((await service.loadMessages(convo.id)).length, beforeCount);
+          expect(streamRequests, isEmpty);
+          expect(errors.single, contains('before the fixed context start'));
+
+          await controller.sendMessage(ChatInputData(text: 'last question'));
+          await waitFor(
+            () =>
+                streamRequests.length == 1 &&
+                !controller.chatController.isConversationLoading(convo.id),
+            'pinned send',
+          );
+          List<dynamic> history() => (streamRequests.last['messages'] as List)
+              .where((m) => m['role'] != 'system')
+              .toList();
+          expect(history(), hasLength(9));
+          expect(history().first['content'], 'question 2');
+          final first = streamRequests.last['messages'];
+          final selected = await service.loadSelectedContextMessages(
+            convo.id,
+            limit: 1,
+          );
+          await controller.regenerateAtMessage(selected.last);
+          await waitFor(
+            () =>
+                streamRequests.length == 2 &&
+                !controller.chatController.isConversationLoading(convo.id),
+            'pinned regeneration',
+          );
+          expect(streamRequests.last['messages'], first);
+          await service.setConversationContextStart(convo.id, users[4].id);
+          await controller.sendMessage(ChatInputData(text: 'another question'));
+          await waitFor(
+            () =>
+                streamRequests.length == 3 &&
+                !controller.chatController.isConversationLoading(convo.id),
+            'moved start',
+          );
+          expect(history().first['content'], 'question 4');
+          final snapshot = await service.loadContextSnapshot(convo.id);
+          final start = snapshot.operations.singleWhere(
+            (op) => op.isFixedStart && !op.revoked,
+          );
+          await service.changeContextOperation(
+            convo.id,
+            start.id,
+            includeDependents: true,
+            expectedState: ContextHistory.operationsFingerprint(
+              snapshot.operations,
+            ),
+          );
+          await controller.sendMessage(ChatInputData(text: 'rolling again'));
+          await waitFor(
+            () =>
+                streamRequests.length == 4 &&
+                !controller.chatController.isConversationLoading(convo.id),
+            'unpinned send',
+          );
+          expect(history(), hasLength(3));
+          expect(history().first['content'], 'another question');
+        });
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets('double regenerate tap creates a single new version', (
     tester,
@@ -3587,6 +3873,1052 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  Future<void> compressionReply(
+    HttpRequest request, {
+    bool summary = false,
+  }) async {
+    if (summary) {
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(
+        jsonEncode({
+          'choices': [
+            {
+              'message': {'role': 'assistant', 'content': 'COMPACT_HANDOFF'},
+              'finish_reason': 'stop',
+            },
+          ],
+          'usage': {'prompt_tokens': 200, 'completion_tokens': 10},
+        }),
+      );
+    } else {
+      request.response.headers.contentType = ContentType(
+        'text',
+        'event-stream',
+        charset: 'utf-8',
+      );
+      request.response.write(
+        'data: ${jsonEncode({
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'role': 'assistant', 'content': 'ok'},
+              'finish_reason': 'stop',
+            },
+          ],
+        })}\n\n',
+      );
+      request.response.write('data: [DONE]\n\n');
+    }
+    await request.response.close();
+  }
+
+  testWidgets(
+    'manual native compaction sends its whole result before unchanged recent history',
+    (tester) async {
+      final controller = await pumpHarness(tester);
+      await tester.runAsync(() async {
+        await settings.disableTitleGeneration();
+        await settings.disableSuggestionGeneration();
+        // Native mode ignores the independently configured text template/model.
+        await settings.setCompressionDefaults(
+          const CompressionConfig(
+            templateId: 'missing-template',
+            providerId: 'missing-summary-provider',
+            modelId: 'missing-summary-model',
+            keepRecentUserTurns: 4,
+          ),
+        );
+        final textSettings = settings.compressionDefaults.toJson();
+        final conversation = await openConversation(controller);
+        for (final content in ['old user', 'recent user']) {
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'user',
+            content: content,
+          );
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: 'answer to $content',
+          );
+        }
+        final nativeOutput = <Map<String, dynamic>>[
+          {
+            'type': 'message',
+            'id': 'preserved',
+            'role': 'user',
+            'content': [
+              {'type': 'input_text', 'text': 'server retained'},
+            ],
+          },
+          {
+            'type': 'compaction',
+            'id': 'opaque-id',
+            'encrypted_content': 'opaque-state',
+          },
+          {
+            'type': 'future_native_item',
+            'custom': {'keep': true},
+          },
+        ];
+        var compactCalls = 0;
+        Map<String, dynamic>? following;
+        apiOverride = (request, body) async {
+          if (request.uri.path.endsWith('/responses/compact')) {
+            compactCalls++;
+            expect(body['model'], 'test-model');
+            expect(jsonEncode(body), contains('old user'));
+            expect(jsonEncode(body), isNot(contains('recent user')));
+            expect(body, isNot(contains('stream')));
+            request.response.headers.contentType = ContentType.json;
+            request.response.write(
+              jsonEncode({
+                'output': nativeOutput,
+                'usage': {'input_tokens': 200, 'output_tokens': 20},
+              }),
+            );
+            await request.response.close();
+          } else {
+            expect(request.uri.path.endsWith('/responses'), isTrue);
+            following = body;
+            request.response.headers.contentType = ContentType(
+              'text',
+              'event-stream',
+            );
+            for (final event in [
+              {
+                'type': 'response.output_text.delta',
+                'output_index': 0,
+                'content_index': 0,
+                'delta': 'continued',
+              },
+              {
+                'type': 'response.completed',
+                'response': {
+                  'status': 'completed',
+                  'output': [
+                    {
+                      'type': 'message',
+                      'id': 'answer-id',
+                      'role': 'assistant',
+                      'content': [
+                        {'type': 'output_text', 'text': 'continued'},
+                      ],
+                    },
+                  ],
+                  'usage': {'input_tokens': 40, 'output_tokens': 2},
+                },
+              },
+            ]) {
+              request.response.write('data: ${jsonEncode(event)}\n\n');
+            }
+            await request.response.close();
+          }
+        };
+        expect(
+          await controller.compressContext(
+            options: const CompressContextOptions(
+              mode: CompressContextLimitMode.keepRecent,
+              keepUserMessages: 1,
+              native: true,
+            ),
+          ),
+          isNull,
+        );
+        await waitFor(
+          () =>
+              service.contextCompression.taskFor(conversation.id)?.phase ==
+              CompressionPhase.completed,
+          'native compaction installs',
+        );
+        expect(compactCalls, 1);
+        expect(settings.compressionDefaults.toJson(), textSettings);
+        expect(
+          settings.getProviderConfig('SiliconFlow').useResponseApi,
+          isNot(isTrue),
+        );
+        await controller.sendMessage(ChatInputData(text: 'next user'));
+        await waitFor(
+          () =>
+              following != null &&
+              !controller.chatController.isConversationLoading(conversation.id),
+          'native follow-up finishes',
+        );
+        final input = following!['input'] as List;
+        expect(input.take(nativeOutput.length).toList(), nativeOutput);
+        final tail = jsonEncode(input.skip(nativeOutput.length).toList());
+        expect(tail, contains('recent user'));
+        expect(tail, contains('answer to recent user'));
+        expect(tail, contains('next user'));
+        expect(tail, isNot(contains('old user')));
+        expect(jsonEncode(following), isNot(contains('_kelivo_native')));
+        expect(
+          (await service.loadMessages(conversation.id)).last.content,
+          'continued',
+        );
+      });
+      AppSnackBarManager().dismissAll();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final scenario in ['threshold', 'overflow', 'failure', 'measured']) {
+    testWidgets(
+      'automatic native compression preserves the active turn: $scenario',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          await settings.disableTitleGeneration();
+          await settings.disableSuggestionGeneration();
+          await assistantProvider.updateAssistant(
+            assistantProvider.currentAssistant!.copyWith(maxTokens: 512),
+          );
+          await settings.setCompressionDefaults(
+            CompressionConfig(
+              mode: AutoCompressionMode.auto,
+              nativeEnabled: true,
+              nativeKeepRecentUserTurns: 1,
+              keepRecentUserTurns: 4,
+              templateId: 'code',
+              summaryTokens: 8192,
+              providerId: 'unavailable-text-provider',
+              modelId: 'text-only-model',
+              planningWindow: scenario == 'overflow' ? 100000 : 4096,
+              includeReference: false,
+            ),
+          );
+          final textSettings = settings.compressionDefaults.toJson();
+          final conversation = await openConversation(controller);
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'user',
+            content: 'EARLIER_NATIVE_FACTS ${'history ' * 5000}',
+          );
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: 'older answer',
+          );
+          var currentQuestion = 'CURRENT_NATIVE_QUESTION';
+          var compactCalls = 0;
+          var replyCalls = 0;
+          apiOverride = (request, body) async {
+            final serialized = jsonEncode(body);
+            expect(serialized, isNot(contains('Target length:')));
+            if (request.uri.path.endsWith('/responses/compact')) {
+              compactCalls++;
+              expect(
+                serialized,
+                contains(
+                  compactCalls == 1
+                      ? 'EARLIER_NATIVE_FACTS'
+                      : 'native-auto-result-1',
+                ),
+              );
+              expect(serialized, isNot(contains(currentQuestion)));
+              if (scenario == 'failure') {
+                request.response.statusCode = 404;
+                request.response.write('unsupported native compaction');
+              } else {
+                request.response.headers.contentType = ContentType.json;
+                request.response.write(
+                  jsonEncode({
+                    'output': [
+                      {
+                        'type': 'compaction',
+                        'id': 'cmp-auto-$compactCalls',
+                        'encrypted_content': 'native-auto-result-$compactCalls',
+                      },
+                      {
+                        'type': 'future_item',
+                        'extra': {'keep': true},
+                      },
+                    ],
+                  }),
+                );
+              }
+            } else {
+              replyCalls++;
+              expect(request.uri.path, endsWith('/responses'));
+              expect(serialized, contains(currentQuestion));
+              if (scenario == 'overflow' && replyCalls == 1) {
+                request.response.statusCode = 400;
+                request.response.write(
+                  '{"error":{"code":"context_length_exceeded"}}',
+                );
+              } else {
+                expect(
+                  serialized.contains('native-auto-result'),
+                  scenario != 'failure',
+                );
+                expect(
+                  serialized.contains('EARLIER_NATIVE_FACTS'),
+                  scenario == 'failure',
+                );
+                request.response.headers.contentType = ContentType(
+                  'text',
+                  'event-stream',
+                );
+                request.response.write(
+                  'data: ${jsonEncode({'type': 'response.output_text.delta', 'output_index': 0, 'content_index': 0, 'delta': 'continued automatically'})}\n\n',
+                );
+                request.response.write(
+                  'data: ${jsonEncode({
+                    'type': 'response.completed',
+                    'response': {
+                      'status': 'completed',
+                      'output': [],
+                      'usage': {'input_tokens': scenario == 'measured' && replyCalls == 1 ? 3500 : 600, 'output_tokens': 3},
+                    },
+                  })}\n\n',
+                );
+              }
+            }
+            await request.response.close();
+          };
+          await controller.sendMessage(
+            ChatInputData(text: 'CURRENT_NATIVE_QUESTION'),
+          );
+          await waitFor(
+            () => !controller.chatController.isConversationLoading(
+              conversation.id,
+            ),
+            'native auto reply',
+          );
+          expect(compactCalls, 1);
+          expect(replyCalls, scenario == 'overflow' ? 2 : 1);
+          expect(
+            (await service.loadMessages(conversation.id)).last.content,
+            'continued automatically',
+          );
+          expect(settings.compressionDefaults.toJson(), textSettings);
+          if (scenario == 'measured') {
+            currentQuestion = 'NEXT_NATIVE_QUESTION';
+            await controller.sendMessage(ChatInputData(text: currentQuestion));
+            await waitFor(
+              () => !controller.chatController.isConversationLoading(
+                conversation.id,
+              ),
+              'native measured usage',
+            );
+            expect(compactCalls, 2);
+            expect(replyCalls, 2);
+          }
+          final operations = await service.loadContextOperations(
+            conversation.id,
+          );
+          if (scenario == 'failure') {
+            expect(operations, isEmpty);
+            expect(
+              service.contextCompression.taskFor(conversation.id)!.phase,
+              CompressionPhase.failed,
+            );
+          } else {
+            expect(operations.last.isNative, isTrue);
+            expect(operations.last.compressionDetails['automatic'], isTrue);
+          }
+        });
+        AppSnackBarManager().dismissAll();
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'automatic native compaction preserves overflow errors for custom string input',
+    (tester) async {
+      final controller = await pumpHarness(tester);
+      await tester.runAsync(() async {
+        await configureNative(claude: false, stream: false);
+        await assistantProvider.updateAssistant(
+          assistantProvider.currentAssistant!.copyWith(
+            customBody: const [
+              {'key': 'input', 'value': 'CUSTOM_INPUT'},
+            ],
+          ),
+        );
+        await settings.setCompressionDefaults(
+          const CompressionConfig(
+            mode: AutoCompressionMode.auto,
+            nativeEnabled: true,
+            planningWindow: 1000000,
+          ),
+        );
+        final conversation = await openConversation(controller);
+        var calls = 0;
+        apiOverride = (request, body) async {
+          calls++;
+          expect(request.uri.path, '/v1/responses');
+          expect(body['input'], 'CUSTOM_INPUT');
+          request.response.statusCode = 400;
+          request.response.write(
+            '{"error":{"code":"context_length_exceeded"}}',
+          );
+          await request.response.close();
+        };
+        await controller.sendMessage(ChatInputData(text: 'Local question'));
+        await waitFor(
+          () =>
+              !controller.chatController.isConversationLoading(conversation.id),
+          'custom input overflow',
+        );
+        expect(calls, 1);
+        expect(await service.loadContextOperations(conversation.id), isEmpty);
+        final content = (await service.loadMessages(
+          conversation.id,
+        )).last.content;
+        expect(content, contains('context_length_exceeded'));
+        expect(content, isNot(contains('subtype')));
+      });
+      AppSnackBarManager().dismissAll();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'automatic native compaction stays on the active connection during a model switch',
+    (tester) async {
+      final controller = await pumpHarness(tester);
+      await tester.runAsync(() async {
+        final original = await configureNative(claude: false, stream: false);
+        await settings.setProviderConfig(
+          'other',
+          original.copyWith(
+            id: 'other',
+            name: 'Other connection',
+            baseUrl: 'http://${server.address.address}:${server.port}/other',
+          ),
+        );
+        await settings.setCompressionDefaults(
+          const CompressionConfig(
+            mode: AutoCompressionMode.auto,
+            nativeEnabled: true,
+            nativeKeepRecentUserTurns: 1,
+            planningWindow: 1000000,
+          ),
+        );
+        final conversation = await openConversation(controller);
+        await service.addMessage(
+          conversationId: conversation.id,
+          role: 'user',
+          content: 'OLD_NATIVE_HISTORY ${'history ' * 500}',
+        );
+        await service.addMessage(
+          conversationId: conversation.id,
+          role: 'assistant',
+          content: 'Old answer',
+        );
+        var compactCalls = 0;
+        var normalCalls = 0;
+        apiOverride = (request, body) async {
+          expect(request.uri.path, startsWith('/v1/responses'));
+          expect(body['model'], 'gpt-5.4');
+          request.response.headers.contentType = ContentType.json;
+          if (request.uri.path.endsWith('/compact')) {
+            compactCalls++;
+            expect(jsonEncode(body), contains('OLD_NATIVE_HISTORY'));
+            expect(jsonEncode(body), isNot(contains('ACTIVE_QUESTION')));
+            expect(jsonEncode(body), isNot(contains('ACTIVE_TOOL_ANSWER')));
+            request.response.write(
+              jsonEncode({
+                'output': [
+                  {
+                    'type': 'compaction',
+                    'id': 'original-connection-state',
+                    'encrypted_content': 'opaque-original-connection',
+                  },
+                ],
+              }),
+            );
+          } else {
+            normalCalls++;
+            if (normalCalls == 1) {
+              request.response.write(
+                jsonEncode({
+                  'output': [
+                    {
+                      'type': 'function_call',
+                      'call_id': 'native-switch-tool',
+                      'name': AskUserToolNames.askUser,
+                      'arguments': jsonEncode({
+                        'questions': [
+                          {'id': 'q1', 'question': 'Continue?'},
+                        ],
+                      }),
+                    },
+                  ],
+                }),
+              );
+            } else if (normalCalls == 2) {
+              request.response.statusCode = 400;
+              request.response.write(
+                '{"error":{"code":"context_length_exceeded"}}',
+              );
+            } else {
+              final wire = jsonEncode(body);
+              expect(wire, contains('opaque-original-connection'));
+              expect(wire, contains('ACTIVE_QUESTION'));
+              expect(wire, contains('ACTIVE_TOOL_ANSWER'));
+              expect(wire, isNot(contains('OLD_NATIVE_HISTORY')));
+              request.response.write(
+                jsonEncode({
+                  'output': [_nativeText('Resumed on original connection')],
+                }),
+              );
+            }
+          }
+          await request.response.close();
+        };
+        final sending = controller.sendMessage(
+          ChatInputData(text: 'ACTIVE_QUESTION'),
+        );
+        await waitFor(
+          () => questions.pendingRequests.containsKey('native-switch-tool'),
+          'native tool before connection switch',
+        );
+        await controller.setConversationModel(
+          providerKey: 'other',
+          modelId: 'other-model',
+        );
+        questions.answer('native-switch-tool', {
+          'q1': const AskUserAnswerValue.single(
+            value: 'ACTIVE_TOOL_ANSWER',
+            custom: true,
+          ),
+        });
+        await sending;
+        await waitFor(
+          () =>
+              !controller.chatController.isConversationLoading(conversation.id),
+          'native continuation after connection switch',
+        );
+        expect(compactCalls, 1);
+        expect(normalCalls, 3);
+        expect(
+          (await service.loadMessages(conversation.id)).last.content,
+          'Resumed on original connection',
+        );
+        final operations = await service.loadContextOperations(conversation.id);
+        expect(operations.single.isNative, isTrue);
+        expect(operations.single.nativePayload!.modelId, 'gpt-5.4');
+      });
+      AppSnackBarManager().dismissAll();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'existing text auto compression can recover an overflow after native compaction',
+    (tester) async {
+      final controller = await pumpHarness(tester);
+      await tester.runAsync(() async {
+        await settings.disableTitleGeneration();
+        await settings.disableSuggestionGeneration();
+        await assistantProvider.updateAssistant(
+          assistantProvider.currentAssistant!.copyWith(maxTokens: 512),
+        );
+        await settings.setCompressionDefaults(
+          const CompressionConfig(
+            mode: AutoCompressionMode.auto,
+            keepRecentUserTurns: 1,
+            summaryTokens: 512,
+            planningWindow: 5000,
+            includeReference: false,
+          ),
+        );
+        final conversation = await openConversation(controller);
+        for (final text in [
+          'ORIGINAL_FACTS ${'history ' * 1000}',
+          'retained turn',
+        ]) {
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'user',
+            content: text,
+          );
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: 'reply',
+          );
+        }
+        var replies = 0;
+        var textCompactions = 0;
+        apiOverride = (request, body) async {
+          if (request.uri.path.endsWith('/responses/compact')) {
+            request.response.headers.contentType = ContentType.json;
+            request.response.write(
+              jsonEncode({
+                'output': [
+                  {
+                    'type': 'compaction',
+                    'id': 'native',
+                    'encrypted_content': 'opaque',
+                  },
+                ],
+              }),
+            );
+            await request.response.close();
+          } else if (jsonEncode(body).contains('Target length:')) {
+            textCompactions++;
+            expect(jsonEncode(body), contains('ORIGINAL_FACTS'));
+            expect(jsonEncode(body), isNot(contains('encrypted_content')));
+            await compressionReply(request, summary: true);
+          } else {
+            replies++;
+            if (replies == 1) {
+              request.response.statusCode = 400;
+              request.response.write(
+                '{"error":{"code":"context_length_exceeded"}}',
+              );
+            } else {
+              expect(jsonEncode(body), contains('COMPACT_HANDOFF'));
+              expect(jsonEncode(body), isNot(contains('encrypted_content')));
+              request.response.headers.contentType = ContentType(
+                'text',
+                'event-stream',
+              );
+              request.response.write(
+                'data: ${jsonEncode({'type': 'response.output_text.delta', 'output_index': 0, 'content_index': 0, 'delta': 'recovered'})}\n\n',
+              );
+              request.response.write(
+                'data: ${jsonEncode({
+                  'type': 'response.completed',
+                  'response': {'status': 'completed', 'output': []},
+                })}\n\n',
+              );
+            }
+            await request.response.close();
+          }
+        };
+        await controller.compressContext(
+          options: const CompressContextOptions(
+            mode: CompressContextLimitMode.keepRecent,
+            keepUserMessages: 1,
+            native: true,
+          ),
+        );
+        await waitFor(
+          () =>
+              service.contextCompression.taskFor(conversation.id)?.phase ==
+              CompressionPhase.completed,
+          'native setup',
+        );
+        await controller.sendMessage(ChatInputData(text: 'current question'));
+        await waitFor(
+          () =>
+              !controller.chatController.isConversationLoading(conversation.id),
+          'automatic recovery',
+        );
+        expect(replies, 2);
+        expect(textCompactions, 1);
+        final operations = await service.loadContextOperations(conversation.id);
+        expect(operations.last.isNative, isFalse);
+        expect(
+          (await service.loadMessages(conversation.id)).last.content,
+          'recovered',
+        );
+        expect(settings.compressionDefaults.mode, AutoCompressionMode.auto);
+      });
+      AppSnackBarManager().dismissAll();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final mode in AutoCompressionMode.values) {
+    testWidgets(
+      'automatic compression mode ${mode.name} respects consent and sends once',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          await settings.disableTitleGeneration();
+          await settings.disableSuggestionGeneration();
+          await assistantProvider.updateAssistant(
+            assistantProvider.currentAssistant!.copyWith(maxTokens: 512),
+          );
+          await settings.setCompressionDefaults(
+            CompressionConfig(
+              mode: mode,
+              keepRecentUserTurns: 1,
+              summaryTokens: 512,
+              planningWindow: 5000,
+              includeReference: false,
+            ),
+          );
+          final conversation = await openConversation(controller);
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'user',
+            content: 'OLD_FACTS ${'history ' * 6000}',
+          );
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: 'Earlier answer',
+          );
+          var summaryCalls = 0;
+          final sent = <Map<String, dynamic>>[];
+          apiOverride = (request, body) async {
+            if (jsonEncode(body).contains('Target length:')) {
+              summaryCalls++;
+              await compressionReply(request, summary: true);
+            } else {
+              sent.add(body);
+              await compressionReply(request);
+            }
+          };
+          await controller.sendMessage(ChatInputData(text: 'CURRENT_QUESTION'));
+          await waitFor(
+            () =>
+                sent.isNotEmpty &&
+                !controller.chatController.isConversationLoading(
+                  conversation.id,
+                ),
+            'compression send completes',
+          );
+          expect(sent, hasLength(1));
+          expect(summaryCalls, mode == AutoCompressionMode.auto ? 1 : 0);
+          expect(jsonEncode(sent.single), contains('CURRENT_QUESTION'));
+          if (mode == AutoCompressionMode.auto) {
+            expect(jsonEncode(sent.single), contains('COMPACT_HANDOFF'));
+            expect(jsonEncode(sent.single), isNot(contains('OLD_FACTS')));
+            final operation = (await service.loadContextOperations(
+              conversation.id,
+            )).single;
+            expect(operation.compressionDetails['requestAttempts'], 1);
+            expect(
+              operation.compressionDetails['usage'],
+              containsPair('promptTokens', 200),
+            );
+          } else {
+            expect(jsonEncode(sent.single), contains('OLD_FACTS'));
+            expect(
+              await service.loadContextOperations(conversation.id),
+              isEmpty,
+            );
+          }
+        });
+        AppSnackBarManager().dismissAll();
+        await tester.pumpAndSettle();
+        AppSnackBarManager().dismissAll();
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('stop during compression settings read never sends a request', (
+    tester,
+  ) async {
+    final controller = await pumpHarness(tester);
+    await tester.runAsync(() async {
+      await settings.disableTitleGeneration();
+      await settings.disableSuggestionGeneration();
+      final conversation = await openConversation(controller);
+      await settings.setCompressionDefaults(
+        const CompressionConfig(replaceConsumedTools: false),
+      );
+      final hold = Completer<void>();
+      repository.compression.readHold = hold;
+      // World-book assembly reads settings before the generation is active.
+      // Hold the following read in _historyContext, just before API dispatch.
+      repository.compression.readsToSkip = 1;
+      var requests = 0;
+      apiOverride = (request, body) async {
+        requests++;
+        await compressionReply(request);
+      };
+      final sending = controller.sendMessage(
+        ChatInputData(text: 'stop before request'),
+      );
+      await repository.compression.readEntered.future;
+      await controller.cancelStreaming();
+      hold.complete();
+      await sending;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(requests, 0);
+      expect(
+        controller.chatController.isConversationLoading(conversation.id),
+        isFalse,
+      );
+      expect(
+        (await service.loadMessages(conversation.id)).last.isStreaming,
+        isFalse,
+      );
+    });
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final retryAfterRestore in [false, true]) {
+    testWidgets(
+      'automatic compression stays inside the finite context window: retryAfterRestore=$retryAfterRestore',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          await settings.disableTitleGeneration();
+          await settings.disableSuggestionGeneration();
+          await assistantProvider.updateAssistant(
+            assistantProvider.currentAssistant!.copyWith(
+              maxTokens: 512,
+              limitContextMessages: true,
+              contextMessageSize: 3,
+            ),
+          );
+          await settings.setCompressionDefaults(
+            const CompressionConfig(
+              mode: AutoCompressionMode.auto,
+              keepRecentUserTurns: 1,
+              summaryTokens: 512,
+              planningWindow: 5000,
+              includeReference: false,
+            ),
+          );
+          final conversation = await openConversation(controller);
+          for (final text in [
+            'EXCLUDED_SECRET',
+            'VISIBLE_FACTS ${'history ' * 6000}',
+          ]) {
+            await service.addMessage(
+              conversationId: conversation.id,
+              role: 'user',
+              content: text,
+            );
+            await service.addMessage(
+              conversationId: conversation.id,
+              role: 'assistant',
+              content: 'Answer to $text',
+            );
+          }
+          var failSummary = retryAfterRestore;
+          final prompts = <String>[];
+          final sent = <Map<String, dynamic>>[];
+          apiOverride = (request, body) async {
+            if (jsonEncode(body).contains('Target length:')) {
+              prompts.add(jsonEncode(body));
+              if (failSummary) {
+                request.response.statusCode = 400;
+                request.response.write(
+                  '{"error":{"message":"summary rejected"}}',
+                );
+                await request.response.close();
+              } else {
+                await compressionReply(request, summary: true);
+              }
+            } else {
+              sent.add(body);
+              await compressionReply(request);
+            }
+          };
+          await controller.sendMessage(ChatInputData(text: 'CURRENT_QUESTION'));
+          await waitFor(
+            () =>
+                sent.isNotEmpty &&
+                !controller.chatController.isConversationLoading(
+                  conversation.id,
+                ),
+            'window compression completes',
+          );
+          if (retryAfterRestore) {
+            expect(
+              service.contextCompression.taskFor(conversation.id)!.phase,
+              CompressionPhase.failed,
+            );
+            await service.contextCompression.restore();
+            final recovered = service.contextCompression.taskFor(
+              conversation.id,
+            )!;
+            expect(recovered.effectiveMessageIds, isNotNull);
+            expect(recovered.phase, CompressionPhase.interrupted);
+            failSummary = false;
+            expect(
+              await controller.compressContext(
+                options: recovered.options,
+                targetConversationId: recovered.conversationId,
+                beforeMessageId: recovered.protectedMessageId,
+                effectiveMessageIds: recovered.effectiveMessageIds,
+              ),
+              isNull,
+            );
+            await waitFor(
+              () =>
+                  service.contextCompression.taskFor(conversation.id)!.phase ==
+                  CompressionPhase.completed,
+              'restored bounded retry completes',
+            );
+          }
+          expect(prompts, isNotEmpty);
+          expect(prompts.join(), contains('VISIBLE_FACTS'));
+          expect(prompts.join(), isNot(contains('EXCLUDED_SECRET')));
+          expect(sent, hasLength(1));
+          expect(
+            jsonEncode(sent.single),
+            contains(retryAfterRestore ? 'VISIBLE_FACTS' : 'COMPACT_HANDOFF'),
+          );
+          expect(jsonEncode(sent.single), contains('CURRENT_QUESTION'));
+          expect(jsonEncode(sent.single), isNot(contains('EXCLUDED_SECRET')));
+          final operation = (await service.loadContextOperations(
+            conversation.id,
+          )).single;
+          final original = await service.loadMessages(conversation.id);
+          expect(
+            operation.sourceGroups,
+            isNot(contains(original.first.groupId)),
+          );
+        });
+        AppSnackBarManager().dismissAll();
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('automatic compression cancellation does not install or resume', (
+    tester,
+  ) async {
+    final controller = await pumpHarness(tester);
+    await tester.runAsync(() async {
+      await settings.disableTitleGeneration();
+      await settings.disableSuggestionGeneration();
+      await settings.setCompressionDefaults(
+        const CompressionConfig(
+          mode: AutoCompressionMode.auto,
+          keepRecentUserTurns: 1,
+          summaryTokens: 512,
+          planningWindow: 8000,
+          includeReference: false,
+        ),
+      );
+      final conversation = await openConversation(controller);
+      await service.addMessage(
+        conversationId: conversation.id,
+        role: 'user',
+        content: 'OLD_FACTS ${'history ' * 8000}',
+      );
+      final held = Completer<void>();
+      var summaryEntered = false;
+      var chatCalls = 0;
+      apiOverride = (request, body) async {
+        if (jsonEncode(body).contains('Target length:')) {
+          summaryEntered = true;
+          await held.future;
+          await compressionReply(request, summary: true);
+        } else {
+          chatCalls++;
+          await compressionReply(request);
+        }
+      };
+      await controller.sendMessage(ChatInputData(text: 'CURRENT_QUESTION'));
+      await waitFor(() => summaryEntered, 'summary request');
+      await controller.cancelStreaming();
+      held.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(chatCalls, 0);
+      expect(await service.loadContextOperations(conversation.id), isEmpty);
+    });
+    AppSnackBarManager().dismissAll();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final enabled in [false, true]) {
+    testWidgets(
+      'automatic compression actual overflow recovery enabled=$enabled',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          await settings.disableTitleGeneration();
+          await settings.disableSuggestionGeneration();
+          await settings.setCompressionDefaults(
+            CompressionConfig(
+              mode: enabled
+                  ? AutoCompressionMode.auto
+                  : AutoCompressionMode.off,
+              keepRecentUserTurns: 1,
+              summaryTokens: 512,
+              planningWindow: 32000,
+              includeReference: false,
+            ),
+          );
+          final conversation = await openConversation(controller);
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'user',
+            content: 'OLD_FACTS ${'history ' * 600}',
+          );
+          var summaryCalls = 0;
+          var chatCalls = 0;
+          apiOverride = (request, body) async {
+            if (jsonEncode(body).contains('Target length:')) {
+              summaryCalls++;
+              await compressionReply(request, summary: true);
+            } else {
+              chatCalls++;
+              if (chatCalls == 1) {
+                request.response.statusCode = 400;
+                request.response.write(
+                  '{"error":{"code":"context_length_exceeded"}}',
+                );
+                await request.response.close();
+              } else {
+                await compressionReply(request);
+              }
+            }
+          };
+          await controller.sendMessage(ChatInputData(text: 'CURRENT_QUESTION'));
+          await waitFor(
+            () =>
+                chatCalls > 0 &&
+                !controller.chatController.isConversationLoading(
+                  conversation.id,
+                ),
+            'overflow completes',
+          );
+          expect(summaryCalls, enabled ? 1 : 0);
+          expect(chatCalls, enabled ? 2 : 1);
+          if (!enabled) {
+            final failed = (await service.loadContextSnapshot(
+              conversation.id,
+            )).messages.last;
+            await controller.debugViewModel.compressAndRetryContext(
+              failed,
+              originalParts: const [],
+            );
+            await waitFor(
+              () =>
+                  chatCalls == 2 &&
+                  !controller.chatController.isConversationLoading(
+                    conversation.id,
+                  ),
+              'explicit compression retry completes',
+            );
+            expect(summaryCalls, 1);
+            final after = await service.loadContextSnapshot(conversation.id);
+            expect(after.messages.last.id, failed.id);
+            expect(
+              after.messages.last.content,
+              isNot(contains('context_length_exceeded')),
+            );
+            expect(
+              after.messages.where((m) => m.content == 'CURRENT_QUESTION'),
+              hasLength(1),
+            );
+            expect(settings.compressionDefaults.mode, AutoCompressionMode.off);
+          }
+        });
+        AppSnackBarManager().dismissAll();
+        await tester.pumpAndSettle();
+        AppSnackBarManager().dismissAll();
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }
 
 Map<String, dynamic> _nativeReasoning(String id) => {

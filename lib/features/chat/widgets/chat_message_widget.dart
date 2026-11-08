@@ -3465,6 +3465,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
               final widgets = <Widget>[
                 ViewportBlockList(
+                  storageId: 'body',
                   itemCount: visibleBlocks.length,
                   spacing: 8,
                   structureToken: (
@@ -3533,6 +3534,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                       showThinkingCards,
                       showToolCards,
                       blockKey(index),
+                      widget.message.modelId,
+                      widget.message.timestamp,
                       widget.onRecoveredAskUserAnswer != null,
                     );
                     final cached = _thinkingWidgets[block];
@@ -3541,11 +3544,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                     }
                     final card = _ChainOfThoughtCard(
                       key: ValueKey(blockKey(index)),
+                      message: widget.message,
                       steps: _timelineStepsFromProjected(
                         block.thinkingSteps,
                         effectiveReasoningSegments,
                       ),
-                      conversationId: widget.message.conversationId,
                       showThinkingCards: showThinkingCards,
                       showToolCards: showToolCards,
                       streaming: streaming,
@@ -4977,7 +4980,7 @@ class _ChainOfThoughtCard extends StatefulWidget {
   const _ChainOfThoughtCard({
     super.key,
     required this.steps,
-    required this.conversationId,
+    required this.message,
     required this.showThinkingCards,
     required this.showToolCards,
     required this.streaming,
@@ -4985,7 +4988,8 @@ class _ChainOfThoughtCard extends StatefulWidget {
   });
 
   final List<_TimelineStepData> steps;
-  final String conversationId;
+  final ChatMessage message;
+  String get conversationId => message.conversationId;
   final bool showThinkingCards;
   final bool showToolCards;
   final bool streaming;
@@ -5022,6 +5026,9 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
   }) {
     return (
       'reasoning',
+      widget.message.id,
+      widget.message.modelId,
+      widget.message.timestamp,
       step.text,
       step.expanded,
       step.loading,
@@ -5199,6 +5206,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                     ),
                   ),
                 ViewportBlockList(
+                  storageId: ('steps', widget.key),
                   itemCount: visibleSteps.length,
                   structureToken: (visibleSteps.length, hiddenCount),
                   itemKey: (i) {
@@ -5245,6 +5253,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                           hasToggle: hasToggle,
                         ),
                         builder: () => _ChainOfThoughtReasoningStep(
+                          message: widget.message,
                           step: reasoning,
                           sourceIndex: sourceIndex,
                           sourceOrdinal: step.sourceOrdinal,
@@ -5287,6 +5296,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                           widget.conversationId,
                         ),
                         builder: () => _ChainOfThoughtBrowserGroup(
+                          sourceOrdinal: step.sourceOrdinal,
                           tools: tools,
                           lite: step.browserLite,
                           conversationId: widget.conversationId,
@@ -5581,6 +5591,7 @@ class _TimelineLinePainter extends CustomPainter {
 
 class _ChainOfThoughtReasoningStep extends StatefulWidget {
   const _ChainOfThoughtReasoningStep({
+    required this.message,
     required this.step,
     required this.sourceIndex,
     required this.sourceOrdinal,
@@ -5588,6 +5599,7 @@ class _ChainOfThoughtReasoningStep extends StatefulWidget {
     required this.isLast,
   });
 
+  final ChatMessage message;
   final ReasoningSegment step;
   final int sourceIndex;
   final int sourceOrdinal;
@@ -5809,12 +5821,20 @@ class _ChainOfThoughtReasoningStepState
             // Bouncing physics already declines drags when content fits.
             // Keeping it stable also retains ScrollPosition on overflow.
             physics: const BouncingScrollPhysics(),
-            child: AppSelectionArea(child: reasoningContent(display)),
+            child: AppSelectionArea(
+              message: widget.message,
+              quoteTextOnly: true,
+              child: reasoningContent(display),
+            ),
           ),
         ),
       );
     } else if (state == _ReasoningStepState.expanded) {
-      content = AppSelectionArea(child: reasoningContent(display));
+      content = AppSelectionArea(
+        message: widget.message,
+        quoteTextOnly: true,
+        child: reasoningContent(display),
+      );
     }
 
     return _TimelineStepShell(
@@ -5851,6 +5871,7 @@ class _ChainOfThoughtReasoningStepState
 
 class _ChainOfThoughtBrowserGroup extends StatefulWidget {
   const _ChainOfThoughtBrowserGroup({
+    required this.sourceOrdinal,
     required this.tools,
     required this.lite,
     required this.conversationId,
@@ -5860,6 +5881,7 @@ class _ChainOfThoughtBrowserGroup extends StatefulWidget {
     required this.showPageCard,
     required this.streaming,
   });
+  final int sourceOrdinal;
   final List<ToolUIPart> tools;
   final bool lite, isFirst, isLast, hideImages, showPageCard, streaming;
   final String conversationId;
@@ -6172,6 +6194,7 @@ class _ChainOfThoughtBrowserGroupState
       }
       steps.add(
         ViewportBlockList(
+          storageId: ('browser-steps', tools.first.id, widget.sourceOrdinal),
           itemCount: _actions.length - firstVisible,
           structureToken: (_structureRevision, firstVisible),
           itemKey: (i) => timelineToolStepKey(

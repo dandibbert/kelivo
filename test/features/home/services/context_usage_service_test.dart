@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:Kelivo/core/models/native_compaction.dart';
 import 'dart:io';
 
 import 'package:fake_async/fake_async.dart';
@@ -12,6 +13,7 @@ import 'package:Kelivo/core/models/conversation.dart';
 import 'package:Kelivo/core/models/conversation_prompt_settings.dart';
 import 'package:Kelivo/core/models/instruction_injection.dart';
 import 'package:Kelivo/core/models/image_context.dart';
+import 'package:Kelivo/core/models/request_budget.dart';
 import 'package:Kelivo/core/models/message_part.dart';
 import 'package:Kelivo/core/models/token_usage.dart';
 import 'package:Kelivo/core/providers/assistant_provider.dart';
@@ -204,6 +206,95 @@ void main() {
   );
 
   String tokenWords(int count) => List.filled(count, 'aa').join(' ');
+
+  test(
+    'request budget changes invalidate context usage configuration',
+    () async {
+      final providers = await createProviders();
+      final before = requestConfiguration(providers);
+      final config = providers.settings.getProviderConfig('TestProvider');
+      await providers.settings.setProviderConfig(
+        'TestProvider',
+        config.copyWith(
+          requestBudget: const RequestBudgetOverrides(imageCount: 10),
+        ),
+      );
+      final providerChanged = requestConfiguration(providers);
+      expect(providerChanged, isNot(before));
+      expect(requestConfiguration(providers), providerChanged);
+      await providers.settings.setProviderConfig(
+        'TestProvider',
+        providers.settings
+            .getProviderConfig('TestProvider')
+            .copyWith(
+              modelOverrides: {
+                ...config.modelOverrides,
+                'window-model': {
+                  ...(config.modelOverrides['window-model'] as Map),
+                  'requestBudget': {'imageCount': 4},
+                },
+              },
+            ),
+      );
+      expect(requestConfiguration(providers), isNot(providerChanged));
+    },
+  );
+
+  test(
+    'native state stays unknown until actual provider usage arrives',
+    () async {
+      final chat = await createChat();
+      final providers = await createProviders();
+      final conversation = await chat.createDraftConversation(title: 'Native');
+      final reply = await chat.addMessage(
+        conversationId: conversation.id,
+        role: 'assistant',
+        content: 'reply',
+      );
+      final usage = createUsage(
+        chat: chat,
+        settings: providers.settings,
+        assistants: providers.assistants,
+        assemble:
+            ({
+              required conversationId,
+              required providerKey,
+              required modelId,
+              required assistantId,
+            }) async => const ContextAssemblyPreview(
+              systemText: '',
+              injectionsText: '',
+              historyText: '',
+              tools: [],
+              images: [],
+              apiMessages: [
+                {
+                  nativeCompactionMessageKey: {'opaque': true},
+                },
+              ],
+            ),
+      );
+      usage.setActiveConversation(conversation.id);
+      await usage.refresh(conversation.id, force: true);
+      expect(usage.current!.state, ContextUsageState.opaque);
+      expect(usage.current!.hasUsage, isFalse);
+      expect(usage.current!.ratio, isNull);
+      await usage.recordUsage(
+        conversationId: conversation.id,
+        providerKey: 'TestProvider',
+        modelId: 'window-model',
+        assistantId: null,
+        requestRevision: chat.contextRevision(conversation.id),
+        requestConfiguration: requestConfiguration(providers),
+        usage: const TokenUsage(promptTokens: 321, completionTokens: 2),
+        assistantMessage: reply,
+      );
+      await usage.refresh(conversation.id, force: true);
+      expect(usage.current!.state, ContextUsageState.exact);
+      expect(usage.current!.usedTokens, 323);
+      expect(usage.current!.hasUsage, isTrue);
+    },
+  );
 
   test(
     'real isolate refresh completes after adding a historical image',

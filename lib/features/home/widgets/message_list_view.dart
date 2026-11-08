@@ -138,6 +138,7 @@ class MessageListView extends StatefulWidget {
     this.removingSlotIds = const <String>{},
     this.onVersionChange,
     this.onRegenerateMessage,
+    this.onSetContextStart,
     this.onResendMessage,
     this.onTranslateMessage,
     this.onEditMessage,
@@ -239,6 +240,7 @@ class MessageListView extends StatefulWidget {
   // Callbacks
   final OnVersionChange? onVersionChange;
   final OnRegenerateMessage? onRegenerateMessage;
+  final ValueChanged<ChatMessage>? onSetContextStart;
   final OnResendMessage? onResendMessage;
   final OnTranslateMessage? onTranslateMessage;
   final OnEditMessage? onEditMessage;
@@ -645,6 +647,18 @@ class _MessageListViewState extends State<MessageListView> {
     });
   }
 
+  bool _showsOperationDivider(ContextOperation operation, ChatMessage message) {
+    final group = ContextHistory.group(message);
+    if (operation.revoked || operation.anchorGroupId != group) return false;
+    // A new conversation already displays its copied summary as a message.
+    // Keep the operation for context assembly without repeating it in the UI.
+    return !(operation.isCompression &&
+        !operation.isEdited &&
+        operation.sourceGroups.length == 1 &&
+        operation.sourceGroups.single == group &&
+        operation.summary == message.content);
+  }
+
   /// Rough height of a message bubble, used for items that never got laid out.
   ///
   /// SuperSliverList's default estimate is a flat 100px. In a long chat a real
@@ -665,9 +679,10 @@ class _MessageListViewState extends State<MessageListView> {
         ? 0
         : widget.contextOperations
               .where(
-                (op) =>
-                    !op.revoked &&
-                    op.anchorGroupId == _effectiveRenderModels[index].slotId,
+                (op) => _showsOperationDivider(
+                  op,
+                  _effectiveRenderModels[index].message,
+                ),
               )
               .length;
     return _estimateMessageExtent(index, crossAxisExtent) +
@@ -1325,10 +1340,26 @@ class _MessageListViewState extends State<MessageListView> {
         oldWidget.contextTaskRevision != widget.contextTaskRevision ||
         !listEquals(
           oldWidget.contextOperations
-              .map((op) => (op.id, op.revoked, op.anchorGroupId))
+              .map(
+                (op) => (
+                  op.id,
+                  op.revoked,
+                  op.anchorGroupId,
+                  op.summary,
+                  op.isEdited,
+                ),
+              )
               .toList(),
           widget.contextOperations
-              .map((op) => (op.id, op.revoked, op.anchorGroupId))
+              .map(
+                (op) => (
+                  op.id,
+                  op.revoked,
+                  op.anchorGroupId,
+                  op.summary,
+                  op.isEdited,
+                ),
+              )
               .toList(),
         ) ||
         oldWidget.chatFontScale != widget.chatFontScale ||
@@ -2121,6 +2152,20 @@ class _MessageListViewState extends State<MessageListView> {
       key: ValueKey<String>('timeline-slot:${_slotId(message)}'),
       mainAxisSize: MainAxisSize.min,
       children: [
+        for (final operation in widget.contextOperations)
+          if (operation.isFixedStart &&
+              _showsOperationDivider(operation, message))
+            Padding(
+              padding: widget.dividerPadding,
+              child: ContextOperationDivider(
+                key: ValueKey('context-node-${operation.id}'),
+                operation: operation,
+                onOpen: () => widget.onOpenContextOperation?.call(operation),
+                onUndo: widget.onUndoContextOperation == null
+                    ? null
+                    : () => widget.onUndoContextOperation!(operation),
+              ),
+            ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2223,8 +2268,8 @@ class _MessageListViewState extends State<MessageListView> {
           ],
         ),
         for (final operation in widget.contextOperations)
-          if (!operation.revoked &&
-              operation.anchorGroupId == (message.groupId ?? message.id))
+          if (!operation.isFixedStart &&
+              _showsOperationDivider(operation, message))
             Padding(
               padding: widget.dividerPadding,
               child: ContextOperationDivider(
@@ -2236,14 +2281,19 @@ class _MessageListViewState extends State<MessageListView> {
                     .any(
                       (op) =>
                           !op.revoked &&
-                          !op.isCompression &&
-                          op.sourceGroups.contains(operation.anchorGroupId),
+                          (op.isFixedStart ||
+                              (op.isClear &&
+                                  op.sourceGroups.contains(
+                                    operation.anchorGroupId,
+                                  ))),
                     ),
-                superseded: widget.contextOperations.any(
-                  (other) =>
-                      !other.revoked &&
-                      other.dependencies.contains(operation.id),
-                ),
+                superseded:
+                    operation.isCompression &&
+                    widget.contextOperations.any(
+                      (other) =>
+                          !other.revoked &&
+                          other.dependencies.contains(operation.id),
+                    ),
                 onOpen: () => widget.onOpenContextOperation?.call(operation),
                 onUndo: widget.onUndoContextOperation == null
                     ? null
@@ -2531,13 +2581,21 @@ class _MessageListViewState extends State<MessageListView> {
           ? () => widget.onDeleteMessage?.call(message, widget.byGroup)
           : null,
       onMore: () async {
+        final start = ContextHistory.fixedStart(widget.contextOperations);
         final action = await showMessageMoreSheet(
           context,
           message,
           canDeleteAllVersions: total > 1,
           canCreateBranch: widget.onForkConversation != null,
+          canSetContextStart:
+              widget.onSetContextStart != null && !message.isStreaming,
+          isContextStart: start?.anchorGroupId == ContextHistory.group(message),
         );
-        if (action == MessageMoreAction.deleteCurrentVersion) {
+        if (action == MessageMoreAction.setContextStart) {
+          widget.onSetContextStart?.call(message);
+        } else if (action == MessageMoreAction.cancelContextStart) {
+          if (start != null) widget.onUndoContextOperation?.call(start);
+        } else if (action == MessageMoreAction.deleteCurrentVersion) {
           await widget.onDeleteMessage?.call(message, widget.byGroup);
         } else if (action == MessageMoreAction.deleteAllVersions) {
           await widget.onDeleteAllVersions?.call(message, widget.byGroup);

@@ -858,7 +858,9 @@ String exportContextNodeText(
   required bool markdown,
   required List<ContextOperation> operations,
 }) {
-  final title = op.isCompression
+  final title = op.isFixedStart
+      ? l10n.contextFixedStart
+      : op.isCompression
       ? l10n.contextCompressMarker
       : l10n.contextClearMarker;
   final hidden = operations
@@ -867,16 +869,17 @@ String exportContextNodeText(
       .any(
         (item) =>
             !item.revoked &&
-            !item.isCompression &&
-            item.sourceGroups.contains(op.anchorGroupId),
+            (item.isFixedStart ||
+                (item.isClear && item.sourceGroups.contains(op.anchorGroupId))),
       );
   final status = op.revoked
       ? l10n.contextOperationUndone
       : hidden
       ? l10n.contextOperationHidden
-      : operations.any(
-          (item) => !item.revoked && item.dependencies.contains(op.id),
-        )
+      : op.isCompression &&
+            operations.any(
+              (item) => !item.revoked && item.dependencies.contains(op.id),
+            )
       ? l10n.contextOperationSuperseded
       : l10n.contextOperationActive;
   return '${markdown ? '### ' : '['}$title · $status${markdown ? '' : ']'}\n'
@@ -975,6 +978,22 @@ Future<void> exportChatMessagesMarkdown(
         }
       }
       buf.writeln('\n---\n');
+    }
+
+    final compressionMetadata = await chat.compressionMetadataForExport(
+      conversation.id,
+      captures.messages.map(ContextHistory.group).toSet(),
+      settings.compressionDefaults,
+      locale: l10n.localeName,
+    );
+    if (compressionMetadata != null) {
+      buf.writeln(
+        '<details><summary>${l10n.contextOperationsTitle}</summary>\n\n```json',
+      );
+      buf.writeln(
+        const JsonEncoder.withIndent('  ').convert(compressionMetadata),
+      );
+      buf.writeln('```\n\n</details>');
     }
 
     final filename = 'chat-export-${DateTime.now().millisecondsSinceEpoch}.md';
@@ -1076,6 +1095,19 @@ Future<void> exportChatMessagesTxt(
         }
       }
       buf.writeln('\n---\n');
+    }
+
+    final compressionMetadata = await chat.compressionMetadataForExport(
+      conversation.id,
+      captures.messages.map(ContextHistory.group).toSet(),
+      settings.compressionDefaults,
+      locale: l10n.localeName,
+    );
+    if (compressionMetadata != null) {
+      buf.writeln('\n${l10n.contextOperationsTitle}');
+      buf.writeln(
+        const JsonEncoder.withIndent('  ').convert(compressionMetadata),
+      );
     }
 
     final filename = 'chat-export-${DateTime.now().millisecondsSinceEpoch}.txt';

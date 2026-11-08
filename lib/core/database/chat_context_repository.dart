@@ -127,17 +127,17 @@ extension ChatContextRepository on ChatDatabaseRepository {
     String id,
     List<ContextOperation> operations,
   ) => _db.transaction(() async {
-    final clear = operations
-        .where((op) => !op.revoked && !op.isCompression)
+    final boundary = operations
+        .where((op) => !op.revoked && (op.isClear || op.isFixedStart))
         .lastOrNull;
-    if (clear == null) return -1;
+    if (boundary == null) return -1;
     await _timelineIndex.ensureConversation(id);
     final anchor = await _db
         .customSelect(
           'SELECT anchor_order FROM timeline_group_rows WHERE conversation_id=? AND group_id=?',
           variables: [
             Variable<String>(id),
-            Variable<String>(clear.anchorGroupId),
+            Variable<String>(boundary.anchorGroupId),
           ],
         )
         .getSingleOrNull();
@@ -149,11 +149,11 @@ extension ChatContextRepository on ChatDatabaseRepository {
           variables: [
             Variable<String>(id),
             Variable<int>(anchor.read<int>('anchor_order')),
-            Variable<String>(clear.anchorGroupId),
+            Variable<String>(boundary.anchorGroupId),
           ],
         )
         .getSingle();
-    return count.read<int>('n');
+    return count.read<int>('n') - (boundary.isFixedStart ? 1 : 0);
   });
 
   Future<void> saveCompressionTask(
@@ -232,7 +232,13 @@ extension ChatContextRepository on ChatDatabaseRepository {
     return [
       for (final op in operations)
         {
-          ...op.toJson()
+          ...op.remapSources({
+              for (final (i, id)
+                  in (op.compressionDetails['sourceRevisionIds'] as List? ??
+                          const [])
+                      .indexed)
+                id as String: 'source:$i',
+            }).toJson()
             ..remove('id')
             // Conversion timestamps are bookkeeping, not clear semantics.
             ..removeWhere(
@@ -335,6 +341,9 @@ extension ChatContextRepository on ChatDatabaseRepository {
     String conversationId,
     ContextOperation operation, {
     required String expectedFingerprint,
+    String? fingerprintThroughId,
+    void Function()? checkBeforeCommit,
+    Future<void> Function()? validateBeforeCommit,
   }) => _db.transaction(() async {
     if (await getConversation(conversationId) == null) {
       throw StateError('conversation_not_found');
@@ -345,11 +354,16 @@ extension ChatContextRepository on ChatDatabaseRepository {
       conversationId,
       limit: 0x7fffffff,
     );
-    if (ContextHistory.fingerprint(selected, operations) !=
+    if (ContextHistory.fingerprint(
+          ContextHistory.throughMessage(selected, fingerprintThroughId),
+          operations,
+        ) !=
         expectedFingerprint) {
       throw StateError('context_changed');
     }
-    final next = [...operations, operation];
+    await validateBeforeCommit?.call();
+    checkBeforeCommit?.call();
+    final next = ContextHistory.appendOperation(operations, operation);
     await _writeContextOperations(conversationId, next);
     // Commit the task outcome with the node so a crash cannot invite a second
     // compression after a successful application.
@@ -367,6 +381,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
         await saveCompressionTask(conversationId, value);
       }
     }
+    checkBeforeCommit?.call();
     return next;
   });
 
@@ -383,7 +398,8 @@ extension ChatContextRepository on ChatDatabaseRepository {
     }
     final target = operations.firstWhere((op) => op.id == operationId);
     if (target.revoked) throw StateError('context_changed');
-    if (summary != null && (!target.isCompression || summary.trim().isEmpty)) {
+    if (summary != null &&
+        (!target.isCompression || target.isNative || summary.trim().isEmpty)) {
       throw ArgumentError('empty_summary');
     }
     final affected = ContextHistory.affectedOperations(
@@ -411,6 +427,8 @@ extension ChatContextRepository on ChatDatabaseRepository {
     ContextOperation operation, {
     required String expectedFingerprint,
     required List<ChatMessage> retained,
+    Future<void> Function()? validateBeforeCommit,
+    void Function()? checkBeforeCommit,
   }) async {
     // Copy the newest accepted UI state before entering the shared writer.
     // Nested message writes and their publications must use this same owner.
@@ -420,6 +438,8 @@ extension ChatContextRepository on ChatDatabaseRepository {
       if (snapshot.fingerprint != expectedFingerprint) {
         throw StateError('context_changed');
       }
+      await validateBeforeCommit?.call();
+      checkBeforeCommit?.call();
       final source = await getConversation(sourceId);
       if (source == null) throw StateError('conversation_not_found');
       final id = const Uuid().v4();
@@ -444,6 +464,12 @@ extension ChatContextRepository on ChatDatabaseRepository {
       final targetOperations = [
         ContextOperation.forCopiedSummary(
           summary,
+          compressionDetails: {
+            ...operation.compressionDetails,
+            'sourceRevisionIds': <String>[],
+            'imageSources': <String, dynamic>{},
+            'toolSources': <String, dynamic>{},
+          },
           keepUserMessages: countUserMessages(retained),
         ),
       ];
@@ -504,6 +530,10 @@ extension ChatContextRepository on ChatDatabaseRepository {
         resetVersions: true,
       );
       await _copyImageContext(sourceId, id, ids);
+      await compression.saveOverrides(
+        id,
+        await compression.overrides(sourceId),
+      );
       await _writeContextOperations(id, targetOperations);
       final task =
           await (_db.select(_db.extensionEntityRows)..where(
@@ -524,6 +554,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
           await saveCompressionTask(sourceId, value);
         }
       }
+      checkBeforeCommit?.call();
       return (await getConversation(id))!;
     });
   }
@@ -571,6 +602,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
     required String sourceId,
     required String targetId,
     required Map<String, String> groups,
+    Map<String, String> messages = const {},
     String? sourcePayload,
     bool completeHistory = false,
   }) async {
@@ -612,7 +644,13 @@ extension ChatContextRepository on ChatDatabaseRepository {
     await _writeContextOperations(
       targetId,
       kept
-          .map((op) => op.remap(groups: remappedGroups, operations: ids))
+          .map(
+            (op) => op.remap(
+              groups: remappedGroups,
+              operations: ids,
+              messages: messages,
+            ),
+          )
           .toList(),
     );
   }
