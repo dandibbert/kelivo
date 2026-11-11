@@ -437,7 +437,7 @@ class WorkspaceToolsService {
       ..writeln();
     if (ctx.workspace.isToolEnabled('shell')) {
       buf.writeln(
-        'shell is one-shot: ${_shellInstructions(shell)} '
+        '${_shellInstructions(shell)} '
         'Use non-interactive flags (-y). '
         'Output is capped; long output is saved to $outputsHint.',
       );

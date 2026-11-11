@@ -478,7 +478,7 @@ void main() {
       expect(touched, isEmpty);
       expect(
         WorkspaceToolsService.buildPromptFragment(context),
-        isNot(contains('shell is one-shot')),
+        isNot(contains('Fresh non-interactive')),
       );
     },
   );
