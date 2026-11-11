@@ -1,3 +1,7 @@
+import '../features/provider/widgets/request_budget_settings.dart';
+import '../features/home/widgets/model_icon.dart';
+import '../core/models/avatar_config.dart';
+import '../features/provider/widgets/avatar_input_dialog.dart';
 import '../core/utils/provider_url.dart';
 import '../features/provider/utils/provider_test_failure.dart';
 import '../features/provider/widgets/provider_test_details.dart';
@@ -5,6 +9,7 @@ import '../features/provider/utils/provider_url_editor.dart';
 import '../features/provider/widgets/provider_input_row.dart';
 import '../features/provider/widgets/provider_base_url_field.dart';
 import '../features/provider/widgets/provider_icon_picker.dart';
+import '../features/provider/widgets/provider_sponsor_card.dart';
 import 'macos_window_drag_area.dart';
 import '../features/provider/widgets/oauth_connection_info.dart';
 import '../features/provider/widgets/oauth_model_switch.dart';
@@ -19,6 +24,7 @@ import 'dart:ui' as ui;
 
 import '../icons/lucide_adapter.dart' as lucide;
 import '../l10n/app_localizations.dart';
+import '../l10n/app_language.dart';
 import '../features/settings/pages/google_fonts_picker_page.dart';
 import '../theme/app_font_weights.dart';
 import '../theme/palettes.dart';
@@ -55,8 +61,6 @@ import 'model_spec_edit_dialog.dart'
 // Use the unified model selector (desktop dialog on desktop platforms)
 import '../features/model/widgets/model_select_sheet.dart'
     show showModelSelector;
-import '../utils/brand_assets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import '../shared/widgets/model_tag_wrap.dart';
 import '../core/models/api_keys.dart';
@@ -95,6 +99,7 @@ import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import '../features/provider/widgets/provider_avatar.dart';
 import '../features/provider/widgets/provider_balance_badge.dart';
+import '../features/provider/widgets/provider_balance_request_editor.dart';
 import '../features/provider/widgets/provider_custom_request_editor.dart';
 import '../features/provider/widgets/share_provider_sheet.dart'
     show encodeProviderConfig;

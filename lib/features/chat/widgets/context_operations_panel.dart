@@ -1,3 +1,4 @@
+import 'context_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/ios_tactile.dart';
 import '../../../shared/widgets/ios_text_button.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../../shared/widgets/thinking_sheen.dart';
+import '../../../theme/app_font_weights.dart';
 import '../../../utils/platform_utils.dart';
 import '../../../utils/utf16_safe_cut.dart';
 import 'context_compression_status.dart';
@@ -40,31 +43,71 @@ class ContextTaskBar extends StatelessWidget {
     )!;
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
+    final status = contextTaskIndicator(task, inputPaused: false);
+    final running = status == ContextTaskIndicator.running;
+    final label = compressionStatusLabel(l10n, task);
+    final color = status == ContextTaskIndicator.failed
+        ? cs.error
+        : cs.onSurfaceVariant;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-      child: IosCardPress(
-        key: const ValueKey('context-task-bar'),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Semantics(
+        button: true,
+        liveRegion: true,
+        label: label,
+        hint: l10n.contextOperationsTitle,
         onTap: onOpen,
-        baseColor: cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            if (phase == CompressionPhase.completed)
-              const Icon(LucideIcons.gitBranch, size: 16)
-            else
-              ContextTaskStatusIcon(
-                status: contextTaskIndicator(task, inputPaused: false)!,
+        excludeSemantics: true,
+        child: Tooltip(
+          message: l10n.contextOperationsTitle,
+          excludeFromSemantics: true,
+          child: IosCardPress(
+            key: const ValueKey('context-task-bar'),
+            onTap: onOpen,
+            focusable: true,
+            baseColor: Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: PlatformUtils.isDesktopTarget ? 20 : 36,
               ),
-            const SizedBox(width: 10),
-            Expanded(child: Text(compressionStatusLabel(l10n, task))),
-            const SizedBox(width: 8),
-            Icon(
-              LucideIcons.chevronRight,
-              size: 18,
-              color: cs.onSurfaceVariant,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    phase == CompressionPhase.completed
+                        ? LucideIcons.gitBranch
+                        : switch (status) {
+                            ContextTaskIndicator.failed =>
+                              LucideIcons.circleAlert,
+                            ContextTaskIndicator.paused => LucideIcons.pause,
+                            _ => LucideIcons.package,
+                          },
+                    size: 14,
+                    color: color,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: ThinkingSheen(
+                      enabled: running,
+                      color: color,
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: AppFontWeights.medium,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(LucideIcons.chevronRight, size: 14, color: color),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -100,6 +143,31 @@ class ContextOperationsPanel extends StatefulWidget {
 class _ContextOperationsPanelState extends State<ContextOperationsPanel> {
   late Future<ContextMessageCounts> _counts;
   late int _revision;
+  List<ContextOperation> _operations = const [];
+  Map<String, ({bool hidden, bool superseded})> _statuses = const {};
+  Object? _taskState;
+
+  Object _currentTaskState() {
+    final task = widget.chat.contextCompression.taskFor(widget.conversationId);
+    return (
+      task?.id,
+      task?.phase,
+      task?.completedParts,
+      task?.totalParts,
+      task?.requestAttempts,
+      task?.unknownUsageAttempts,
+      task?.usage?.promptTokens,
+      task?.usage?.completionTokens,
+      task?.error,
+      task?.resultConversationId,
+    );
+  }
+
+  void _readOperations() {
+    _operations = widget.chat.contextOperationsFor(widget.conversationId);
+    _statuses = ContextHistory.operationStatuses(_operations);
+  }
+
   bool _busy = false;
   String? _error;
 
@@ -112,17 +180,29 @@ class _ContextOperationsPanelState extends State<ContextOperationsPanel> {
 
   void _load() {
     _revision = widget.chat.contextRevision(widget.conversationId);
-    _counts = widget.chat.loadContextMessageCounts(
-      widget.conversationId,
-      limit: widget.messageLimit,
-    );
+    _taskState = _currentTaskState();
+    final revision = _revision;
+    Future<ContextMessageCounts> load() async {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return (stored: 0, messages: 0, summaries: 0);
+      await widget.chat.loadContextOperations(widget.conversationId);
+      if (mounted && revision == _revision) setState(_readOperations);
+      return widget.chat.loadContextMessageCounts(
+        widget.conversationId,
+        limit: widget.messageLimit,
+      );
+    }
+
+    _counts = load();
   }
 
   void _changed() {
+    final revision = widget.chat.contextRevision(widget.conversationId);
+    final taskState = _currentTaskState();
+    if (revision == _revision && taskState == _taskState) return;
     setState(() {
-      if (_revision != widget.chat.contextRevision(widget.conversationId)) {
-        _load();
-      }
+      _taskState = taskState;
+      if (_revision != revision) _load();
     });
   }
 
@@ -167,6 +247,17 @@ class _ContextOperationsPanelState extends State<ContextOperationsPanel> {
             compressionStatusLabel(l10n, task),
             style: Theme.of(context).textTheme.titleSmall,
           ),
+          if (task.requestAttempts > 0)
+            Text(l10n.compressionCalls(task.requestAttempts)),
+          if (task.usage != null)
+            Text(
+              l10n.compressionUsageValues(
+                contextTokenValue(task.usage!.promptTokens),
+                contextTokenValue(task.usage!.completionTokens),
+              ),
+            ),
+          if (task.unknownUsageAttempts > 0)
+            Text(l10n.compressionUsageUnknown(task.unknownUsageAttempts)),
           if (task.error != null) ...[
             const SizedBox(height: 6),
             Text(
@@ -200,7 +291,8 @@ class _ContextOperationsPanelState extends State<ContextOperationsPanel> {
                   onPressed: () =>
                       widget.onOpenConversation(task.resultConversationId!),
                 ),
-              if (task.phase != CompressionPhase.applying)
+              if (task.phase != CompressionPhase.applying &&
+                  task.phase != CompressionPhase.completed)
                 IosTextButton(
                   label: task.active
                       ? l10n.contextTaskCancel
@@ -230,9 +322,7 @@ class _ContextOperationsPanelState extends State<ContextOperationsPanel> {
     return FutureBuilder<ContextMessageCounts>(
       future: _counts,
       builder: (context, snapshot) {
-        final operations = widget.chat.contextOperationsFor(
-          widget.conversationId,
-        );
+        final operations = _operations;
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -314,19 +404,9 @@ class _ContextOperationsPanelState extends State<ContextOperationsPanel> {
                   }
                   final operation =
                       operations[operations.length - (index - 2) - 1];
-                  final hidden = operations
-                      .skipWhile((op) => op.id != operation.id)
-                      .skip(1)
-                      .any(
-                        (op) =>
-                            !op.revoked &&
-                            !op.isCompression &&
-                            op.sourceGroups.contains(operation.anchorGroupId),
-                      );
-                  final superseded = operations.any(
-                    (op) =>
-                        !op.revoked && op.dependencies.contains(operation.id),
-                  );
+                  final hidden = _statuses[operation.id]?.hidden ?? false;
+                  final superseded =
+                      _statuses[operation.id]?.superseded ?? false;
                   final status = operation.revoked
                       ? l10n.contextOperationUndone
                       : hidden
@@ -346,8 +426,14 @@ class _ContextOperationsPanelState extends State<ContextOperationsPanel> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            operation.isCompression
-                                ? l10n.contextDividerCompressed
+                            operation.isFixedStart
+                                ? l10n.contextFixedStart
+                                : operation.isCompression
+                                ? operation.isNative
+                                      ? operation.isImportedNative
+                                            ? l10n.compressionNativeImported
+                                            : l10n.compressionNativeLabel
+                                      : l10n.contextDividerCompressed
                                 : l10n.contextDetailClearTitle,
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
@@ -358,7 +444,8 @@ class _ContextOperationsPanelState extends State<ContextOperationsPanel> {
                               color: cs.onSurfaceVariant,
                             ),
                           ),
-                          if (operation.isCompression) ...[
+                          if (operation.isCompression &&
+                              !operation.isNative) ...[
                             const SizedBox(height: 6),
                             Text(
                               truncateHeadUtf16Safe(operation.summary, 240),

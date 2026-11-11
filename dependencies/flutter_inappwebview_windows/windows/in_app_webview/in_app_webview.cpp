@@ -528,15 +528,22 @@ namespace flutter_inappwebview_plugin
       Callback<ICoreWebView2NavigationStartingEventHandler>(
         [this](ICoreWebView2* sender, ICoreWebView2NavigationStartingEventArgs* args)
         {
+          wil::unique_cotaskmem_string uri = nullptr;
+          std::optional<std::string> url = SUCCEEDED(args->get_Uri(&uri)) ? wide_to_utf8(uri.get()) : std::optional<std::string>{};
+          const bool networkNavigation = url.has_value() &&
+            (starts_with(url.value(), std::string{ "http://" }) || starts_with(url.value(), std::string{ "https://" }));
+          // Cancel offline-app navigations before they replace the document
+          // with a Chromium error page and discard its storage bridge.
+          if (settings->blockNetworkLoads && networkNavigation) {
+            args->put_Cancel(TRUE);
+            return S_OK;
+          }
           isLoading_ = true;
 
           if (!channelDelegate) {
             args->put_Cancel(false);
             return S_OK;
           }
-
-          wil::unique_cotaskmem_string uri = nullptr;
-          std::optional<std::string> url = SUCCEEDED(args->get_Uri(&uri)) ? wide_to_utf8(uri.get()) : std::optional<std::string>{};
 
           wil::unique_cotaskmem_string requestMethod = nullptr;
           wil::com_ptr<ICoreWebView2HttpRequestHeaders> requestHeaders = nullptr;
@@ -619,8 +626,9 @@ namespace flutter_inappwebview_plugin
             navigationActions_[navigationId] = navigationAction;
           }
 
-          // if shouldOverrideUrlLoading is not used, then call onLoadStart and onProgressChanged here
-          if (!settings->useShouldOverrideUrlLoading) {
+          // CDP Fetch only pauses HTTP(S) documents. Registered custom schemes
+          // and NavigateToString must still start a fresh Dart navigation.
+          if (!settings->useShouldOverrideUrlLoading || !networkNavigation) {
             channelDelegate->onLoadStart(url);
             channelDelegate->onProgressChanged(0);
           }
@@ -935,7 +943,7 @@ namespace flutter_inappwebview_plugin
                     {
                       wil::com_ptr<ICoreWebView2WebResourceResponse> nativeResponse;
                       nativeResponse.attach(response->toWebView2Response(environment));
-                      if (nativeResponse) resourceArgs->put_Response(nativeResponse.get());
+                      if (nativeResponse) failedLog(resourceArgs->put_Response(nativeResponse.get()));
                       failedLog(deferral->Complete());
                       return false;
                     };
@@ -968,7 +976,7 @@ namespace flutter_inappwebview_plugin
                 {
                   wil::com_ptr<ICoreWebView2WebResourceResponse> nativeResponse;
                   nativeResponse.attach(response->toWebView2Response(environment));
-                  if (nativeResponse) resourceArgs->put_Response(nativeResponse.get());
+                  if (nativeResponse) failedLog(resourceArgs->put_Response(nativeResponse.get()));
                   failedLog(deferral->Complete());
                   return false;
                 };
@@ -1190,8 +1198,9 @@ namespace flutter_inappwebview_plugin
   void InAppWebView::goBackOrForward(const int64_t& steps)
   {
     getCopyBackForwardList(
-      [this, steps](std::unique_ptr<WebHistory> webHistory)
+      [this, alive = alive_, steps](std::unique_ptr<WebHistory> webHistory)
       {
+        if (!*alive) return;
         if (webHistory && webHistory->currentIndex.has_value() && webHistory->list.has_value()) {
           auto currentIndex = webHistory->currentIndex.value();
           auto items = &webHistory->list.value();
@@ -1304,8 +1313,9 @@ namespace flutter_inappwebview_plugin
     }
 
     userContentController->createContentWorld(contentWorld,
-      [=](const int& contextId)
+      [=, alive = alive_](const int& contextId)
       {
+        if (!*alive) return;
         nlohmann::json parameters = {
           {"expression", source},
           { "returnByValue", true }
@@ -1316,15 +1326,18 @@ namespace flutter_inappwebview_plugin
         }
 
         auto hr = webView->CallDevToolsProtocolMethod(L"Runtime.evaluate", utf8_to_wide(parameters.dump()).c_str(), Callback<ICoreWebView2CallDevToolsProtocolMethodCompletedHandler>(
-          [this, completionHandler](HRESULT errorCode, LPCWSTR returnObjectAsJson)
+          [this, alive, completionHandler](HRESULT errorCode, LPCWSTR returnObjectAsJson)
           {
+            if (!*alive) return S_OK;
             nlohmann::json result;
             if (succeededOrLog(errorCode)) {
               nlohmann::json json = nlohmann::json::parse(wide_to_utf8(returnObjectAsJson));
               result = json["result"].contains("value") ? json["result"]["value"] : nlohmann::json{};
               if (json.contains("exceptionDetails")) {
                 nlohmann::json exceptionDetails = json["exceptionDetails"];
-                auto errorMessage = exceptionDetails.contains("exception") && exceptionDetails["exception"].contains("value")
+                auto errorMessage = exceptionDetails.contains("exception") && exceptionDetails["exception"].contains("description")
+                  ? exceptionDetails["exception"]["description"].get<std::string>() :
+                  exceptionDetails.contains("exception") && exceptionDetails["exception"].contains("value")
                   ? exceptionDetails["exception"]["value"].dump() :
                   (result["value"].is_null() ? exceptionDetails["text"].get<std::string>() : result["value"].dump());
                 result = nlohmann::json{};
@@ -1357,8 +1370,9 @@ namespace flutter_inappwebview_plugin
     }
 
     userContentController->createContentWorld(contentWorld,
-      [=](const int& contextId)
+      [=, alive = alive_](const int& contextId)
       {
+        if (!*alive) return;
         std::vector<std::string> functionArgumentNamesList;
         std::vector<std::string> functionArgumentValuesList;
 
@@ -1383,8 +1397,9 @@ namespace flutter_inappwebview_plugin
         }
 
         auto hr = webView->CallDevToolsProtocolMethod(L"Runtime.evaluate", utf8_to_wide(parameters.dump()).c_str(), Callback<ICoreWebView2CallDevToolsProtocolMethodCompletedHandler>(
-          [this, completionHandler](HRESULT errorCode, LPCWSTR returnObjectAsJson)
+          [this, alive, completionHandler](HRESULT errorCode, LPCWSTR returnObjectAsJson)
           {
+            if (!*alive) return S_OK;
             nlohmann::json result = {
               {"value", nlohmann::json{}},
               {"error", nlohmann::json{}}
@@ -1394,7 +1409,9 @@ namespace flutter_inappwebview_plugin
               result["value"] = json["result"].contains("value") ? json["result"]["value"] : nlohmann::json{};
               if (json.contains("exceptionDetails")) {
                 nlohmann::json exceptionDetails = json["exceptionDetails"];
-                auto errorMessage = exceptionDetails.contains("exception") && exceptionDetails["exception"].contains("value")
+                auto errorMessage = exceptionDetails.contains("exception") && exceptionDetails["exception"].contains("description")
+                  ? exceptionDetails["exception"]["description"].get<std::string>() :
+                  exceptionDetails.contains("exception") && exceptionDetails["exception"].contains("value")
                   ? exceptionDetails["exception"]["value"].dump() :
                   (result["value"].is_null() ? exceptionDetails["text"].get<std::string>() : result["value"].dump());
                 result["value"] = nlohmann::json{};

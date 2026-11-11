@@ -181,6 +181,15 @@ void main() {
         await chat.close();
         chat = ChatService();
         await chat.init();
+        if (temporary) {
+          expect(chat.getConversation(created.id), isNull);
+          expect(await chat.loadMessages(created.id), isEmpty);
+          expect(
+            await chat.chatRepositoryOrNull!.getConversation(created.id),
+            isNull,
+          );
+          return;
+        }
         expect(
           (await chat.loadMessages(created.id)).map((m) => m.content),
           expected,
@@ -268,15 +277,18 @@ void main() {
     'temporary compression publishes only a complete, usable target',
     () async {
       final operation = await compress(temporary: true);
-      final before = chat.getAllConversations().map((c) => c.id).toSet();
+      final copying = chat as _PausingCopyChatService;
+      final gate = Completer<void>();
+      copying.copyGate = gate;
+      copying.copyTarget = Completer<String>();
+      String? targetId;
       String? adopted;
       final publishedCounts = <int>[];
       void adoptNewConversation() {
         if (adopted != null) return;
-        final target = chat
-            .getAllConversations()
-            .where((c) => !before.contains(c.id))
-            .firstOrNull;
+        final target = targetId == null
+            ? null
+            : chat.getCompleteConversation(targetId);
         if (target == null) return;
         publishedCounts.add(chat.getMessageCount(target.id));
         expect(chat.contextOperationsFor(target.id), hasLength(1));
@@ -288,17 +300,18 @@ void main() {
 
       chat.addListener(adoptNewConversation);
       try {
-        final created = await chat.continueFromContextSummary(
-          sourceId,
-          operation.id,
-        );
+        final future = chat.continueFromContextSummary(sourceId, operation.id);
+        targetId = await copying.copyTarget!.future;
+        expect(chat.getCompleteConversation(targetId), isNull);
+        gate.complete();
+        final created = await future;
         expect(adopted, created.id);
         expect(publishedCounts, [3]);
         expect(chat.currentConversationId, created.id);
         expect(chat.getConversation(sourceId), isNull);
         expect(
           await chat.chatRepositoryOrNull!.getConversation(created.id),
-          isNotNull,
+          isNull,
         );
         expect(
           (await chat.loadSelectedContextMessages(
@@ -348,7 +361,7 @@ void main() {
       (await chat.searchConversationMatches(
         tokens: ['original'],
       )).any((match) => match.conversationId == targetId),
-      isTrue,
+      isFalse, // Temporary chats stay out of persisted search.
     );
     chat.setCurrentConversation(targetId);
     expect(chat.currentConversationId, targetId);
@@ -372,8 +385,9 @@ void main() {
       });
       addTearDown(settings.dispose);
       addTearDown(assistants.dispose);
-      chat.contextCompression.estimateCandidate = (_, _) async =>
-          (usedTokens: 100, contextWindow: 4000);
+      chat.contextCompression.estimateCandidate =
+          (_, _, {bool? fixedContextStart}) async =>
+              (usedTokens: 100, contextWindow: 4000);
       Future<void> pumpUntil(bool Function() complete) async {
         for (var i = 0; i < 500; i++) {
           await tester.pump();
@@ -419,7 +433,14 @@ void main() {
         ),
       );
       await pumpUntil(
-        () => find.byType(ContextOperationContent).evaluate().isNotEmpty,
+        () =>
+            find.byType(ContextOperationContent).evaluate().isNotEmpty &&
+            tester
+                    .widget<ContextOperationContent>(
+                      find.byType(ContextOperationContent),
+                    )
+                    .onContinueNewChat !=
+                null,
       );
       await tester.pumpAndSettle();
       expect(find.byType(ContextOperationContent), findsOneWidget);

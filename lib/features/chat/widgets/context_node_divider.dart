@@ -1,3 +1,4 @@
+import '../../../shared/widgets/ios_tactile.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -93,7 +94,10 @@ class _ContextOperationDividerState extends State<ContextOperationDivider> {
     final desktop = PlatformUtils.isDesktopTarget;
     final hovered = desktop && (_hovered || _focused);
     final showUndo =
-        operation != null && widget.onUndo != null && (!desktop || hovered);
+        operation != null &&
+        operation.canUndo &&
+        widget.onUndo != null &&
+        (!desktop || hovered);
     final symmetricIcons = showUndo && !desktop;
     final undoSize = desktop ? 18.0 : 28.0;
     final color = _highlight ? cs.primary : cs.onSurface.withValues(alpha: .6);
@@ -103,9 +107,19 @@ class _ContextOperationDividerState extends State<ContextOperationDivider> {
             task,
             waitingForApproval: widget.waitingForApproval,
           )
-        : '${operation!.isCompression ? l10n.contextDividerCompressed : l10n.homePageClearContext}'
+        : '${operation!.isFixedStart
+                  ? l10n.contextFixedStart
+                  : operation.isCompression
+                  ? operation.isNative
+                        ? operation.isImportedNative
+                              ? l10n.compressionNativeImported
+                              : l10n.compressionNativeLabel
+                        : l10n.contextDividerCompressed
+                  : l10n.homePageClearContext}'
               '${operation.isCompression && operation.isEdited ? ' · ${l10n.contextDividerEdited}' : ''}';
-    final undoLabel = operation?.isCompression == true
+    final undoLabel = operation?.isFixedStart == true
+        ? l10n.contextCancelFixedStart
+        : operation?.isCompression == true
         ? l10n.contextUndoCompressTooltip
         : l10n.contextUndoClearTooltip;
     final failed =
@@ -184,6 +198,9 @@ class _ContextOperationDividerState extends State<ContextOperationDivider> {
                                                 ? LucideIcons.circleAlert
                                                 : review
                                                 ? LucideIcons.pause
+                                                : operation?.isFixedStart ==
+                                                      true
+                                                ? LucideIcons.flag
                                                 : operation?.isCompression ==
                                                       true
                                                 ? LucideIcons.package2
@@ -221,26 +238,16 @@ class _ContextOperationDividerState extends State<ContextOperationDivider> {
                                   child: SizedBox(
                                     width: undoSize,
                                     height: undoSize,
-                                    child: IconButton(
+                                    child: IosIconButton(
                                       key: ValueKey(
                                         'undo-context-${operation.id}',
                                       ),
-                                      onPressed: widget.onUndo,
+                                      onTap: widget.onUndo,
+                                      icon: LucideIcons.x,
+                                      size: 12,
+                                      minSize: undoSize,
                                       padding: EdgeInsets.zero,
-                                      constraints: BoxConstraints.tightFor(
-                                        width: undoSize,
-                                        height: undoSize,
-                                      ),
-                                      style: IconButton.styleFrom(
-                                        focusColor: cs.primary.withValues(
-                                          alpha: .15,
-                                        ),
-                                      ),
-                                      icon: Icon(
-                                        LucideIcons.x,
-                                        size: 12,
-                                        color: color,
-                                      ),
+                                      color: color,
                                     ),
                                   ),
                                 ),

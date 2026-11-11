@@ -20,7 +20,7 @@ class ContextImpactDialog extends StatelessWidget {
     this.after,
     this.sourceLabel,
   });
-  final List<ContextOperation> operations;
+  final List<ContextOperationMetadata> operations;
   final Set<String> affectedIds;
   final ContextImpactKind kind;
   final String? targetId;
@@ -127,10 +127,16 @@ class ContextImpactDialog extends StatelessWidget {
                             ),
                           _row(
                             context,
-                            operations[index].isCompression
+                            operations[index].isFixedStart
+                                ? LucideIcons.flag
+                                : operations[index].isCompression
                                 ? LucideIcons.package2
                                 : LucideIcons.eraser,
-                            '${operations[index].isCompression ? l10n.contextDividerCompressed : l10n.homePageClearContext} · '
+                            '${operations[index].isFixedStart
+                                ? l10n.contextFixedStart
+                                : operations[index].isCompression
+                                ? l10n.contextDividerCompressed
+                                : l10n.homePageClearContext} · '
                             '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(operations[index].createdAt.toLocal()))}',
                             kind == ContextImpactKind.edit &&
                                     operations[index].id == targetId

@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../l10n/app_localizations.dart';
 import 'browser_glass.dart';
 import '../models/browser_models.dart';
+import 'package:Kelivo/theme/app_font_weights.dart';
 
 /// Browser controls intentionally have no Material ink or app-wide press paint.
 class BrowserActionButton extends StatelessWidget {
@@ -190,7 +191,6 @@ class BrowserAddressBar extends StatelessWidget {
                             focusNode: focusNode,
                             autofocus: false,
                             autocorrect: false,
-                            enableSuggestions: false,
                             keyboardType: TextInputType.url,
                             textInputAction: TextInputAction.go,
                             placeholder: l.browserSearchHint,
@@ -223,8 +223,8 @@ class BrowserAddressBar extends StatelessWidget {
                               fontSize: compact ? 12.5 : 16,
                               height: 1.15,
                               fontWeight: compact
-                                  ? FontWeight.w400
-                                  : FontWeight.w500,
+                                  ? AppFontWeights.regular
+                                  : AppFontWeights.medium,
                             ),
                           ),
                   ),
@@ -383,7 +383,7 @@ class BrowserEmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 17,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: AppFontWeights.semibold,
                   color: cs.onSurface,
                 ),
               ),

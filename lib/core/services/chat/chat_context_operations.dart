@@ -1,5 +1,10 @@
 part of 'chat_service.dart';
 
+typedef ConversationContextHistory = ({
+  List<ChatMessage> messages,
+  List<ContextOperation> operations,
+});
+
 typedef ConversationContextSnapshot = ({
   List<ChatMessage> messages,
   List<ContextOperation> operations,
@@ -27,82 +32,30 @@ extension ChatContextOperations on ChatService {
     bool includeAttachmentsAndTools = true,
     required String Function(int) quoteMarker,
   }) async {
-    if (!includeAttachmentsAndTools) return messages;
     final prompts = await _repo.getMessagePrompts(
       messages
           .where(
             (m) =>
+                includeAttachmentsAndTools &&
                 m.role == 'user' &&
                 m.parts.any((p) => p is ImagePart || p is FilePart),
           )
           .map((m) => m.id),
     );
-    return [
-      for (final message in messages)
-        (() {
-          final frozen = prompts[message.id];
-          var body = message.quotedContent(quoteMarker);
-          if (frozen != null) {
-            body = frozen.carriesMemorySnapshot
-                ? MemoryBlockBuilder.splitInjectedPrefix(
-                        frozen.payload,
-                      )?.rest ??
-                      body
-                : frozen.payload;
-          }
-          final buffer = StringBuffer(LogPayloadElider.elideDataUris(body));
-          for (final part in message.parts) {
-            if (part is ToolCallPart) {
-              try {
-                final tool = jsonDecode(part.payloadJson);
-                if (tool is! Map) continue;
-                final result = toolResultContentForModel(
-                  (tool['content'] ?? '').toString(),
-                );
-                buffer.write('\n[Tool: ${tool['name'] ?? 'unknown'}]\n');
-                final imageUris = mcpResultImageUris(
-                  readMcpResultMetadata(
-                    (tool['metadata'] as Map?)?.cast<String, dynamic>(),
-                  ),
-                );
-                for (var i = 0; i < imageUris.length; i++) {
-                  buffer.write(
-                    '\n[Image ${ContextImageIdentity(message.id, "tool:${tool['id'] ?? 'part:${message.parts.indexOf(part)}'}", i).handle}; read_chat_image can restore it]\n',
-                  );
-                }
-                if (tool['arguments'] != null) {
-                  buffer.write(
-                    truncateHeadTailUtf16Safe(
-                      LogPayloadElider.elide(jsonEncode(tool['arguments'])),
-                      2000,
-                      marker: '\n[…truncated…]\n',
-                    ),
-                  );
-                  buffer.write('\n');
-                }
-                buffer.write(
-                  truncateHeadTailUtf16Safe(
-                    LogPayloadElider.elide(result),
-                    8000,
-                    marker: '\n[…truncated…]\n',
-                  ),
-                );
-              } on FormatException {
-                buffer.write('\n[Unreadable tool record]');
-              }
-            } else if (part is FilePart) {
-              buffer.write(
-                '\n[Attachment: ${part.name}; only available text above is included; binary content was not reread]',
-              );
-            } else if (part is ImagePart) {
-              buffer.write(
-                '\n[Image ${ContextImageIdentity(message.id, 'part:${message.parts.indexOf(part)}').handle}; image content not summarized]',
-              );
-            }
-          }
-          return message.copyWith(content: buffer.toString(), quotes: const []);
-        })(),
-    ];
+    final images = await RequestImageContext.collectHistory(
+      messages,
+      parseMarkdownImages: true,
+      allowRemoteImages: true,
+    );
+    return Isolate.run(
+      _CompressionInputJob(
+        messages,
+        prompts,
+        images,
+        includeAttachmentsAndTools,
+        quoteMarker,
+      ).call,
+    );
   }
 
   List<ContextOperation> contextOperationsFor(String conversationId) =>
@@ -121,19 +74,19 @@ extension ChatContextOperations on ChatService {
     if (_temporaryConversationIds.contains(id) ||
         _draftConversations.containsKey(id)) {
       final operations = contextOperationsFor(id);
-      final clear = operations
-          .where((op) => !op.revoked && !op.isCompression)
+      final boundary = operations
+          .where((op) => !op.revoked && (op.isClear || op.isFixedStart))
           .lastOrNull;
       final messages = _collapseTitleVersions(
         _messagesCache[id] ?? [],
         getVersionSelections(id),
       );
-      _contextStartIndices[id] = clear == null
+      _contextStartIndices[id] = boundary == null
           ? -1
           : messages.indexWhere(
-                  (m) => ContextHistory.group(m) == clear.anchorGroupId,
+                  (m) => ContextHistory.group(m) == boundary.anchorGroupId,
                 ) +
-                1;
+                (boundary.isFixedStart ? 0 : 1);
       _contextStateVersions[id] = contextRevision(id);
       return operations;
     }
@@ -149,6 +102,58 @@ extension ChatContextOperations on ChatService {
     final conversation = _conversationsCache[id];
     if (conversation != null) conversation.truncateIndex = -1;
     return operations;
+  }
+
+  Future<CompressionHistory> loadCompressionHistory(String id) {
+    if (!_initialized || getConversation(id) == null) {
+      return Future.error(StateError('conversation_not_found'));
+    }
+    final epoch = _contextPreviewEpoch;
+    final revision = compressionHistoryRevision(id);
+    final cached = _compressionHistoryCache;
+    if (cached?.id == id && cached?.revision == revision) return cached!.value;
+    Future<CompressionHistory> read() async {
+      try {
+        final history =
+            !_temporaryConversationIds.contains(id) &&
+                !_draftConversations.containsKey(id)
+            ? await _repo.readCompressionHistory(id)
+            : CompressionHistory.fromMessages(
+                await loadRawSelectedContextMessages(id, limit: 0x7fffffff),
+                await loadContextOperations(id),
+              );
+        if (epoch != _contextPreviewEpoch ||
+            compressionHistoryRevision(id) != revision) {
+          return await loadCompressionHistory(id);
+        }
+        return history;
+      } catch (_) {
+        if (epoch == _contextPreviewEpoch &&
+            _compressionHistoryCache?.revision == revision &&
+            _compressionHistoryCache?.id == id) {
+          _compressionHistoryCache = null;
+        }
+        rethrow;
+      }
+    }
+
+    final value = read();
+    _compressionHistoryCache = (id: id, revision: revision, value: value);
+    return value;
+  }
+
+  /// Read-only previews do not need the commit-time fingerprint.
+  Future<ConversationContextHistory> loadContextHistory(String id) async {
+    if (!_temporaryConversationIds.contains(id) &&
+        !_draftConversations.containsKey(id)) {
+      final history = await _repo.readContextHistory(id);
+      await _cacheMessageArtifacts(history.messages);
+      return history;
+    }
+    return (
+      messages: await loadRawSelectedContextMessages(id, limit: 0x7fffffff),
+      operations: await loadContextOperations(id),
+    );
   }
 
   Future<ConversationContextSnapshot> loadContextSnapshot(String id) async {
@@ -167,7 +172,9 @@ extension ChatContextOperations on ChatService {
     return (
       messages: messages,
       operations: operations,
-      fingerprint: ContextHistory.fingerprint(messages, operations),
+      fingerprint: await Isolate.run(
+        () => ContextHistory.fingerprint(messages, operations),
+      ),
     );
   }
 
@@ -230,20 +237,38 @@ extension ChatContextOperations on ChatService {
     String id,
     ContextOperation operation, {
     required String expectedFingerprint,
+    String? fingerprintThroughId,
+    void Function()? checkBeforeCommit,
+    Future<void> Function()? validateBeforeCommit,
   }) async {
     if (getConversation(id) == null) throw StateError('conversation_not_found');
     if (_temporaryConversationIds.contains(id) ||
         _draftConversations.containsKey(id)) {
       final snapshot = await loadContextSnapshot(id);
-      if (snapshot.fingerprint != expectedFingerprint) {
+      if (ContextHistory.fingerprint(
+            ContextHistory.throughMessage(
+              snapshot.messages,
+              fingerprintThroughId,
+            ),
+            snapshot.operations,
+          ) !=
+          expectedFingerprint) {
         throw StateError('context_changed');
       }
-      _contextOperations[id] = [...snapshot.operations, operation];
+      await validateBeforeCommit?.call();
+      checkBeforeCommit?.call();
+      _contextOperations[id] = ContextHistory.appendOperation(
+        snapshot.operations,
+        operation,
+      );
     } else {
       _contextOperations[id] = await _repo.appendContextOperation(
         id,
         operation,
         expectedFingerprint: expectedFingerprint,
+        fingerprintThroughId: fingerprintThroughId,
+        checkBeforeCommit: checkBeforeCommit,
+        validateBeforeCommit: validateBeforeCommit,
       );
     }
     await loadContextOperations(id, refresh: true);
@@ -253,30 +278,63 @@ extension ChatContextOperations on ChatService {
   Future<ContextMessageCounts> loadContextMessageCounts(
     String id, {
     required int limit,
-  }) async {
+  }) {
     if (!_initialized || getConversation(id) == null) {
-      throw StateError('conversation_not_found');
+      return Future.error(StateError('conversation_not_found'));
     }
-    await loadContextOperations(id);
-    if (!_temporaryConversationIds.contains(id) &&
-        !_draftConversations.containsKey(id)) {
-      return _repo.getContextMessageCounts(id, limit: limit);
+    final epoch = _contextPreviewEpoch;
+    final revision = contextRevision(id);
+    final cached = _contextCountsCache;
+    if (cached?.id == id &&
+        cached?.revision == revision &&
+        cached?.limit == limit) {
+      return cached!.value;
     }
-    final snapshot = await loadContextSnapshot(id);
-    if (limit <= 0) {
-      return (stored: snapshot.messages.length, messages: 0, summaries: 0);
+    Future<ContextMessageCounts> read() async {
+      try {
+        final ContextMessageCounts counts;
+        if (!_temporaryConversationIds.contains(id) &&
+            !_draftConversations.containsKey(id)) {
+          counts = await _repo.getContextMessageCounts(id, limit: limit);
+        } else {
+          final history = await loadCompressionHistory(id);
+          final effective = limit <= 0
+              ? <ContextMessageMetadata>[]
+              : ContextHistory.project(
+                  history.messages,
+                  history.operations,
+                  limit: limit,
+                );
+          final summaries = effective.where((m) => m.isSummary).length;
+          counts = (
+            stored: history.messages.length,
+            messages: effective.length - summaries,
+            summaries: summaries,
+          );
+        }
+        if (epoch != _contextPreviewEpoch || revision != contextRevision(id)) {
+          return await loadContextMessageCounts(id, limit: limit);
+        }
+        return counts;
+      } catch (_) {
+        if (epoch == _contextPreviewEpoch &&
+            _contextCountsCache?.id == id &&
+            _contextCountsCache?.revision == revision &&
+            _contextCountsCache?.limit == limit) {
+          _contextCountsCache = null;
+        }
+        rethrow;
+      }
     }
-    final effective = ContextHistory.resolve(
-      snapshot.messages,
-      snapshot.operations,
+
+    final value = read();
+    _contextCountsCache = (
+      id: id,
+      revision: revision,
       limit: limit,
+      value: value,
     );
-    final summaries = effective.where(ContextOperation.isSummary).length;
-    return (
-      stored: snapshot.messages.length,
-      messages: effective.length - summaries,
-      summaries: summaries,
-    );
+    return value;
   }
 
   Future<void> changeContextOperation(
@@ -292,6 +350,9 @@ extension ChatContextOperations on ChatService {
       if (ContextHistory.operationsFingerprint(operations) != expectedState) {
         throw StateError('context_changed');
       }
+      if (operations.any((op) => op.id == operationId && op.isImportedNative)) {
+        throw StateError('native_compaction_originals_unavailable');
+      }
       final affected = ContextHistory.affectedOperations(
         operations,
         operationIds: {operationId},
@@ -301,6 +362,10 @@ extension ChatContextOperations on ChatService {
       }
       if (summary != null && summary.trim().isEmpty) {
         throw ArgumentError('empty_summary');
+      }
+      if (summary != null &&
+          operations.any((op) => op.id == operationId && op.isNative)) {
+        throw StateError('native_compaction_read_only');
       }
       _contextOperations[id] = [
         for (final op in operations)
@@ -321,6 +386,7 @@ extension ChatContextOperations on ChatService {
       );
     }
     await loadContextOperations(id, refresh: true);
+    if (summary == null) contextCompression.skipNextAutomaticTurn(id);
     _notifyContextChanged(id);
   });
 
@@ -354,9 +420,14 @@ extension ChatContextOperations on ChatService {
     ContextOperation operation, {
     required String expectedFingerprint,
     required List<ChatMessage> retained,
+    Future<void> Function()? validateBeforeCommit,
+    void Function()? checkBeforeCommit,
   }) async {
     if (_temporaryConversationIds.contains(id)) {
-      if ((await loadContextSnapshot(id)).fingerprint != expectedFingerprint) {
+      await validateBeforeCommit?.call();
+      checkBeforeCommit?.call();
+      final snapshot = await loadContextSnapshot(id);
+      if (snapshot.fingerprint != expectedFingerprint) {
         throw StateError('context_changed');
       }
       final source = getConversation(id)!;
@@ -373,6 +444,7 @@ extension ChatContextOperations on ChatService {
         title: source.title,
         assistantId: source.assistantId,
         activate: false,
+        temporary: true,
         sourceMessages: sourceMessages,
         sourceExtras: Map<String, dynamic>.from(source.extras),
         sourceMcpServerIds: ConversationMcpSettings.isOverridden(source)
@@ -380,16 +452,36 @@ extension ChatContextOperations on ChatService {
             : null,
         activationOwner: _currentConversationId,
         beforePublish: (created) async {
+          await validateBeforeCommit?.call();
+          checkBeforeCommit?.call();
+          _temporaryCompressionSettings[created.id] =
+              await compressionOverrides(id);
           final target = await loadContextSnapshot(created.id);
+          ContextOperation copySummary(int index) {
+            final original = index == 0
+                ? operation
+                : snapshot.operations.firstWhere(
+                    (op) => op.summaryMessageId == sourceMessages[index].id,
+                  );
+            final keep = countUserMessages(
+              sourceMessages.skip(index + 1).toList(),
+            );
+            return index == 0 || original.isNative
+                ? original.copiedTo(
+                    target.messages[index],
+                    sourceConversationId: id,
+                    keepUserMessages: keep,
+                  )
+                : ContextOperation.forCopiedSummary(
+                    target.messages[index],
+                    keepUserMessages: keep,
+                  );
+          }
+
           await restoreContextOperations(created.id, [
             for (var i = 0; i < sourceMessages.length; i++)
               if (i == 0 || ContextOperation.isSummary(sourceMessages[i]))
-                ContextOperation.forCopiedSummary(
-                  target.messages[i],
-                  keepUserMessages: countUserMessages(
-                    sourceMessages.skip(i + 1).toList(),
-                  ),
-                ),
+                copySummary(i),
           ], expectedFingerprint: target.fingerprint);
           await setConversationModel(
             created.id,
@@ -408,6 +500,8 @@ extension ChatContextOperations on ChatService {
       operation,
       expectedFingerprint: expectedFingerprint,
       retained: retained,
+      validateBeforeCommit: validateBeforeCommit,
+      checkBeforeCommit: checkBeforeCommit,
     );
     _conversationsCache[created.id] = created;
     _messageCounts[created.id] = created.messageIds.length;
@@ -485,4 +579,175 @@ extension ChatContextOperations on ChatService {
           expectedFingerprint: snapshot.fingerprint,
         );
       });
+
+  /// Pins the inclusive history boundary to a message group, independently of
+  /// compression and the assistant's rolling message-count limit.
+  Future<void> setConversationContextStart(String id, String messageId) =>
+      contextCompression.runContextChange(id, () async {
+        final snapshot = await loadContextSnapshot(id);
+        final message = snapshot.messages
+            .where((message) => message.id == messageId)
+            .firstOrNull;
+        if (message == null) throw StateError('message_not_found');
+        final group = ContextHistory.group(message);
+        if (ContextHistory.fixedStart(snapshot.operations)?.anchorGroupId ==
+            group) {
+          return;
+        }
+        await appendContextOperation(
+          id,
+          ContextOperation(
+            id: const Uuid().v4(),
+            kind: ContextOperationKind.start,
+            anchorGroupId: group,
+            appliedAfterGroupId: group,
+            sourceGroups: [group],
+            dependencies: const [],
+            createdAt: DateTime.now(),
+          ),
+          expectedFingerprint: snapshot.fingerprint,
+        );
+      });
+}
+
+class _CompressionInputJob {
+  _CompressionInputJob(
+    this.messages,
+    this.prompts,
+    this.images,
+    this.includeAttachmentsAndTools,
+    this.quoteMarker,
+  );
+  final List<ChatMessage> messages;
+  final Map<String, MessagePromptRow> prompts;
+  final List<ChatContextImage> images;
+  final bool includeAttachmentsAndTools;
+  final String Function(int) quoteMarker;
+
+  List<ChatMessage> call() {
+    final markdownImages = <(String, int?), List<ChatContextImage>>{};
+    for (final image in images) {
+      if (image.identity.slot.startsWith('markdown:')) {
+        markdownImages
+            .putIfAbsent((
+              image.identity.messageId,
+              image.partOrdinal,
+            ), () => [])
+            .add(image);
+      }
+    }
+    return [
+      for (final message in messages)
+        (() {
+          final frozen = prompts[message.id];
+          var body = message.quotedContent(quoteMarker);
+          if (frozen != null) {
+            body = frozen.carriesMemorySnapshot
+                ? MemoryBlockBuilder.splitInjectedPrefix(
+                        frozen.payload,
+                      )?.rest ??
+                      body
+                : frozen.payload;
+          }
+          final buffer = StringBuffer();
+          final hasFrozen = frozen != null;
+          if (hasFrozen) buffer.write(LogPayloadElider.elideDataUris(body));
+          var quoteIndex = 0;
+          var textOffset = 0;
+          final thinking = message.role == 'assistant'
+              ? ThinkingTagParser.parseWithRanges(
+                  message.content,
+                  protectedRanges: UiMessageSource.of(
+                    message.parts,
+                  ).protectedJoinedRanges,
+                )
+              : null;
+          for (var ordinal = 0; ordinal < message.parts.length; ordinal++) {
+            final part = message.parts[ordinal];
+            if (part is TextPart) {
+              if (!hasFrozen) {
+                final count = quotePlaceholder.allMatches(part.text).length;
+                final selectedQuotes = message.quotes
+                    .skip(quoteIndex)
+                    .take(count)
+                    .toList();
+                final visible = thinking == null
+                    ? part.text
+                    : ThinkingTagParser.visibleSlice(
+                        message.content,
+                        start: textOffset,
+                        end: textOffset + part.text.length,
+                        hiddenRanges: thinking.hiddenRanges,
+                      );
+                textOffset += part.text.length;
+                final text = formatQuotedMessage(
+                  visible,
+                  selectedQuotes,
+                  quoteMarker: (number) => quoteMarker(number + quoteIndex),
+                );
+                quoteIndex += count;
+                buffer.write(LogPayloadElider.elideDataUris(text));
+                for (final image
+                    in markdownImages[(message.id, ordinal)] ??
+                        const <ChatContextImage>[]) {
+                  buffer.write(
+                    '\n[Image ${image.handle}; image content not summarized]\n',
+                  );
+                }
+              }
+            } else if (part is ToolCallPart) {
+              if (!includeAttachmentsAndTools) {
+                buffer.write('\n[Tool result omitted by the user]\n');
+                continue;
+              }
+              try {
+                final tool = jsonDecode(part.payloadJson);
+                if (tool is! Map) throw const FormatException('tool');
+                final result = toolResultContentForModel(
+                  (tool['content'] ?? '').toString(),
+                );
+                buffer.write(
+                  '\n[source tool:${message.id}:$ordinal; id=${tool['id']}; name=${tool['name']}; status=${tool['status'] ?? (tool['error'] == null ? 'completed' : 'error')}]\n',
+                );
+                if (tool['arguments'] != null) {
+                  buffer.write(
+                    'Arguments: ${LogPayloadElider.elideDataUris(jsonEncode(tool['arguments']))}\n',
+                  );
+                }
+                buffer.write(LogPayloadElider.elideDataUris(result));
+                if (tool['error'] != null) {
+                  buffer.write('\nError: ${tool['error']}');
+                }
+                final imageUris = mcpResultImageUris(
+                  readMcpResultMetadata(
+                    (tool['metadata'] as Map?)?.cast<String, dynamic>(),
+                  ),
+                );
+                for (var i = 0; i < imageUris.length; i++) {
+                  buffer.write(
+                    '\n[Image ${ContextImageIdentity(message.id, "tool:${tool['id'] ?? 'part:$ordinal'}", i).handle}; image content not summarized]\n',
+                  );
+                }
+              } on FormatException {
+                // Preserve malformed data for the summarizer, with its status.
+                buffer.write(
+                  '\n[Unreadable tool record $ordinal]\n${LogPayloadElider.elideDataUris(part.payloadJson)}',
+                );
+              }
+            } else if (part is FilePart) {
+              buffer.write(
+                includeAttachmentsAndTools
+                    ? '\n[Attachment: ${part.name}; only available text is included; binary content was not reread]\n'
+                    : '\n[Attachment: ${part.name}; content omitted by the user]\n',
+              );
+            } else if (part is ImagePart) {
+              buffer.write(
+                '\n[Image ${ContextImageIdentity(message.id, 'part:$ordinal').handle}; image content not summarized]\n',
+              );
+            }
+          }
+          return message.copyWith(content: buffer.toString(), quotes: const []);
+        })(),
+    ];
+  }
 }

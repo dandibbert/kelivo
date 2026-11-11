@@ -15,7 +15,12 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform, visibleForTesting, mapEquals;
+    show
+        defaultTargetPlatform,
+        TargetPlatform,
+        visibleForTesting,
+        mapEquals,
+        ValueListenable;
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import '../../../core/services/haptics.dart';
@@ -71,6 +76,7 @@ import '../../../shared/widgets/custom_bottom_sheet.dart';
 import '../../../shared/widgets/ios_checkbox.dart';
 import '../../../shared/widgets/ios_tactile.dart';
 import '../../../shared/widgets/thinking_sheen.dart';
+import '../../../shared/animations/status_animation.dart';
 import '../../../desktop/desktop_context_menu.dart';
 import '../../../desktop/menu_anchor.dart';
 import '../../../shared/widgets/emoji_text.dart';
@@ -3465,6 +3471,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
               final widgets = <Widget>[
                 ViewportBlockList(
+                  storageId: 'body',
                   itemCount: visibleBlocks.length,
                   spacing: 8,
                   structureToken: (
@@ -3533,6 +3540,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                       showThinkingCards,
                       showToolCards,
                       blockKey(index),
+                      widget.message.modelId,
+                      widget.message.timestamp,
                       widget.onRecoveredAskUserAnswer != null,
                     );
                     final cached = _thinkingWidgets[block];
@@ -3541,11 +3550,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                     }
                     final card = _ChainOfThoughtCard(
                       key: ValueKey(blockKey(index)),
+                      message: widget.message,
                       steps: _timelineStepsFromProjected(
                         block.thinkingSteps,
                         effectiveReasoningSegments,
                       ),
-                      conversationId: widget.message.conversationId,
                       showThinkingCards: showThinkingCards,
                       showToolCards: showToolCards,
                       streaming: streaming,
@@ -4477,7 +4486,7 @@ class _RetryCountdownHint extends StatelessWidget {
 }
 
 // Pulsing 3-dot loading indicator for chat thinking states (shared)
-class LoadingIndicator extends StatefulWidget {
+class LoadingIndicator extends StatelessWidget {
   const LoadingIndicator({
     super.key,
     this.height = 16,
@@ -4491,41 +4500,21 @@ class LoadingIndicator extends StatefulWidget {
   final double spacing;
   final Color? color;
   @override
-  State<LoadingIndicator> createState() => _LoadingIndicatorState();
-}
-
-class _LoadingIndicatorState extends State<LoadingIndicator>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1100),
-      vsync: this,
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final base = widget.color ?? cs.primary;
+    final base = color ?? cs.primary;
 
     return RepaintBoundary(
-      child: CustomPaint(
-        size: Size(widget.dotSize * 3 + widget.spacing * 2, widget.height),
-        painter: _LoadingDotsPainter(
-          animation: _controller,
-          color: base,
-          dotSize: widget.dotSize,
-          spacing: widget.spacing,
+      child: StatusAnimation(
+        duration: const Duration(milliseconds: 1100),
+        builder: (context, progress) => CustomPaint(
+          size: Size(dotSize * 3 + spacing * 2, height),
+          painter: _LoadingDotsPainter(
+            animation: progress,
+            color: base,
+            dotSize: dotSize,
+            spacing: spacing,
+          ),
         ),
       ),
     );
@@ -4540,7 +4529,7 @@ class _LoadingDotsPainter extends CustomPainter {
     required this.spacing,
   }) : super(repaint: animation);
 
-  final Animation<double> animation;
+  final ValueListenable<double> animation;
   final Color color;
   final double dotSize;
   final double spacing;
@@ -4977,7 +4966,7 @@ class _ChainOfThoughtCard extends StatefulWidget {
   const _ChainOfThoughtCard({
     super.key,
     required this.steps,
-    required this.conversationId,
+    required this.message,
     required this.showThinkingCards,
     required this.showToolCards,
     required this.streaming,
@@ -4985,7 +4974,8 @@ class _ChainOfThoughtCard extends StatefulWidget {
   });
 
   final List<_TimelineStepData> steps;
-  final String conversationId;
+  final ChatMessage message;
+  String get conversationId => message.conversationId;
   final bool showThinkingCards;
   final bool showToolCards;
   final bool streaming;
@@ -5022,6 +5012,9 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
   }) {
     return (
       'reasoning',
+      widget.message.id,
+      widget.message.modelId,
+      widget.message.timestamp,
       step.text,
       step.expanded,
       step.loading,
@@ -5199,6 +5192,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                     ),
                   ),
                 ViewportBlockList(
+                  storageId: ('steps', widget.key),
                   itemCount: visibleSteps.length,
                   structureToken: (visibleSteps.length, hiddenCount),
                   itemKey: (i) {
@@ -5245,6 +5239,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                           hasToggle: hasToggle,
                         ),
                         builder: () => _ChainOfThoughtReasoningStep(
+                          message: widget.message,
                           step: reasoning,
                           sourceIndex: sourceIndex,
                           sourceOrdinal: step.sourceOrdinal,
@@ -5287,6 +5282,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                           widget.conversationId,
                         ),
                         builder: () => _ChainOfThoughtBrowserGroup(
+                          sourceOrdinal: step.sourceOrdinal,
                           tools: tools,
                           lite: step.browserLite,
                           conversationId: widget.conversationId,
@@ -5581,6 +5577,7 @@ class _TimelineLinePainter extends CustomPainter {
 
 class _ChainOfThoughtReasoningStep extends StatefulWidget {
   const _ChainOfThoughtReasoningStep({
+    required this.message,
     required this.step,
     required this.sourceIndex,
     required this.sourceOrdinal,
@@ -5588,6 +5585,7 @@ class _ChainOfThoughtReasoningStep extends StatefulWidget {
     required this.isLast,
   });
 
+  final ChatMessage message;
   final ReasoningSegment step;
   final int sourceIndex;
   final int sourceOrdinal;
@@ -5809,12 +5807,20 @@ class _ChainOfThoughtReasoningStepState
             // Bouncing physics already declines drags when content fits.
             // Keeping it stable also retains ScrollPosition on overflow.
             physics: const BouncingScrollPhysics(),
-            child: AppSelectionArea(child: reasoningContent(display)),
+            child: AppSelectionArea(
+              message: widget.message,
+              quoteTextOnly: true,
+              child: reasoningContent(display),
+            ),
           ),
         ),
       );
     } else if (state == _ReasoningStepState.expanded) {
-      content = AppSelectionArea(child: reasoningContent(display));
+      content = AppSelectionArea(
+        message: widget.message,
+        quoteTextOnly: true,
+        child: reasoningContent(display),
+      );
     }
 
     return _TimelineStepShell(
@@ -5851,6 +5857,7 @@ class _ChainOfThoughtReasoningStepState
 
 class _ChainOfThoughtBrowserGroup extends StatefulWidget {
   const _ChainOfThoughtBrowserGroup({
+    required this.sourceOrdinal,
     required this.tools,
     required this.lite,
     required this.conversationId,
@@ -5860,6 +5867,7 @@ class _ChainOfThoughtBrowserGroup extends StatefulWidget {
     required this.showPageCard,
     required this.streaming,
   });
+  final int sourceOrdinal;
   final List<ToolUIPart> tools;
   final bool lite, isFirst, isLast, hideImages, showPageCard, streaming;
   final String conversationId;
@@ -6172,6 +6180,7 @@ class _ChainOfThoughtBrowserGroupState
       }
       steps.add(
         ViewportBlockList(
+          storageId: ('browser-steps', tools.first.id, widget.sourceOrdinal),
           itemCount: _actions.length - firstVisible,
           structureToken: (_structureRevision, firstVisible),
           itemKey: (i) => timelineToolStepKey(
@@ -6898,28 +6907,17 @@ class _ToolCallItemState extends State<_ToolCallItem> {
                     ),
                   )
                 else if (widget.part.loading && !isPendingApproval)
-                  isWorkspace
-                      ? SizedBox(
-                          key: WorkspaceStatusBadge.runningKey,
-                          width: 18,
-                          height: 18,
-                          child: LoadingIndicator(
-                            height: 12,
-                            dotSize: 3,
-                            spacing: 2,
-                            color: fg.accent,
-                          ),
-                        )
-                      : SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              fg.accent,
-                            ),
-                          ),
-                        )
+                  SizedBox(
+                    key: isWorkspace ? WorkspaceStatusBadge.runningKey : null,
+                    width: 18,
+                    height: 18,
+                    child: LoadingIndicator(
+                      height: 12,
+                      dotSize: 3,
+                      spacing: 2,
+                      color: fg.accent,
+                    ),
+                  )
                 else
                   SizedBox(
                     width: 18,

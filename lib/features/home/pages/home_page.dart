@@ -203,6 +203,7 @@ class _HomePageState extends State<HomePage>
       scroll_ctrl.ChatAutoFollowScrollController();
   String? _scrollConversationId;
   final GlobalKey _inputBarKey = GlobalKey();
+  final GlobalKey _reasoningButtonKey = GlobalKey();
   final GlobalKey _selectionMiniMapKey = GlobalKey();
   final GlobalKey _selectionActionBarKey = GlobalKey();
   bool _scrollNavHovering = false;
@@ -257,6 +258,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<bool> _jumpToQuote(QuoteRef quote) async {
+    if (!quote.hasSourceRange) return false;
     final source = (await context.read<ChatService>().loadMessagesByIds([
       quote.messageId,
     ])).firstOrNull;
@@ -411,6 +413,8 @@ class _HomePageState extends State<HomePage>
         void retry() => _controller.compressContext(
           options: task.options,
           targetConversationId: task.conversationId,
+          beforeMessageId: task.protectedMessageId,
+          effectiveMessageIds: task.effectiveMessageIds,
         );
         void options() => _showCompressContextOptions(
           targetConversationId: task.conversationId,
@@ -460,9 +464,9 @@ class _HomePageState extends State<HomePage>
           case CompressionPhase.review:
             showAppSnackBar(
               context,
-              message: task.error == 'context_budget_exceeded'
-                  ? l10n.compressOverSnack
-                  : l10n.contextSummaryNotSmaller,
+              message: task.error == null
+                  ? l10n.compressionPreviewOnly
+                  : compressionErrorLabel(l10n, task.error!),
               type: NotificationType.warning,
               actionLabel: l10n.compressAdjust,
               onAction: () => showCompressionReview(
@@ -1200,6 +1204,8 @@ class _HomePageState extends State<HomePage>
       title: title,
       providerName: providerName,
       modelDisplay: modelDisplay,
+      modelProviderKey: _resolvedChatModel().providerKey,
+      modelId: _resolvedChatModel().modelId,
       compact:
           _controller.isDesktopPlatform &&
           MediaQuery.sizeOf(context).width < AppBreakpoints.tablet,
@@ -1478,6 +1484,8 @@ class _HomePageState extends State<HomePage>
         onRetry: () => _controller.compressContext(
           options: task.options,
           targetConversationId: task.conversationId,
+          beforeMessageId: task.protectedMessageId,
+          effectiveMessageIds: task.effectiveMessageIds,
         ),
         onAdjust: () => _showCompressContextOptions(
           targetConversationId: task.conversationId,
@@ -1558,6 +1566,21 @@ class _HomePageState extends State<HomePage>
       },
       onRegenerateMessage: (message) =>
           _controller.regenerateAtMessage(message),
+      onSetContextStart: (message) async {
+        try {
+          await chat.setConversationContextStart(
+            message.conversationId,
+            message.id,
+          );
+        } catch (error) {
+          if (!context.mounted) return;
+          showAppSnackBar(
+            context,
+            message: error.toString(),
+            type: NotificationType.error,
+          );
+        }
+      },
       onResendMessage: (message) => _controller.regenerateAtMessage(message),
       onTranslateMessage: (message) => _controller.translateMessage(message),
       onEditMessage: (message) => _controller.editMessage(message),
@@ -1691,6 +1714,7 @@ class _HomePageState extends State<HomePage>
         ).push(MaterialPageRoute(builder: (_) => const McpPage()));
       },
       onOpenSearch: _openSearchSettings,
+      reasoningButtonKey: _reasoningButtonKey,
       onConfigureReasoning: () async {
         await _openReasoningSettings();
       },
@@ -1993,13 +2017,20 @@ class _HomePageState extends State<HomePage>
       return;
     }
     final assistant = context.read<AssistantProvider>().currentAssistant;
+    final conversationId = await ensureConversationId(
+      context,
+      conversationId: _controller.currentConversation?.id,
+      assistantId: assistant?.id,
+    );
+    if (!mounted) return;
     if (PlatformUtils.isDesktop) {
       await showDesktopReasoningLevelPopover(
         context,
-        anchorKey: _inputBarKey,
+        anchorKey: _reasoningButtonKey,
         config: config,
         modelId: modelId,
         assistant: assistant,
+        conversationId: conversationId,
       );
     } else {
       await showReasoningLevelSheet(
@@ -2007,6 +2038,7 @@ class _HomePageState extends State<HomePage>
         config: config,
         modelId: modelId,
         assistant: assistant,
+        conversationId: conversationId,
       );
     }
   }
@@ -2182,7 +2214,6 @@ class _HomePageState extends State<HomePage>
               _inputController.quotes,
               quoteMarker: AppLocalizations.of(context)!.selectionQuoteMarker,
             ),
-            messageCountLabel: _controller.contextMessageCountLabel(),
             onCompress: () async {
               await Navigator.of(ctx).maybePop();
               if (!mounted) return;
@@ -2235,6 +2266,8 @@ class _HomePageState extends State<HomePage>
       onRetry: (task) => _controller.compressContext(
         options: task.options,
         targetConversationId: id,
+        beforeMessageId: task.protectedMessageId,
+        effectiveMessageIds: task.effectiveMessageIds,
       ),
       onAdjust: (task) => _showCompressContextOptions(
         targetConversationId: id,
@@ -2275,24 +2308,38 @@ class _HomePageState extends State<HomePage>
     final messageWindow = assistant?.limitContextMessages == true
         ? assistant!.contextMessageSize
         : null;
-    final snapshot = await chat.loadContextSnapshot(conversation.id);
-    if (!mounted) return;
-    final estimator = chat.contextCompression.estimateCandidate;
-    final options = await showDialog<CompressContextOptions>(
+    Future<ConversationContextHistory>? previewHistory;
+    var previewRevision = -1;
+    final options = await showCompressContextOptions(
       context: context,
-      builder: (_) => CompressContextOptionsDialog(
-        messages: snapshot.messages,
-        operations: snapshot.operations,
+      builder: (sheet) => CompressContextOptionsDialog(
+        sheet: sheet,
+        conversationId: conversation.id,
+        loadHistory: () => chat.loadCompressionHistory(conversation.id),
+        historyRevision: chat.compressionHistoryRevisionListenable(
+          conversation.id,
+        ),
+        previewRequest: (options, config) {
+          final revision = chat.compressionHistoryRevision(conversation.id);
+          if (previewHistory == null || previewRevision != revision) {
+            previewRevision = revision;
+            previewHistory = chat.loadContextHistory(conversation.id);
+          }
+          final history = previewHistory!;
+          return _controller
+              .previewCompressionRequest(
+                conversation.id,
+                options,
+                config,
+                history: history,
+              )
+              .catchError((Object error, StackTrace stack) {
+                if (identical(previewHistory, history)) previewHistory = null;
+                Error.throwWithStackTrace(error, stack);
+              });
+        },
         messageWindow: messageWindow,
         initialOptions: initialOptions,
-        prepareInput: (messages, include) => chat.messagesForCompression(
-          messages,
-          includeAttachmentsAndTools: include,
-          quoteMarker: AppLocalizations.of(context)!.selectionQuoteMarker,
-        ),
-        estimateContext: estimator == null
-            ? null
-            : (history) => estimator(conversation.id, history),
       ),
     );
     if (options == null || !mounted) return;
