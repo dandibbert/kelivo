@@ -16501,144 +16501,6 @@ abstract class AppLocalizations {
   /// **'Long edge 1024 px · quality 70'**
   String get imageSettingsPageQualitySaverSubtitle;
 
-  /// Settings toggle that lets kelivo://v1 links from other apps send messages or fill the input. Off by default.
-  ///
-  /// In en, this message translates to:
-  /// **'Allow External Auto-Send'**
-  String get settingsPageExternalAutoSend;
-
-  /// Subtitle for Allow External Auto-Send. Links may send or fill the input; when off, external text is only inserted for review.
-  ///
-  /// In en, this message translates to:
-  /// **'Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.'**
-  String get settingsPageExternalAutoSendSubtitle;
-
-  /// Settings section title for the iOS kelivo://v1 deep link feature.
-  ///
-  /// In en, this message translates to:
-  /// **'Deep Links'**
-  String get settingsPageDeepLinks;
-
-  /// Subtitle explaining that other apps can open Kelivo with kelivo://v1 URLs.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Kelivo from other apps with kelivo://v1/... URLs'**
-  String get settingsPageDeepLinksSubtitle;
-
-  /// Section title on the About page that documents supported deep links.
-  ///
-  /// In en, this message translates to:
-  /// **'Deep Links'**
-  String get aboutPageDeepLinksSection;
-
-  /// About-page introduction: kelivo://v1 links can open chats, compose, or send messages.
-  ///
-  /// In en, this message translates to:
-  /// **'Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:'**
-  String get aboutPageDeepLinksDescription;
-
-  /// About-page label for the kelivo://v1/chat route that opens the chat page.
-  ///
-  /// In en, this message translates to:
-  /// **'Open the chat page'**
-  String get aboutPageDeepLinkChat;
-
-  /// About-page label for the route that starts a new conversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Start a new conversation'**
-  String get aboutPageDeepLinkNewChat;
-
-  /// About-page label for opening an existing conversation by ID.
-  ///
-  /// In en, this message translates to:
-  /// **'Open an existing conversation'**
-  String get aboutPageDeepLinkOpenConversation;
-
-  /// About-page label for filling the message box by replacing or appending text.
-  ///
-  /// In en, this message translates to:
-  /// **'Fill the message box (replace or append)'**
-  String get aboutPageDeepLinkCompose;
-
-  /// About-page label for sending a message directly. Notes that the auto-send setting must be enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Send a message directly (requires the setting to be enabled)'**
-  String get aboutPageDeepLinkSend;
-
-  /// About-page label for jumping to a settings page.
-  ///
-  /// In en, this message translates to:
-  /// **'Jump to a settings page'**
-  String get aboutPageDeepLinkSettings;
-
-  /// About-page label for opening an assistant settings page.
-  ///
-  /// In en, this message translates to:
-  /// **'Open an assistant settings page'**
-  String get aboutPageDeepLinkAssistant;
-
-  /// About-page note that auto-send is off by default and is enabled under Settings, Allow External Auto-Send.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.'**
-  String get aboutPageDeepLinksFooter;
-
-  /// Warning when an external link tries to send while auto-send is off. The user reviews and sends manually.
-  ///
-  /// In en, this message translates to:
-  /// **'External auto-send is disabled. Review the message and send it manually.'**
-  String get deepLinkAutoSendDisabled;
-
-  /// Error when a deep link names an assistant that does not exist.
-  ///
-  /// In en, this message translates to:
-  /// **'The requested assistant could not be found.'**
-  String get deepLinkAssistantNotFound;
-
-  /// Error when more than one assistant shares the requested name. Asks for the assistant ID.
-  ///
-  /// In en, this message translates to:
-  /// **'More than one assistant has that name. Use the assistant ID instead.'**
-  String get deepLinkAssistantNameAmbiguous;
-
-  /// Error when a deep link targets a conversation that does not exist.
-  ///
-  /// In en, this message translates to:
-  /// **'The requested conversation could not be found.'**
-  String get deepLinkConversationNotFound;
-
-  /// Error when the external text is too large to carry in a URL link.
-  ///
-  /// In en, this message translates to:
-  /// **'The external text is too large for a URL link.'**
-  String get deepLinkPayloadTooLarge;
-
-  /// Error when a link selects an assistant together with a target other than a new conversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Assistant selection can only be used with a new conversation.'**
-  String get deepLinkAssistantTargetConflict;
-
-  /// Error when Kelivo cannot send the message requested by an external link.
-  ///
-  /// In en, this message translates to:
-  /// **'Kelivo could not send the external message.'**
-  String get deepLinkSendRejected;
-
-  /// Error when a kelivo:// link uses a route Kelivo does not support.
-  ///
-  /// In en, this message translates to:
-  /// **'This Kelivo link is not supported.'**
-  String get deepLinkUnsupportedRoute;
-
-  /// Generic error when Kelivo cannot handle an external link.
-  ///
-  /// In en, this message translates to:
-  /// **'Kelivo could not handle this external link.'**
-  String get deepLinkFailed;
-
   /// Name of the 'Custom' image upload quality option allowing user-chosen compression.
   ///
   /// In en, this message translates to:
@@ -23916,264 +23778,6 @@ abstract class AppLocalizations {
   /// **'Completing sign-in…'**
   String get mcpOAuthExchangingToken;
 
-  /// Title of the URL Scheme Generator page in Settings.
-  ///
-  /// In en, this message translates to:
-  /// **'URL Scheme Generator'**
-  String get deepLinkGenTitle;
-
-  /// Subtitle: the page builds kelivo:// links for Shortcuts, automation, and other apps.
-  ///
-  /// In en, this message translates to:
-  /// **'Build kelivo:// links for Shortcuts, automation and other apps'**
-  String get deepLinkGenSubtitle;
-
-  /// Section header for choosing the generated link's action.
-  ///
-  /// In en, this message translates to:
-  /// **'Action'**
-  String get deepLinkGenSectionAction;
-
-  /// Section header for the message text included in the link.
-  ///
-  /// In en, this message translates to:
-  /// **'Message'**
-  String get deepLinkGenSectionMessage;
-
-  /// Section header for choosing which conversation the link opens.
-  ///
-  /// In en, this message translates to:
-  /// **'Conversation'**
-  String get deepLinkGenSectionTarget;
-
-  /// Section header for extra options such as assistant and temporary chat.
-  ///
-  /// In en, this message translates to:
-  /// **'Options'**
-  String get deepLinkGenSectionOptions;
-
-  /// Section header above the generated kelivo:// link.
-  ///
-  /// In en, this message translates to:
-  /// **'Generated link'**
-  String get deepLinkGenSectionResult;
-
-  /// Label for the message text field on the URL scheme generator.
-  ///
-  /// In en, this message translates to:
-  /// **'Message text'**
-  String get deepLinkGenText;
-
-  /// Placeholder hint for text that will be filled in or sent.
-  ///
-  /// In en, this message translates to:
-  /// **'Text to fill in or send'**
-  String get deepLinkGenTextHint;
-
-  /// Counter of used bytes against the maximum. Placeholders used and max are integers.
-  ///
-  /// In en, this message translates to:
-  /// **'{used} / {max} bytes'**
-  String deepLinkGenTextBytes(int used, int max);
-
-  /// Label for what to do when the input box already contains text.
-  ///
-  /// In en, this message translates to:
-  /// **'If the input box has text'**
-  String get deepLinkGenInsertMode;
-
-  /// Option to replace existing input text.
-  ///
-  /// In en, this message translates to:
-  /// **'Replace it'**
-  String get deepLinkGenInsertReplace;
-
-  /// Option to append to existing input text.
-  ///
-  /// In en, this message translates to:
-  /// **'Append to it'**
-  String get deepLinkGenInsertAppend;
-
-  /// Label for where the generated link sends or opens.
-  ///
-  /// In en, this message translates to:
-  /// **'Send to'**
-  String get deepLinkGenTarget;
-
-  /// Option to use the current conversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Current conversation'**
-  String get deepLinkGenTargetCurrent;
-
-  /// Option to start a new conversation.
-  ///
-  /// In en, this message translates to:
-  /// **'New conversation'**
-  String get deepLinkGenTargetNew;
-
-  /// Option to target a specific conversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Specific conversation'**
-  String get deepLinkGenTargetConversation;
-
-  /// Label for the conversation selector.
-  ///
-  /// In en, this message translates to:
-  /// **'Conversation'**
-  String get deepLinkGenConversation;
-
-  /// Action to choose a conversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a conversation'**
-  String get deepLinkGenConversationPick;
-
-  /// Label for the conversation ID field.
-  ///
-  /// In en, this message translates to:
-  /// **'Conversation ID'**
-  String get deepLinkGenConversationId;
-
-  /// Hint that an ID can be pasted or chosen from the list above.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste an ID, or choose one above'**
-  String get deepLinkGenConversationIdHint;
-
-  /// Empty state when there are no conversations to choose.
-  ///
-  /// In en, this message translates to:
-  /// **'No conversations yet'**
-  String get deepLinkGenConversationEmpty;
-
-  /// Label for the assistant selector on the generator.
-  ///
-  /// In en, this message translates to:
-  /// **'Assistant'**
-  String get deepLinkGenAssistant;
-
-  /// Option meaning the current assistant, with no assistant written into the link.
-  ///
-  /// In en, this message translates to:
-  /// **'Default (current assistant)'**
-  String get deepLinkGenAssistantDefault;
-
-  /// Action to choose an assistant.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose an assistant'**
-  String get deepLinkGenAssistantPick;
-
-  /// Label for whether the assistant is referenced by ID or by name.
-  ///
-  /// In en, this message translates to:
-  /// **'Reference assistant by'**
-  String get deepLinkGenAssistantRef;
-
-  /// Option to reference the assistant by ID.
-  ///
-  /// In en, this message translates to:
-  /// **'ID'**
-  String get deepLinkGenRefId;
-
-  /// Option to reference the assistant by name.
-  ///
-  /// In en, this message translates to:
-  /// **'Name'**
-  String get deepLinkGenRefName;
-
-  /// Label for the assistant ID field.
-  ///
-  /// In en, this message translates to:
-  /// **'Assistant ID'**
-  String get deepLinkGenAssistantId;
-
-  /// Label for the assistant name field.
-  ///
-  /// In en, this message translates to:
-  /// **'Assistant name'**
-  String get deepLinkGenAssistantName;
-
-  /// Label for the temporary-chat switch.
-  ///
-  /// In en, this message translates to:
-  /// **'Temporary chat'**
-  String get deepLinkGenTemporary;
-
-  /// Subtitle stating a temporary chat is not saved to history.
-  ///
-  /// In en, this message translates to:
-  /// **'Not saved to history'**
-  String get deepLinkGenTemporarySubtitle;
-
-  /// Label for choosing which settings page the link opens.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings page'**
-  String get deepLinkGenSettingsSection;
-
-  /// Option for the settings home page.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings home'**
-  String get deepLinkGenSettingsHome;
-
-  /// Button that copies the generated link.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy link'**
-  String get deepLinkGenCopy;
-
-  /// Button that copies the generated link as Markdown.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy as Markdown'**
-  String get deepLinkGenCopyMarkdown;
-
-  /// Confirmation shown after the link is copied.
-  ///
-  /// In en, this message translates to:
-  /// **'Link copied'**
-  String get deepLinkGenCopied;
-
-  /// Button that runs the generated link inside the app.
-  ///
-  /// In en, this message translates to:
-  /// **'Run now'**
-  String get deepLinkGenRun;
-
-  /// Validation message asking for message text before a link can be generated.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter the message text to generate a link.'**
-  String get deepLinkGenNeedText;
-
-  /// Validation message asking to choose a conversation or enter its ID.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a conversation or enter its ID.'**
-  String get deepLinkGenNeedConversation;
-
-  /// Validation message asking to choose an assistant.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose an assistant.'**
-  String get deepLinkGenNeedAssistant;
-
-  /// Notice that auto-send is off, so the link only fills the input for review, and where to enable it.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto-send is off, so this link will only fill the input box for review. Enable it in Settings → Allow External Auto-Send.'**
-  String get deepLinkGenAutoSendOff;
-
-  /// Hint that assistant and temporary chat apply only when the target is a new conversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Assistant and temporary chat only apply to a new conversation.'**
-  String get deepLinkGenNewOnlyHint;
-
   /// Title of the developer Markdown Playground page and its entry in the desktop about pane.
   ///
   /// In en, this message translates to:
@@ -28854,10 +28458,10 @@ abstract class AppLocalizations {
   /// **'A turn includes a user message, its replies and tools.'**
   String get compressionKeepHint;
 
-  /// Number-field label for the summary output token limit.
+  /// Compression summary settings: target maximum length of visible summary text in tokens, separate from the total generation limit including reasoning.
   ///
   /// In en, this message translates to:
-  /// **'Summary limit (tokens)'**
+  /// **'Summary target (tokens)'**
   String get compressionLength;
 
   /// Number-field label for the context-usage percentage that starts automatic compression.
@@ -28884,16 +28488,16 @@ abstract class AppLocalizations {
   /// **'Maximum calls'**
   String get compressionRequests;
 
-  /// Switch label for including active world books and memory as reference during summarization.
+  /// Compression option to include world books evaluated on the selected history and memory snapshots frozen in that history, rather than current live memory or retained messages.
   ///
   /// In en, this message translates to:
-  /// **'Reference active world books and memory'**
+  /// **'Reference world books and historical memory'**
   String get compressionReference;
 
-  /// Hint clarifying that reference material explains names/rules but is not evidence events occurred or characters know them.
+  /// Compression reference help: restrict dynamic reference sources to the selected historical range, and distinguish explanatory background from events or character knowledge. No placeholders.
   ///
   /// In en, this message translates to:
-  /// **'Reference explains names and rules; it is not evidence that events happened or characters know them.'**
+  /// **'Scan only the selected history for world books and use its saved memory snapshots. References explain names and rules; they do not establish events or character knowledge.'**
   String get compressionReferenceHint;
 
   /// Switch label for replacing already-consumed tool results with references.
@@ -29598,10 +29202,10 @@ abstract class AppLocalizations {
   /// **'The service did not return a complete native compaction result. The original context is unchanged.'**
   String get compressionNativeIncomplete;
 
-  /// Error shown when a native context belongs to a different connection or account, advising undo or a text summary.
+  /// Error when native context belongs to a different connection or account. Return to the original connection; undo or text-summary regeneration is only possible in a chat containing the originals, which may be the source chat of imported context. No placeholders.
   ///
   /// In en, this message translates to:
-  /// **'This native context belongs to another connection or account. Undo its compaction, or create a text summary from the original history before continuing.'**
+  /// **'This native context belongs to another connection or account. Continue with the original connection, or undo the compaction or create a text summary in the chat that contains the originals.'**
   String get compressionNativeScopeChanged;
 
   /// Hint stating that token usage for opaque native context is determined by the service; also used as the opaque usage state label.
@@ -29610,10 +29214,10 @@ abstract class AppLocalizations {
   /// **'Token usage for opaque native context is determined by the service.'**
   String get compressionNativeTokenHint;
 
-  /// Hint in the compression dialog noting that a new conversation keeps original messages so native compaction can be undone.
+  /// Hint in the compression dialog when native compaction and new chat are selected. Only the complete provider output and retained recent turns are copied; original history remains in the source chat and cannot be restored by undo in the new chat. No placeholders.
   ///
   /// In en, this message translates to:
-  /// **'A new conversation keeps original messages so native compaction can be undone.'**
+  /// **'The new chat keeps only the complete native compaction result and retained recent turns. Originals stay in the source chat and cannot be restored by undoing here.'**
   String get compressionNativeCopyHint;
 
   /// Error shown when a custom input field would override native compression data, asking the user to remove the input override first.
@@ -29717,6 +29321,606 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Custom'**
   String get themePaletteCustom;
+
+  /// Settings toggle that lets kelivo://v1 links from other apps send messages or fill the input. Off by default.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow External Auto-Send'**
+  String get settingsPageExternalAutoSend;
+
+  /// Subtitle for Allow External Auto-Send. Links may send or fill the input; when off, external text is only inserted for review.
+  ///
+  /// In en, this message translates to:
+  /// **'Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.'**
+  String get settingsPageExternalAutoSendSubtitle;
+
+  /// Settings section title for the iOS kelivo://v1 deep link feature.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Links'**
+  String get settingsPageDeepLinks;
+
+  /// Subtitle explaining that other apps can open Kelivo with kelivo://v1 URLs.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Kelivo from other apps with kelivo://v1/... URLs'**
+  String get settingsPageDeepLinksSubtitle;
+
+  /// Section title on the About page that documents supported deep links.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Links'**
+  String get aboutPageDeepLinksSection;
+
+  /// About-page introduction: kelivo://v1 links can open chats, compose, or send messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:'**
+  String get aboutPageDeepLinksDescription;
+
+  /// About-page label for the kelivo://v1/chat route that opens the chat page.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the chat page'**
+  String get aboutPageDeepLinkChat;
+
+  /// About-page label for the route that starts a new conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new conversation'**
+  String get aboutPageDeepLinkNewChat;
+
+  /// About-page label for opening an existing conversation by ID.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an existing conversation'**
+  String get aboutPageDeepLinkOpenConversation;
+
+  /// About-page label for filling the message box by replacing or appending text.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill the message box (replace or append)'**
+  String get aboutPageDeepLinkCompose;
+
+  /// About-page label for sending a message directly. Notes that the auto-send setting must be enabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a message directly (requires the setting to be enabled)'**
+  String get aboutPageDeepLinkSend;
+
+  /// About-page label for jumping to a settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to a settings page'**
+  String get aboutPageDeepLinkSettings;
+
+  /// About-page label for opening an assistant settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an assistant settings page'**
+  String get aboutPageDeepLinkAssistant;
+
+  /// About-page note that auto-send is off by default and is enabled under Settings, Allow External Auto-Send.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.'**
+  String get aboutPageDeepLinksFooter;
+
+  /// Warning when an external link tries to send while auto-send is off. The user reviews and sends manually.
+  ///
+  /// In en, this message translates to:
+  /// **'External auto-send is disabled. Review the message and send it manually.'**
+  String get deepLinkAutoSendDisabled;
+
+  /// Error when a deep link names an assistant that does not exist.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested assistant could not be found.'**
+  String get deepLinkAssistantNotFound;
+
+  /// Error when more than one assistant shares the requested name. Asks for the assistant ID.
+  ///
+  /// In en, this message translates to:
+  /// **'More than one assistant has that name. Use the assistant ID instead.'**
+  String get deepLinkAssistantNameAmbiguous;
+
+  /// Error when a deep link targets a conversation that does not exist.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested conversation could not be found.'**
+  String get deepLinkConversationNotFound;
+
+  /// Error when the external text is too large to carry in a URL link.
+  ///
+  /// In en, this message translates to:
+  /// **'The external text is too large for a URL link.'**
+  String get deepLinkPayloadTooLarge;
+
+  /// Error when a link selects an assistant together with a target other than a new conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant selection can only be used with a new conversation.'**
+  String get deepLinkAssistantTargetConflict;
+
+  /// Error when Kelivo cannot send the message requested by an external link.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo could not send the external message.'**
+  String get deepLinkSendRejected;
+
+  /// Error when a kelivo:// link uses a route Kelivo does not support.
+  ///
+  /// In en, this message translates to:
+  /// **'This Kelivo link is not supported.'**
+  String get deepLinkUnsupportedRoute;
+
+  /// Generic error when Kelivo cannot handle an external link.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo could not handle this external link.'**
+  String get deepLinkFailed;
+
+  /// Title of the URL Scheme Generator page in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'URL Scheme Generator'**
+  String get deepLinkGenTitle;
+
+  /// Subtitle: the page builds kelivo:// links for Shortcuts, automation, and other apps.
+  ///
+  /// In en, this message translates to:
+  /// **'Build kelivo:// links for Shortcuts, automation and other apps'**
+  String get deepLinkGenSubtitle;
+
+  /// Section header for choosing the generated link's action.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get deepLinkGenSectionAction;
+
+  /// Section header for the message text included in the link.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get deepLinkGenSectionMessage;
+
+  /// Section header for choosing which conversation the link opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get deepLinkGenSectionTarget;
+
+  /// Section header for extra options such as assistant and temporary chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get deepLinkGenSectionOptions;
+
+  /// Section header above the generated kelivo:// link.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated link'**
+  String get deepLinkGenSectionResult;
+
+  /// Label for the message text field on the URL scheme generator.
+  ///
+  /// In en, this message translates to:
+  /// **'Message text'**
+  String get deepLinkGenText;
+
+  /// Placeholder hint for text that will be filled in or sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Text to fill in or send'**
+  String get deepLinkGenTextHint;
+
+  /// Counter of used bytes against the maximum. Placeholders used and max are integers.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} / {max} bytes'**
+  String deepLinkGenTextBytes(int used, int max);
+
+  /// Label for what to do when the input box already contains text.
+  ///
+  /// In en, this message translates to:
+  /// **'If the input box has text'**
+  String get deepLinkGenInsertMode;
+
+  /// Option to replace existing input text.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace it'**
+  String get deepLinkGenInsertReplace;
+
+  /// Option to append to existing input text.
+  ///
+  /// In en, this message translates to:
+  /// **'Append to it'**
+  String get deepLinkGenInsertAppend;
+
+  /// Label for where the generated link sends or opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to'**
+  String get deepLinkGenTarget;
+
+  /// Option to use the current conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Current conversation'**
+  String get deepLinkGenTargetCurrent;
+
+  /// Option to start a new conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'New conversation'**
+  String get deepLinkGenTargetNew;
+
+  /// Option to target a specific conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific conversation'**
+  String get deepLinkGenTargetConversation;
+
+  /// Label for the conversation selector.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get deepLinkGenConversation;
+
+  /// Action to choose a conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a conversation'**
+  String get deepLinkGenConversationPick;
+
+  /// Label for the conversation ID field.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation ID'**
+  String get deepLinkGenConversationId;
+
+  /// Hint that an ID can be pasted or chosen from the list above.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste an ID, or choose one above'**
+  String get deepLinkGenConversationIdHint;
+
+  /// Empty state when there are no conversations to choose.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get deepLinkGenConversationEmpty;
+
+  /// Label for the assistant selector on the generator.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get deepLinkGenAssistant;
+
+  /// Option meaning the current assistant, with no assistant written into the link.
+  ///
+  /// In en, this message translates to:
+  /// **'Default (current assistant)'**
+  String get deepLinkGenAssistantDefault;
+
+  /// Action to choose an assistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an assistant'**
+  String get deepLinkGenAssistantPick;
+
+  /// Label for whether the assistant is referenced by ID or by name.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference assistant by'**
+  String get deepLinkGenAssistantRef;
+
+  /// Option to reference the assistant by ID.
+  ///
+  /// In en, this message translates to:
+  /// **'ID'**
+  String get deepLinkGenRefId;
+
+  /// Option to reference the assistant by name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get deepLinkGenRefName;
+
+  /// Label for the assistant ID field.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant ID'**
+  String get deepLinkGenAssistantId;
+
+  /// Label for the assistant name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant name'**
+  String get deepLinkGenAssistantName;
+
+  /// Label for the temporary-chat switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary chat'**
+  String get deepLinkGenTemporary;
+
+  /// Subtitle stating a temporary chat is not saved to history.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved to history'**
+  String get deepLinkGenTemporarySubtitle;
+
+  /// Label for choosing which settings page the link opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings page'**
+  String get deepLinkGenSettingsSection;
+
+  /// Option for the settings home page.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings home'**
+  String get deepLinkGenSettingsHome;
+
+  /// Button that copies the generated link.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get deepLinkGenCopy;
+
+  /// Button that copies the generated link as Markdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as Markdown'**
+  String get deepLinkGenCopyMarkdown;
+
+  /// Confirmation shown after the link is copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get deepLinkGenCopied;
+
+  /// Button that runs the generated link inside the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Run now'**
+  String get deepLinkGenRun;
+
+  /// Validation message asking for message text before a link can be generated.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the message text to generate a link.'**
+  String get deepLinkGenNeedText;
+
+  /// Validation message asking to choose a conversation or enter its ID.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a conversation or enter its ID.'**
+  String get deepLinkGenNeedConversation;
+
+  /// Validation message asking to choose an assistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an assistant.'**
+  String get deepLinkGenNeedAssistant;
+
+  /// Notice that auto-send is off, so the link only fills the input for review, and where to enable it.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-send is off, so this link will only fill the input box for review. Enable it in Settings → Allow External Auto-Send.'**
+  String get deepLinkGenAutoSendOff;
+
+  /// Hint that assistant and temporary chat apply only when the target is a new conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant and temporary chat only apply to a new conversation.'**
+  String get deepLinkGenNewOnlyHint;
+
+  /// Summary in the context usage panel and input-bar tooltip when OpenAI native compaction is present. Only readable content has been estimated; the encrypted compaction block's input token count is unknown. tokens is the already-formatted subtotal, such as 42k, not the full context total.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated {tokens} + unknown compaction'**
+  String contextUsagePartialSummary(String tokens);
+
+  /// Category row in the context usage breakdown for opaque OpenAI native compaction state. Its token value is shown as unknown, separately from estimated readable messages and other categories.
+  ///
+  /// In en, this message translates to:
+  /// **'Native compaction'**
+  String get contextUsageBucketNativeCompaction;
+
+  /// Token value in the context usage panel for encrypted native compaction content that cannot be counted locally; unknown must not be interpreted as zero.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get contextUsageUnknownTokens;
+
+  /// Separate line below the native-compaction context usage breakdown showing input tokens reported by the last matching model request, not the current estimated window or the compaction operation's output usage. tokens is an already-formatted token count such as 42k.
+  ///
+  /// In en, this message translates to:
+  /// **'Last request input (measured): {tokens}'**
+  String contextUsageLastRequestInput(String tokens);
+
+  /// Title for an imported native compaction at the start of a new chat, shown in the timeline, context operation list and details. It is opaque context carried over from another chat, not a locally undoable compression. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Native context loaded'**
+  String get compressionNativeImported;
+
+  /// Description in imported native context details. Explains which data this chat owns, that the provider result is opaque, and that earlier originals must be viewed or restored in the source chat rather than through local undo. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat starts with the complete native compaction result and retained recent turns. The result cannot be read or edited as text. Earlier originals remain in the source chat, so they cannot be restored by undoing here.'**
+  String get compressionNativeImportedDescription;
+
+  /// Action in imported native context details to open the source conversation containing the earlier originals. Source means the originating chat, not source code. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source chat'**
+  String get compressionNativeOpenSource;
+
+  /// Message when undo or text-summary regeneration would require originals absent from an imported native context. Also shown in compression options when the selected range includes such context. Directs users to native compaction or the source chat. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat has no originals for the imported native context. Continue with native compaction, or return to the source chat to view or summarize the originals.'**
+  String get compressionNativeOriginalsUnavailable;
+
+  /// Warning in the compression dialog when native compaction creates a new temporary chat. The app discards the source temporary chat when switching away, so originals outside the retained tail are deleted and cannot be restored from the new chat. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'The new temporary chat keeps only the complete native compaction result and retained recent turns. Leaving the source temporary chat deletes it and the originals not carried over; they cannot be restored here.'**
+  String get compressionNativeTemporaryCopyHint;
+
+  /// Description in imported native context details when the source conversation has been deleted or discarded. Explains that this chat still owns the complete opaque result and retained tail, but cannot restore absent originals. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat keeps the complete native compaction result and retained recent turns. The source chat is no longer available. Originals not copied here cannot be restored, and the native result cannot be read or edited as text.'**
+  String get compressionNativeSourceUnavailable;
+
+  /// Label of the hosted image generation model picker in a chat model’s built-in tools settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Image model'**
+  String get modelDetailSheetImageGenerationModel;
+
+  /// Default image model option in built-in tools settings. Omits the tool model parameter so the server chooses the image model.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get modelDetailSheetImageGenerationAuto;
+
+  /// Label of the image planning effort picker in built-in tools settings, separate from chat reasoning effort and rendering quality.
+  ///
+  /// In en, this message translates to:
+  /// **'Image complexity'**
+  String get modelDetailSheetImageGenerationComplexity;
+
+  /// Default image complexity option. Omits complexity and uses server behavior, which may inherit the chat reasoning effort.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get modelDetailSheetImageGenerationComplexityDefault;
+
+  /// Low image planning complexity option in the built-in image generation tool settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get modelDetailSheetImageGenerationComplexityLow;
+
+  /// Medium image planning complexity option in the built-in image generation tool settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get modelDetailSheetImageGenerationComplexityMedium;
+
+  /// High image planning complexity option in the built-in image generation tool settings.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get modelDetailSheetImageGenerationComplexityHigh;
+
+  /// Help text below image complexity in built-in tools settings. Explain that an explicit level is independent, while omitting the field may inherit outer chat reasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Controls image planning separately from chat reasoning. Default uses server behavior and may inherit chat reasoning.'**
+  String get modelDetailSheetImageGenerationComplexityDescription;
+
+  /// Hint in image generation settings for ChatGPT/Codex OAuth providers. The server may replace the requested image model or reject explicit complexity.
+  ///
+  /// In en, this message translates to:
+  /// **'ChatGPT sign-in may use a different image model. Model and complexity settings depend on server support.'**
+  String get modelDetailSheetImageGenerationOAuthHint;
+
+  /// Actionable hint appended after the original provider error when ChatGPT/Codex OAuth image generation rejects a complexity level. Preserve the original error; do not automatically retry or alter chat settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Set chat reasoning to Auto and image complexity to Default, then retry image generation. ChatGPT sign-in may use a different image model or reject explicit complexity.'**
+  String get imageGenerationComplexityErrorHint;
+
+  /// Title of the desktop Environment row and dialog for choosing the shell used by the AI shell tool.
+  ///
+  /// In en, this message translates to:
+  /// **'Default shell'**
+  String get workspaceEnvNativeShellTitle;
+
+  /// Help below the shell executable path field in the desktop Environment dialog; explains automatic mode, supported shell command interfaces and device-local scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for automatic detection. Otherwise, enter the absolute path to PowerShell, cmd, or a shell that supports -lc (such as bash, zsh, or fish). This setting applies only to this device.'**
+  String get workspaceEnvNativeShellHint;
+
+  /// Validation error in the desktop shell settings dialog when the path is invalid or the shell cannot execute a probe command.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start this shell. Check its absolute path and supported command syntax.'**
+  String get workspaceEnvNativeShellInvalid;
+
+  /// Value of the actual shell path in desktop Environment when no shell can be started.
+  ///
+  /// In en, this message translates to:
+  /// **'Shell unavailable'**
+  String get workspaceEnvNativeShellUnavailable;
+
+  /// Desktop Environment action that clears shell detection caches and checks the current shell setting again.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect again'**
+  String get workspaceEnvNativeShellDetect;
+
+  /// Button in the desktop default shell dialog; validates and saves the executable path or automatic detection setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get workspaceEnvNativeShellSave;
+
+  /// Desktop display settings, tray section: switch to register Kelivo to start when the user logs in to this device. Disabled by default.
+  ///
+  /// In en, this message translates to:
+  /// **'Launch at startup'**
+  String get desktopAutostartTitle;
+
+  /// Tooltip for the desktop launch-at-startup switch. This is a device-local operating system setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Kelivo when you sign in to this computer.'**
+  String get desktopAutostartDescription;
+
+  /// Desktop display settings, tray section: switch to keep the main window hidden only when the system starts Kelivo at login.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide to tray on automatic startup'**
+  String get desktopAutostartHiddenTitle;
+
+  /// Tooltip for hiding the desktop window on automatic startup. Explains prerequisites and that manual launches remain visible.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires launch at startup and the tray icon. Opening Kelivo manually still shows the window.'**
+  String get desktopAutostartHiddenDescription;
+
+  /// Desktop startup switch tooltip when the current macOS version does not support the system login-item API.
+  ///
+  /// In en, this message translates to:
+  /// **'Launch at startup requires macOS 13 or later.'**
+  String get desktopAutostartUnsupported;
+
+  /// Desktop startup setting failure tooltip and error notification, including when system approval is required. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not apply the startup setting. Check this app in your system startup or login-item settings and try again.'**
+  String get desktopAutostartError;
+
+  /// Optional number field in compression summary settings for total generated tokens, including reasoning and visible summary. Blank uses the summary target. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Total output limit (tokens)'**
+  String get compressionOutputBudget;
+
+  /// Help below the compression total output limit field: reasoning consumes the same budget, an independent higher limit does not increase the desired summary length, blank follows the summary target, and model output limits still apply. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes reasoning and summary text. Leave blank to use the summary target, or set a higher limit for thinking without lengthening the summary. The model output limit still applies.'**
+  String get compressionOutputBudgetHint;
 }
 
 class _AppLocalizationsDelegate

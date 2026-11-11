@@ -1,29 +1,82 @@
 part of 'chat_database_repository.dart';
 
 extension ChatContextRepository on ChatDatabaseRepository {
+  Future<ContextMutationState> readContextMutationState(String id) =>
+      _db.transaction(() async {
+        final row =
+            await (_db.selectOnly(_db.conversationRows)
+                  ..addColumns([_db.conversationRows.truncateIndex])
+                  ..where(_db.conversationRows.id.equals(id)))
+                .getSingleOrNull();
+        if (row == null) throw StateError('conversation_not_found');
+        // Preserve the existing atomic conversion before issuing approval.
+        if (row.read(_db.conversationRows.truncateIndex)! >= 0) {
+          await readContextOperations(id);
+        }
+        return _contextIndex.read(id);
+      });
+
+  Future<({List<ChatMessage> messages, List<ContextOperation> operations})>
+  readContextMutationPreview(String id, {required String expectedState}) =>
+      _db.transaction(() async {
+        await _assertContextState(id, expectedState);
+        return (
+          messages: await getSelectedContextMessages(id, limit: 0x7fffffff),
+          operations: await readContextOperations(id),
+        );
+      });
   // Read only selection metadata for the excluded prefix. Large message parts
   // and provider artifacts are hydrated only for history actually being sent.
-  Future<List<ChatMessage>> _contextMetadata(String id) async {
+  Future<List<ContextMessageMetadata>> _contextMetadata(
+    String id, {
+    bool contentInfo = false,
+  }) async {
     await _timelineIndex.ensureConversation(id);
     final rows = await _db
         .customSelect(
-          'SELECT g.group_id,m.id,m.role FROM timeline_group_rows g '
+          '''SELECT g.group_id,m.id,m.role${contentInfo ? """,
+              COALESCE(SUM(CASE WHEN p.kind='text' THEN kelivo_text_length(p.payload) ELSE 0 END),0) AS content_length,
+              COALESCE(MAX(CASE WHEN p.kind IN ('text','image','file') THEN kelivo_has_context_content(p.kind,p.payload) ELSE 0 END),0) AS has_content,
+              EXISTS(SELECT 1 FROM provider_artifact_rows a WHERE a.revision_id=m.id AND a.kind='openai_native_compaction') AS native
+            """ : ''} FROM timeline_group_rows g '''
           'LEFT JOIN timeline_selection_rows s ON s.conversation_id=g.conversation_id AND s.group_id=g.group_id '
           'JOIN message_rows m ON m.id=${MessageTimelineIndex.selectedRevision('g')} '
-          'WHERE g.conversation_id=? ORDER BY g.anchor_order,g.group_id',
+          "${contentInfo ? 'LEFT JOIN message_part_rows p ON p.revision_id=m.id ' : ''}"
+          'WHERE g.conversation_id=? '
+          "${contentInfo ? 'GROUP BY g.group_id ' : ''}"
+          'ORDER BY g.anchor_order,g.group_id',
           variables: [Variable<String>(id)],
         )
         .get();
     return [
       for (final row in rows)
-        ChatMessage(
+        ContextMessageMetadata(
           id: row.read<String>('id'),
           groupId: row.read<String>('group_id'),
           role: row.read<String>('role'),
-          conversationId: id,
+          contentLength: contentInfo ? row.read<int>('content_length') : 0,
+          hasContent: contentInfo && row.read<int>('has_content') != 0,
+          native: contentInfo && row.read<int>('native') != 0,
         ),
     ];
   }
+
+  Future<CompressionHistory> readCompressionHistory(String id) =>
+      _db.transaction(() async {
+        final operations = await readContextOperations(id);
+        return CompressionHistory(
+          messages: await _contextMetadata(id, contentInfo: true),
+          operations: operations,
+        );
+      });
+
+  Future<({List<ChatMessage> messages, List<ContextOperation> operations})>
+  readContextHistory(String id) => _db.transaction(
+    () async => (
+      operations: await readContextOperations(id),
+      messages: await getSelectedContextMessages(id, limit: 0x7fffffff),
+    ),
+  );
 
   Future<
     ({
@@ -38,7 +91,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
     return (
       messages: messages,
       operations: operations,
-      fingerprint: ContextHistory.fingerprint(messages, operations),
+      fingerprint: await _contextSnapshotFingerprint(messages, operations),
     );
   });
 
@@ -71,18 +124,16 @@ extension ChatContextRepository on ChatDatabaseRepository {
       if (target == null) return <ChatMessage>[];
       throughGroup = target.groupId ?? target.id;
       endGroup = throughGroup;
-      final index = metadata.indexWhere(
-        (m) => ContextHistory.group(m) == throughGroup,
-      );
+      final index = metadata.indexWhere((m) => m.groupId == throughGroup);
       if (includeFollowingAssistant &&
           target.role == 'user' &&
           index >= 0 &&
           index + 1 < metadata.length &&
           metadata[index + 1].role == 'assistant') {
-        endGroup = ContextHistory.group(metadata[index + 1]);
+        endGroup = metadata[index + 1].groupId;
       }
     }
-    final projected = ContextHistory.resolve(
+    final projected = ContextHistory.project(
       metadata,
       operations,
       limit: limit,
@@ -91,13 +142,14 @@ extension ChatContextRepository on ChatDatabaseRepository {
     );
     final hydrated = await getMessagesByIds([
       for (final m in projected)
-        if (!ContextOperation.isSummary(m)) m.id,
+        if (!m.isSummary) m.id,
     ]);
-    final byId = {for (final m in hydrated) m.id: m};
-    return [
-      for (final m in projected)
-        ContextOperation.isSummary(m) ? m : byId[m.id]!,
-    ];
+    return ContextHistory.materialize(
+      hydrated,
+      operations,
+      projected,
+      conversationId: id,
+    );
   });
 
   /// Counts the same projection used for sending without loading message bodies.
@@ -105,22 +157,9 @@ extension ChatContextRepository on ChatDatabaseRepository {
     String id, {
     required int limit,
   }) => _db.transaction(() async {
-    final operations = await readContextOperations(id);
+    final operations = (await readContextMutationState(id)).operations;
     final metadata = await _contextMetadata(id);
-    if (limit <= 0) {
-      return (stored: metadata.length, messages: 0, summaries: 0);
-    }
-    final effective = ContextHistory.resolve(
-      metadata,
-      operations,
-      limit: limit,
-    );
-    final summaries = effective.where(ContextOperation.isSummary).length;
-    return (
-      stored: metadata.length,
-      messages: effective.length - summaries,
-      summaries: summaries,
-    );
+    return _contextMessageCounts(metadata, operations, limit);
   });
 
   Future<int> contextBoundaryIndex(
@@ -278,6 +317,13 @@ extension ChatContextRepository on ChatDatabaseRepository {
           _db.conversationRows,
         )..where((row) => row.id.equals(conversationId))).getSingleOrNull();
         if (conversation == null) return [];
+        final state = await _contextIndex.read(conversationId);
+        final cached = _contextOperationCache;
+        if (conversation.truncateIndex < 0 &&
+            cached?.id == conversationId &&
+            cached?.revision == state.revision) {
+          return cached!.operations;
+        }
         final record =
             await (_db.select(_db.extensionEntityRows)..where(
                   (row) =>
@@ -287,13 +333,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
                 .getSingleOrNull();
         final operations = record == null
             ? <ContextOperation>[]
-            : (jsonDecode(record.payload) as List)
-                  .map(
-                    (value) => ContextOperation.fromJson(
-                      Map<String, dynamic>.from(value as Map),
-                    ),
-                  )
-                  .toList();
+            : await _decodeContextOperations(record.payload);
         // Explicitly approved one-time conversion. Clearing this column and
         // saving the node share a transaction, including on backup imports.
         if (conversation.truncateIndex >= 0) {
@@ -306,7 +346,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
             operations.add(
               _legacyClearOperation(
                 index,
-                selected.map(ContextHistory.group).toList(),
+                selected.map((m) => m.groupId).toList(),
                 conversation.updatedAt,
               ),
             );
@@ -316,13 +356,20 @@ extension ChatContextRepository on ChatDatabaseRepository {
                 ..where((row) => row.id.equals(conversationId)))
               .write(const ConversationRowsCompanion(truncateIndex: Value(-1)));
         }
-        return operations;
+        final result = List<ContextOperation>.unmodifiable(operations);
+        _contextOperationCache = (
+          id: conversationId,
+          revision: state.revision,
+          operations: result,
+        );
+        return result;
       });
 
   Future<void> _writeContextOperations(
     String id,
     List<ContextOperation> operations,
   ) async {
+    final payload = await _encodeContextOperations(operations);
     await _db
         .into(_db.extensionEntityRows)
         .insertOnConflictUpdate(
@@ -331,7 +378,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
             id: id,
             ownerId: Value(id),
             sortOrder: 0,
-            payload: jsonEncode(operations.map((op) => op.toJson()).toList()),
+            payload: payload,
             updatedAt: DateTime.now(),
           ),
         );
@@ -398,6 +445,9 @@ extension ChatContextRepository on ChatDatabaseRepository {
     }
     final target = operations.firstWhere((op) => op.id == operationId);
     if (target.revoked) throw StateError('context_changed');
+    if (target.isImportedNative) {
+      throw StateError('native_compaction_originals_unavailable');
+    }
     if (summary != null &&
         (!target.isCompression || target.isNative || summary.trim().isEmpty)) {
       throw ArgumentError('empty_summary');
@@ -446,7 +496,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
       final now = DateTime.now();
       final target = Conversation(
         id: id,
-        title: source.title,
+        title: await _nextForkTitle(source.title),
         assistantId: source.assistantId,
         createdAt: now,
         updatedAt: now,
@@ -462,14 +512,9 @@ extension ChatContextRepository on ChatDatabaseRepository {
         modelId: operation.model,
       );
       final targetOperations = [
-        ContextOperation.forCopiedSummary(
+        operation.copiedTo(
           summary,
-          compressionDetails: {
-            ...operation.compressionDetails,
-            'sourceRevisionIds': <String>[],
-            'imageSources': <String, dynamic>{},
-            'toolSources': <String, dynamic>{},
-          },
+          sourceConversationId: sourceId,
           keepUserMessages: countUserMessages(retained),
         ),
       ];
@@ -500,22 +545,31 @@ extension ChatContextRepository on ChatDatabaseRepository {
       ];
       for (var i = 0; i < retained.length; i++) {
         if (ContextOperation.isSummary(retained[i])) {
+          final retainedOperation = snapshot.operations.firstWhere(
+            (op) => op.summaryMessageId == retained[i].id,
+          );
           final background = ChatMessage(
             role: 'user',
             content: retained[i].content,
             conversationId: id,
+            modelId: retainedOperation.model,
           );
           await _db
               .into(_db.messageRows)
               .insert(_messageCompanion(background, i + 1));
           await _replaceMessageParts(background);
+          final keep = countUserMessages(retained.skip(i + 1).toList());
           targetOperations.add(
-            ContextOperation.forCopiedSummary(
-              background,
-              keepUserMessages: countUserMessages(
-                retained.skip(i + 1).toList(),
-              ),
-            ),
+            retainedOperation.isNative
+                ? retainedOperation.copiedTo(
+                    background,
+                    sourceConversationId: sourceId,
+                    keepUserMessages: keep,
+                  )
+                : ContextOperation.forCopiedSummary(
+                    background,
+                    keepUserMessages: keep,
+                  ),
           );
         }
       }
@@ -572,8 +626,7 @@ extension ChatContextRepository on ChatDatabaseRepository {
 
   Future<void> _assertContextState(String id, String? expected) async {
     if (expected == null) return;
-    final operations = await readContextOperations(id);
-    if (ContextHistory.operationsFingerprint(operations) != expected) {
+    if ((await readContextMutationState(id)).revision != expected) {
       throw StateError('context_changed');
     }
   }
@@ -584,14 +637,15 @@ extension ChatContextRepository on ChatDatabaseRepository {
     Set<String> groups, {
     Set<String> removedGroups = const {},
   }) async {
-    final operations = await readContextOperations(id);
-    if (operations.isEmpty) return;
+    final state = await readContextMutationState(id);
+    if (state.operations.isEmpty) return;
     final affected = ContextHistory.affectedOperations(
-      operations,
+      state.operations,
       changedGroups: groups,
       removedGroups: removedGroups,
     );
     if (affected.isEmpty) return;
+    final operations = await readContextOperations(id);
     await _writeContextOperations(id, [
       for (final op in operations)
         affected.contains(op.id) ? op.copyWith(revoked: true) : op,
@@ -655,3 +709,36 @@ extension ChatContextRepository on ChatDatabaseRepository {
     );
   }
 }
+
+Future<List<ContextOperation>> _decodeContextOperations(String payload) =>
+    Isolate.run(
+      () => [
+        for (final value in jsonDecode(payload) as List)
+          ContextOperation.fromJson(Map<String, dynamic>.from(value as Map)),
+      ],
+    );
+
+Future<String> _encodeContextOperations(List<ContextOperation> operations) =>
+    Isolate.run(() => jsonEncode(operations.map((op) => op.toJson()).toList()));
+
+Future<String> _contextSnapshotFingerprint(
+  List<ChatMessage> messages,
+  List<ContextOperation> operations,
+) => Isolate.run(() => ContextHistory.fingerprint(messages, operations));
+
+Future<ContextMessageCounts> _contextMessageCounts(
+  List<ContextMessageMetadata> metadata,
+  List<ContextOperationMetadata> operations,
+  int limit,
+) => Isolate.run(() {
+  if (limit <= 0) {
+    return (stored: metadata.length, messages: 0, summaries: 0);
+  }
+  final effective = ContextHistory.project(metadata, operations, limit: limit);
+  final summaries = effective.where((m) => m.isSummary).length;
+  return (
+    stored: metadata.length,
+    messages: effective.length - summaries,
+    summaries: summaries,
+  );
+});

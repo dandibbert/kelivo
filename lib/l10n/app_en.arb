@@ -4276,29 +4276,6 @@
   "imageSettingsPageQualityBalancedSubtitle": "Long edge 1568 px · quality 85",
   "imageSettingsPageQualitySaver": "Data Saver",
   "imageSettingsPageQualitySaverSubtitle": "Long edge 1024 px · quality 70",
-  "settingsPageExternalAutoSend": "Allow External Auto-Send",
-  "settingsPageExternalAutoSendSubtitle": "Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.",
-  "settingsPageDeepLinks": "Deep Links",
-  "settingsPageDeepLinksSubtitle": "Open Kelivo from other apps with kelivo://v1/... URLs",
-  "aboutPageDeepLinksSection": "Deep Links",
-  "aboutPageDeepLinksDescription": "Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:",
-  "aboutPageDeepLinkChat": "Open the chat page",
-  "aboutPageDeepLinkNewChat": "Start a new conversation",
-  "aboutPageDeepLinkOpenConversation": "Open an existing conversation",
-  "aboutPageDeepLinkCompose": "Fill the message box (replace or append)",
-  "aboutPageDeepLinkSend": "Send a message directly (requires the setting to be enabled)",
-  "aboutPageDeepLinkSettings": "Jump to a settings page",
-  "aboutPageDeepLinkAssistant": "Open an assistant settings page",
-  "aboutPageDeepLinksFooter": "Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.",
-  "deepLinkAutoSendDisabled": "External auto-send is disabled. Review the message and send it manually.",
-  "deepLinkAssistantNotFound": "The requested assistant could not be found.",
-  "deepLinkAssistantNameAmbiguous": "More than one assistant has that name. Use the assistant ID instead.",
-  "deepLinkConversationNotFound": "The requested conversation could not be found.",
-  "deepLinkPayloadTooLarge": "The external text is too large for a URL link.",
-  "deepLinkAssistantTargetConflict": "Assistant selection can only be used with a new conversation.",
-  "deepLinkSendRejected": "Kelivo could not send the external message.",
-  "deepLinkUnsupportedRoute": "This Kelivo link is not supported.",
-  "deepLinkFailed": "Kelivo could not handle this external link.",
   "imageSettingsPageQualityCustom": "Custom",
   "imageSettingsPageQualityCustomSubtitle": "Choose the compression quality",
   "imageSettingsPageCustomQualityTitle": "Compression Quality",
@@ -6313,60 +6290,6 @@
   "mcpOAuthRegistering": "Preparing authorization…",
   "mcpOAuthWaitingBrowser": "Waiting for browser authorization…",
   "mcpOAuthExchangingToken": "Completing sign-in…",
-  "deepLinkGenTitle": "URL Scheme Generator",
-  "deepLinkGenSubtitle": "Build kelivo:// links for Shortcuts, automation and other apps",
-  "deepLinkGenSectionAction": "Action",
-  "deepLinkGenSectionMessage": "Message",
-  "deepLinkGenSectionTarget": "Conversation",
-  "deepLinkGenSectionOptions": "Options",
-  "deepLinkGenSectionResult": "Generated link",
-  "deepLinkGenText": "Message text",
-  "deepLinkGenTextHint": "Text to fill in or send",
-  "deepLinkGenTextBytes": "{used} / {max} bytes",
-  "@deepLinkGenTextBytes": {
-    "placeholders": {
-      "used": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    },
-    "description": "Counter of used bytes against the maximum. Placeholders used and max are integers."
-  },
-  "deepLinkGenInsertMode": "If the input box has text",
-  "deepLinkGenInsertReplace": "Replace it",
-  "deepLinkGenInsertAppend": "Append to it",
-  "deepLinkGenTarget": "Send to",
-  "deepLinkGenTargetCurrent": "Current conversation",
-  "deepLinkGenTargetNew": "New conversation",
-  "deepLinkGenTargetConversation": "Specific conversation",
-  "deepLinkGenConversation": "Conversation",
-  "deepLinkGenConversationPick": "Choose a conversation",
-  "deepLinkGenConversationId": "Conversation ID",
-  "deepLinkGenConversationIdHint": "Paste an ID, or choose one above",
-  "deepLinkGenConversationEmpty": "No conversations yet",
-  "deepLinkGenAssistant": "Assistant",
-  "deepLinkGenAssistantDefault": "Default (current assistant)",
-  "deepLinkGenAssistantPick": "Choose an assistant",
-  "deepLinkGenAssistantRef": "Reference assistant by",
-  "deepLinkGenRefId": "ID",
-  "deepLinkGenRefName": "Name",
-  "deepLinkGenAssistantId": "Assistant ID",
-  "deepLinkGenAssistantName": "Assistant name",
-  "deepLinkGenTemporary": "Temporary chat",
-  "deepLinkGenTemporarySubtitle": "Not saved to history",
-  "deepLinkGenSettingsSection": "Settings page",
-  "deepLinkGenSettingsHome": "Settings home",
-  "deepLinkGenCopy": "Copy link",
-  "deepLinkGenCopyMarkdown": "Copy as Markdown",
-  "deepLinkGenCopied": "Link copied",
-  "deepLinkGenRun": "Run now",
-  "deepLinkGenNeedText": "Enter the message text to generate a link.",
-  "deepLinkGenNeedConversation": "Choose a conversation or enter its ID.",
-  "deepLinkGenNeedAssistant": "Choose an assistant.",
-  "deepLinkGenAutoSendOff": "Auto-send is off, so this link will only fill the input box for review. Enable it in Settings → Allow External Auto-Send.",
-  "deepLinkGenNewOnlyHint": "Assistant and temporary chat only apply to a new conversation.",
   "markdownPlaygroundTitle": "Markdown Playground",
   "markdownPlaygroundSource": "Markdown source",
   "markdownPlaygroundPreview": "Preview",
@@ -8034,13 +7957,13 @@
   "compressionNearLimit": "Context is near its estimated capacity. You can keep chatting or compress manually.",
   "compressionKeepTurns": "Keep recent",
   "compressionKeepHint": "A turn includes a user message, its replies and tools.",
-  "compressionLength": "Summary limit (tokens)",
+  "compressionLength": "Summary target (tokens)",
   "compressionTrigger": "Start at",
   "compressionTarget": "Compress to",
   "compressionWindow": "Planning window",
   "compressionRequests": "Maximum calls",
-  "compressionReference": "Reference active world books and memory",
-  "compressionReferenceHint": "Reference explains names and rules; it is not evidence that events happened or characters know them.",
+  "compressionReference": "Reference world books and historical memory",
+  "compressionReferenceHint": "Scan only the selected history for world books and use its saved memory snapshots. References explain names and rules; they do not establish events or character knowledge.",
   "compressionToolReferences": "Reference consumed tool results",
   "compressionToolReferencesHint": "Only with tool access. Keeps the latest unread results and allows exact, read-only recall.",
   "compressionSummaryScan": "Include summaries in world book keyword matching",
@@ -8305,9 +8228,9 @@
   "compressionNativeLabel": "Native compaction",
   "compressionNativeDescription": "The native context returned by the service is saved locally for subsequent requests. It cannot be read or edited as text. Original messages remain available and this compaction can be undone.",
   "compressionNativeIncomplete": "The service did not return a complete native compaction result. The original context is unchanged.",
-  "compressionNativeScopeChanged": "This native context belongs to another connection or account. Undo its compaction, or create a text summary from the original history before continuing.",
+  "compressionNativeScopeChanged": "This native context belongs to another connection or account. Continue with the original connection, or undo the compaction or create a text summary in the chat that contains the originals.",
   "compressionNativeTokenHint": "Token usage for opaque native context is determined by the service.",
-  "compressionNativeCopyHint": "A new conversation keeps original messages so native compaction can be undone.",
+  "compressionNativeCopyHint": "The new chat keeps only the complete native compaction result and retained recent turns. Originals stay in the source chat and cannot be restored by undoing here.",
   "compressionNativeInputOverride": "The custom input field would replace native compression data. Remove the input override in the provider, model, or assistant settings before continuing.",
   "compressionNativeAllHint": "Send all current history to native compaction without keeping a separate recent tail. Original messages remain available.",
   "compressionNativeAutoHint": "At the threshold, compact natively with the current chat model, then continue sending. A failed attempt keeps the original context and does not switch to text summarization.",
@@ -21411,7 +21334,7 @@
     "description": "Hint text explaining that a turn includes a user message plus its replies and tool content."
   },
   "@compressionLength": {
-    "description": "Number-field label for the summary output token limit."
+    "description": "Compression summary settings: target maximum length of visible summary text in tokens, separate from the total generation limit including reasoning."
   },
   "@compressionTrigger": {
     "description": "Number-field label for the context-usage percentage that starts automatic compression."
@@ -21426,10 +21349,10 @@
     "description": "Number-field label for the maximum number of model calls allowed."
   },
   "@compressionReference": {
-    "description": "Switch label for including active world books and memory as reference during summarization."
+    "description": "Compression option to include world books evaluated on the selected history and memory snapshots frozen in that history, rather than current live memory or retained messages."
   },
   "@compressionReferenceHint": {
-    "description": "Hint clarifying that reference material explains names/rules but is not evidence events occurred or characters know them."
+    "description": "Compression reference help: restrict dynamic reference sources to the selected historical range, and distinguish explanatory background from events or character knowledge. No placeholders."
   },
   "@compressionToolReferences": {
     "description": "Switch label for replacing already-consumed tool results with references."
@@ -21738,13 +21661,13 @@
     "description": "Error message shown when the service returns an incomplete native compaction result and the original context is unchanged."
   },
   "@compressionNativeScopeChanged": {
-    "description": "Error shown when a native context belongs to a different connection or account, advising undo or a text summary."
+    "description": "Error when native context belongs to a different connection or account. Return to the original connection; undo or text-summary regeneration is only possible in a chat containing the originals, which may be the source chat of imported context. No placeholders."
   },
   "@compressionNativeTokenHint": {
     "description": "Hint stating that token usage for opaque native context is determined by the service; also used as the opaque usage state label."
   },
   "@compressionNativeCopyHint": {
-    "description": "Hint in the compression dialog noting that a new conversation keeps original messages so native compaction can be undone."
+    "description": "Hint in the compression dialog when native compaction and new chat are selected. Only the complete provider output and retained recent turns are copied; original history remains in the source chat and cannot be restored by undo in the new chat. No placeholders."
   },
   "@compressionNativeInputOverride": {
     "description": "Error shown when a custom input field would override native compression data, asking the user to remove the input override first."
@@ -21755,6 +21678,83 @@
   "@compressionNativeAutoHint": {
     "description": "Hint for automatic compression with native mode: compact at the threshold with the current model; failures keep the original context without falling back to text summarization."
   },
+  "settingsPageExternalAutoSend": "Allow External Auto-Send",
+  "settingsPageExternalAutoSendSubtitle": "Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.",
+  "settingsPageDeepLinks": "Deep Links",
+  "settingsPageDeepLinksSubtitle": "Open Kelivo from other apps with kelivo://v1/... URLs",
+  "aboutPageDeepLinksSection": "Deep Links",
+  "aboutPageDeepLinksDescription": "Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:",
+  "aboutPageDeepLinkChat": "Open the chat page",
+  "aboutPageDeepLinkNewChat": "Start a new conversation",
+  "aboutPageDeepLinkOpenConversation": "Open an existing conversation",
+  "aboutPageDeepLinkCompose": "Fill the message box (replace or append)",
+  "aboutPageDeepLinkSend": "Send a message directly (requires the setting to be enabled)",
+  "aboutPageDeepLinkSettings": "Jump to a settings page",
+  "aboutPageDeepLinkAssistant": "Open an assistant settings page",
+  "aboutPageDeepLinksFooter": "Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.",
+  "deepLinkAutoSendDisabled": "External auto-send is disabled. Review the message and send it manually.",
+  "deepLinkAssistantNotFound": "The requested assistant could not be found.",
+  "deepLinkAssistantNameAmbiguous": "More than one assistant has that name. Use the assistant ID instead.",
+  "deepLinkConversationNotFound": "The requested conversation could not be found.",
+  "deepLinkPayloadTooLarge": "The external text is too large for a URL link.",
+  "deepLinkAssistantTargetConflict": "Assistant selection can only be used with a new conversation.",
+  "deepLinkSendRejected": "Kelivo could not send the external message.",
+  "deepLinkUnsupportedRoute": "This Kelivo link is not supported.",
+  "deepLinkFailed": "Kelivo could not handle this external link.",
+  "deepLinkGenTitle": "URL Scheme Generator",
+  "deepLinkGenSubtitle": "Build kelivo:// links for Shortcuts, automation and other apps",
+  "deepLinkGenSectionAction": "Action",
+  "deepLinkGenSectionMessage": "Message",
+  "deepLinkGenSectionTarget": "Conversation",
+  "deepLinkGenSectionOptions": "Options",
+  "deepLinkGenSectionResult": "Generated link",
+  "deepLinkGenText": "Message text",
+  "deepLinkGenTextHint": "Text to fill in or send",
+  "deepLinkGenTextBytes": "{used} / {max} bytes",
+  "@deepLinkGenTextBytes": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    },
+    "description": "Counter of used bytes against the maximum. Placeholders used and max are integers."
+  },
+  "deepLinkGenInsertMode": "If the input box has text",
+  "deepLinkGenInsertReplace": "Replace it",
+  "deepLinkGenInsertAppend": "Append to it",
+  "deepLinkGenTarget": "Send to",
+  "deepLinkGenTargetCurrent": "Current conversation",
+  "deepLinkGenTargetNew": "New conversation",
+  "deepLinkGenTargetConversation": "Specific conversation",
+  "deepLinkGenConversation": "Conversation",
+  "deepLinkGenConversationPick": "Choose a conversation",
+  "deepLinkGenConversationId": "Conversation ID",
+  "deepLinkGenConversationIdHint": "Paste an ID, or choose one above",
+  "deepLinkGenConversationEmpty": "No conversations yet",
+  "deepLinkGenAssistant": "Assistant",
+  "deepLinkGenAssistantDefault": "Default (current assistant)",
+  "deepLinkGenAssistantPick": "Choose an assistant",
+  "deepLinkGenAssistantRef": "Reference assistant by",
+  "deepLinkGenRefId": "ID",
+  "deepLinkGenRefName": "Name",
+  "deepLinkGenAssistantId": "Assistant ID",
+  "deepLinkGenAssistantName": "Assistant name",
+  "deepLinkGenTemporary": "Temporary chat",
+  "deepLinkGenTemporarySubtitle": "Not saved to history",
+  "deepLinkGenSettingsSection": "Settings page",
+  "deepLinkGenSettingsHome": "Settings home",
+  "deepLinkGenCopy": "Copy link",
+  "deepLinkGenCopyMarkdown": "Copy as Markdown",
+  "deepLinkGenCopied": "Link copied",
+  "deepLinkGenRun": "Run now",
+  "deepLinkGenNeedText": "Enter the message text to generate a link.",
+  "deepLinkGenNeedConversation": "Choose a conversation or enter its ID.",
+  "deepLinkGenNeedAssistant": "Choose an assistant.",
+  "deepLinkGenAutoSendOff": "Auto-send is off, so this link will only fill the input box for review. Enable it in Settings → Allow External Auto-Send.",
+  "deepLinkGenNewOnlyHint": "Assistant and temporary chat only apply to a new conversation.",
   "@settingsPageExternalAutoSend": {
     "description": "Settings toggle that lets kelivo://v1 links from other apps send messages or fill the input. Off by default."
   },
@@ -21949,5 +21949,151 @@
   },
   "@deepLinkGenNewOnlyHint": {
     "description": "Hint that assistant and temporary chat apply only when the target is a new conversation."
+  },
+  "contextUsagePartialSummary": "Estimated {tokens} + unknown compaction",
+  "@contextUsagePartialSummary": {
+    "description": "Summary in the context usage panel and input-bar tooltip when OpenAI native compaction is present. Only readable content has been estimated; the encrypted compaction block's input token count is unknown. tokens is the already-formatted subtotal, such as 42k, not the full context total.",
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "contextUsageBucketNativeCompaction": "Native compaction",
+  "@contextUsageBucketNativeCompaction": {
+    "description": "Category row in the context usage breakdown for opaque OpenAI native compaction state. Its token value is shown as unknown, separately from estimated readable messages and other categories."
+  },
+  "contextUsageUnknownTokens": "Unknown",
+  "@contextUsageUnknownTokens": {
+    "description": "Token value in the context usage panel for encrypted native compaction content that cannot be counted locally; unknown must not be interpreted as zero."
+  },
+  "contextUsageLastRequestInput": "Last request input (measured): {tokens}",
+  "@contextUsageLastRequestInput": {
+    "description": "Separate line below the native-compaction context usage breakdown showing input tokens reported by the last matching model request, not the current estimated window or the compaction operation's output usage. tokens is an already-formatted token count such as 42k.",
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "compressionNativeImported": "Native context loaded",
+  "@compressionNativeImported": {
+    "description": "Title for an imported native compaction at the start of a new chat, shown in the timeline, context operation list and details. It is opaque context carried over from another chat, not a locally undoable compression. No placeholders."
+  },
+  "compressionNativeImportedDescription": "This chat starts with the complete native compaction result and retained recent turns. The result cannot be read or edited as text. Earlier originals remain in the source chat, so they cannot be restored by undoing here.",
+  "@compressionNativeImportedDescription": {
+    "description": "Description in imported native context details. Explains which data this chat owns, that the provider result is opaque, and that earlier originals must be viewed or restored in the source chat rather than through local undo. No placeholders."
+  },
+  "compressionNativeOpenSource": "Open source chat",
+  "@compressionNativeOpenSource": {
+    "description": "Action in imported native context details to open the source conversation containing the earlier originals. Source means the originating chat, not source code. No placeholders."
+  },
+  "compressionNativeOriginalsUnavailable": "This chat has no originals for the imported native context. Continue with native compaction, or return to the source chat to view or summarize the originals.",
+  "@compressionNativeOriginalsUnavailable": {
+    "description": "Message when undo or text-summary regeneration would require originals absent from an imported native context. Also shown in compression options when the selected range includes such context. Directs users to native compaction or the source chat. No placeholders."
+  },
+  "compressionNativeTemporaryCopyHint": "The new temporary chat keeps only the complete native compaction result and retained recent turns. Leaving the source temporary chat deletes it and the originals not carried over; they cannot be restored here.",
+  "@compressionNativeTemporaryCopyHint": {
+    "description": "Warning in the compression dialog when native compaction creates a new temporary chat. The app discards the source temporary chat when switching away, so originals outside the retained tail are deleted and cannot be restored from the new chat. No placeholders."
+  },
+  "compressionNativeSourceUnavailable": "This chat keeps the complete native compaction result and retained recent turns. The source chat is no longer available. Originals not copied here cannot be restored, and the native result cannot be read or edited as text.",
+  "@compressionNativeSourceUnavailable": {
+    "description": "Description in imported native context details when the source conversation has been deleted or discarded. Explains that this chat still owns the complete opaque result and retained tail, but cannot restore absent originals. No placeholders."
+  },
+  "modelDetailSheetImageGenerationModel": "Image model",
+  "@modelDetailSheetImageGenerationModel": {
+    "description": "Label of the hosted image generation model picker in a chat model’s built-in tools settings."
+  },
+  "modelDetailSheetImageGenerationAuto": "Auto",
+  "@modelDetailSheetImageGenerationAuto": {
+    "description": "Default image model option in built-in tools settings. Omits the tool model parameter so the server chooses the image model."
+  },
+  "modelDetailSheetImageGenerationComplexity": "Image complexity",
+  "@modelDetailSheetImageGenerationComplexity": {
+    "description": "Label of the image planning effort picker in built-in tools settings, separate from chat reasoning effort and rendering quality."
+  },
+  "modelDetailSheetImageGenerationComplexityDefault": "Default",
+  "@modelDetailSheetImageGenerationComplexityDefault": {
+    "description": "Default image complexity option. Omits complexity and uses server behavior, which may inherit the chat reasoning effort."
+  },
+  "modelDetailSheetImageGenerationComplexityLow": "Low",
+  "@modelDetailSheetImageGenerationComplexityLow": {
+    "description": "Low image planning complexity option in the built-in image generation tool settings."
+  },
+  "modelDetailSheetImageGenerationComplexityMedium": "Medium",
+  "@modelDetailSheetImageGenerationComplexityMedium": {
+    "description": "Medium image planning complexity option in the built-in image generation tool settings."
+  },
+  "modelDetailSheetImageGenerationComplexityHigh": "High",
+  "@modelDetailSheetImageGenerationComplexityHigh": {
+    "description": "High image planning complexity option in the built-in image generation tool settings."
+  },
+  "modelDetailSheetImageGenerationComplexityDescription": "Controls image planning separately from chat reasoning. Default uses server behavior and may inherit chat reasoning.",
+  "@modelDetailSheetImageGenerationComplexityDescription": {
+    "description": "Help text below image complexity in built-in tools settings. Explain that an explicit level is independent, while omitting the field may inherit outer chat reasoning."
+  },
+  "modelDetailSheetImageGenerationOAuthHint": "ChatGPT sign-in may use a different image model. Model and complexity settings depend on server support.",
+  "@modelDetailSheetImageGenerationOAuthHint": {
+    "description": "Hint in image generation settings for ChatGPT/Codex OAuth providers. The server may replace the requested image model or reject explicit complexity."
+  },
+  "imageGenerationComplexityErrorHint": "Set chat reasoning to Auto and image complexity to Default, then retry image generation. ChatGPT sign-in may use a different image model or reject explicit complexity.",
+  "@imageGenerationComplexityErrorHint": {
+    "description": "Actionable hint appended after the original provider error when ChatGPT/Codex OAuth image generation rejects a complexity level. Preserve the original error; do not automatically retry or alter chat settings."
+  },
+  "workspaceEnvNativeShellTitle": "Default shell",
+  "@workspaceEnvNativeShellTitle": {
+    "description": "Title of the desktop Environment row and dialog for choosing the shell used by the AI shell tool."
+  },
+  "workspaceEnvNativeShellHint": "Leave empty for automatic detection. Otherwise, enter the absolute path to PowerShell, cmd, or a shell that supports -lc (such as bash, zsh, or fish). This setting applies only to this device.",
+  "@workspaceEnvNativeShellHint": {
+    "description": "Help below the shell executable path field in the desktop Environment dialog; explains automatic mode, supported shell command interfaces and device-local scope."
+  },
+  "workspaceEnvNativeShellInvalid": "Could not start this shell. Check its absolute path and supported command syntax.",
+  "@workspaceEnvNativeShellInvalid": {
+    "description": "Validation error in the desktop shell settings dialog when the path is invalid or the shell cannot execute a probe command."
+  },
+  "workspaceEnvNativeShellUnavailable": "Shell unavailable",
+  "@workspaceEnvNativeShellUnavailable": {
+    "description": "Value of the actual shell path in desktop Environment when no shell can be started."
+  },
+  "workspaceEnvNativeShellDetect": "Detect again",
+  "@workspaceEnvNativeShellDetect": {
+    "description": "Desktop Environment action that clears shell detection caches and checks the current shell setting again."
+  },
+  "workspaceEnvNativeShellSave": "Save",
+  "@workspaceEnvNativeShellSave": {
+    "description": "Button in the desktop default shell dialog; validates and saves the executable path or automatic detection setting."
+  },
+  "desktopAutostartTitle": "Launch at startup",
+  "@desktopAutostartTitle": {
+    "description": "Desktop display settings, tray section: switch to register Kelivo to start when the user logs in to this device. Disabled by default."
+  },
+  "desktopAutostartDescription": "Start Kelivo when you sign in to this computer.",
+  "@desktopAutostartDescription": {
+    "description": "Tooltip for the desktop launch-at-startup switch. This is a device-local operating system setting."
+  },
+  "desktopAutostartHiddenTitle": "Hide to tray on automatic startup",
+  "@desktopAutostartHiddenTitle": {
+    "description": "Desktop display settings, tray section: switch to keep the main window hidden only when the system starts Kelivo at login."
+  },
+  "desktopAutostartHiddenDescription": "Requires launch at startup and the tray icon. Opening Kelivo manually still shows the window.",
+  "@desktopAutostartHiddenDescription": {
+    "description": "Tooltip for hiding the desktop window on automatic startup. Explains prerequisites and that manual launches remain visible."
+  },
+  "desktopAutostartUnsupported": "Launch at startup requires macOS 13 or later.",
+  "@desktopAutostartUnsupported": {
+    "description": "Desktop startup switch tooltip when the current macOS version does not support the system login-item API."
+  },
+  "desktopAutostartError": "Could not apply the startup setting. Check this app in your system startup or login-item settings and try again.",
+  "@desktopAutostartError": {
+    "description": "Desktop startup setting failure tooltip and error notification, including when system approval is required. No placeholders."
+  },
+  "compressionOutputBudget": "Total output limit (tokens)",
+  "compressionOutputBudgetHint": "Includes reasoning and summary text. Leave blank to use the summary target, or set a higher limit for thinking without lengthening the summary. The model output limit still applies.",
+  "@compressionOutputBudget": {
+    "description": "Optional number field in compression summary settings for total generated tokens, including reasoning and visible summary. Blank uses the summary target. No placeholders."
+  },
+  "@compressionOutputBudgetHint": {
+    "description": "Help below the compression total output limit field: reasoning consumes the same budget, an independent higher limit does not increase the desired summary length, blank follows the summary target, and model output limits still apply. No placeholders."
   }
 }

@@ -8772,79 +8772,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageSettingsPageQualitySaverSubtitle => '最长边 1024 像素 · 质量 70';
 
   @override
-  String get settingsPageExternalAutoSend => '允许外部自动发送';
-
-  @override
-  String get settingsPageExternalAutoSendSubtitle =>
-      '允许 kelivo://v1/... 链接从其他应用发送消息或填入输入框。关闭时，外部文本仅填入供您确认。';
-
-  @override
-  String get settingsPageDeepLinks => '深链接';
-
-  @override
-  String get settingsPageDeepLinksSubtitle =>
-      '通过 kelivo://v1/... URL 从其他应用打开 Kelivo';
-
-  @override
-  String get aboutPageDeepLinksSection => '深链接';
-
-  @override
-  String get aboutPageDeepLinksDescription =>
-      'Kelivo 支持 kelivo://v1/... URL 协议，其他应用可通过链接打开聊天、编辑或发送消息：';
-
-  @override
-  String get aboutPageDeepLinkChat => '打开聊天页面';
-
-  @override
-  String get aboutPageDeepLinkNewChat => '新建会话';
-
-  @override
-  String get aboutPageDeepLinkOpenConversation => '打开指定会话';
-
-  @override
-  String get aboutPageDeepLinkCompose => '填入消息框（替换或追加）';
-
-  @override
-  String get aboutPageDeepLinkSend => '直接发送消息（需开启对应设置）';
-
-  @override
-  String get aboutPageDeepLinkSettings => '跳转到设置页面';
-
-  @override
-  String get aboutPageDeepLinkAssistant => '打开助手设置页面';
-
-  @override
-  String get aboutPageDeepLinksFooter =>
-      '出于安全考虑，自动发送默认关闭；可在 设置 → 允许外部自动发送 中开启。';
-
-  @override
-  String get deepLinkAutoSendDisabled => '外部自动发送已关闭。请检查消息后手动发送。';
-
-  @override
-  String get deepLinkAssistantNotFound => '找不到指定的助手。';
-
-  @override
-  String get deepLinkAssistantNameAmbiguous => '存在多个同名助手，请改用助手 ID。';
-
-  @override
-  String get deepLinkConversationNotFound => '找不到指定的会话。';
-
-  @override
-  String get deepLinkPayloadTooLarge => '外部文本过长，无法通过 URL 链接处理。';
-
-  @override
-  String get deepLinkAssistantTargetConflict => '仅新建会话时可以指定助手。';
-
-  @override
-  String get deepLinkSendRejected => 'Kelivo 无法发送外部消息。';
-
-  @override
-  String get deepLinkUnsupportedRoute => '不支持此 Kelivo 链接。';
-
-  @override
-  String get deepLinkFailed => 'Kelivo 无法处理此外部链接。';
-
-  @override
   String get imageSettingsPageQualityCustom => '自定义';
 
   @override
@@ -12795,138 +12722,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpOAuthExchangingToken => '正在完成登录…';
 
   @override
-  String get deepLinkGenTitle => 'URL Scheme 生成器';
-
-  @override
-  String get deepLinkGenSubtitle => '生成 kelivo:// 链接，用于快捷指令、自动化和其他应用';
-
-  @override
-  String get deepLinkGenSectionAction => '动作';
-
-  @override
-  String get deepLinkGenSectionMessage => '消息';
-
-  @override
-  String get deepLinkGenSectionTarget => '会话';
-
-  @override
-  String get deepLinkGenSectionOptions => '选项';
-
-  @override
-  String get deepLinkGenSectionResult => '生成的链接';
-
-  @override
-  String get deepLinkGenText => '消息内容';
-
-  @override
-  String get deepLinkGenTextHint => '要填入或发送的文字';
-
-  @override
-  String deepLinkGenTextBytes(int used, int max) {
-    return '$used / $max 字节';
-  }
-
-  @override
-  String get deepLinkGenInsertMode => '输入框已有内容时';
-
-  @override
-  String get deepLinkGenInsertReplace => '替换';
-
-  @override
-  String get deepLinkGenInsertAppend => '追加';
-
-  @override
-  String get deepLinkGenTarget => '发送到';
-
-  @override
-  String get deepLinkGenTargetCurrent => '当前会话';
-
-  @override
-  String get deepLinkGenTargetNew => '新会话';
-
-  @override
-  String get deepLinkGenTargetConversation => '指定会话';
-
-  @override
-  String get deepLinkGenConversation => '会话';
-
-  @override
-  String get deepLinkGenConversationPick => '选择会话';
-
-  @override
-  String get deepLinkGenConversationId => '会话 ID';
-
-  @override
-  String get deepLinkGenConversationIdHint => '粘贴 ID，或在上方选择';
-
-  @override
-  String get deepLinkGenConversationEmpty => '还没有会话';
-
-  @override
-  String get deepLinkGenAssistant => '助手';
-
-  @override
-  String get deepLinkGenAssistantDefault => '默认（当前助手）';
-
-  @override
-  String get deepLinkGenAssistantPick => '选择助手';
-
-  @override
-  String get deepLinkGenAssistantRef => '助手引用方式';
-
-  @override
-  String get deepLinkGenRefId => 'ID';
-
-  @override
-  String get deepLinkGenRefName => '名称';
-
-  @override
-  String get deepLinkGenAssistantId => '助手 ID';
-
-  @override
-  String get deepLinkGenAssistantName => '助手名称';
-
-  @override
-  String get deepLinkGenTemporary => '临时聊天';
-
-  @override
-  String get deepLinkGenTemporarySubtitle => '不保存到历史记录';
-
-  @override
-  String get deepLinkGenSettingsSection => '设置页面';
-
-  @override
-  String get deepLinkGenSettingsHome => '设置首页';
-
-  @override
-  String get deepLinkGenCopy => '复制链接';
-
-  @override
-  String get deepLinkGenCopyMarkdown => '复制为 Markdown';
-
-  @override
-  String get deepLinkGenCopied => '链接已复制';
-
-  @override
-  String get deepLinkGenRun => '立即运行';
-
-  @override
-  String get deepLinkGenNeedText => '请输入消息内容以生成链接。';
-
-  @override
-  String get deepLinkGenNeedConversation => '请选择会话或输入会话 ID。';
-
-  @override
-  String get deepLinkGenNeedAssistant => '请选择助手。';
-
-  @override
-  String get deepLinkGenAutoSendOff =>
-      '自动发送已关闭，此链接只会把内容填入输入框供确认。可在 设置 → 允许外部自动发送 中开启。';
-
-  @override
-  String get deepLinkGenNewOnlyHint => '助手和临时聊天仅对新会话生效。';
-
-  @override
   String get markdownPlaygroundTitle => 'Markdown Playground';
 
   @override
@@ -15508,7 +15303,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get compressionKeepHint => '一轮包含一条用户消息及其后续回复、工具内容。';
 
   @override
-  String get compressionLength => '摘要上限（tokens）';
+  String get compressionLength => '摘要目标长度（tokens）';
 
   @override
   String get compressionTrigger => '触发阈值';
@@ -15523,10 +15318,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get compressionRequests => '最多调用';
 
   @override
-  String get compressionReference => '参考当前生效的世界书与记忆';
+  String get compressionReference => '参考世界书与历史记忆';
 
   @override
-  String get compressionReferenceHint => '参考用于理解人名与规则，不代表事件已经发生或角色已经知情。';
+  String get compressionReferenceHint =>
+      '仅按所选历史触发世界书，并使用其中已保存的记忆快照。参考用于理解人名与规则，不代表事件已经发生或角色已经知情。';
 
   @override
   String get compressionToolReferences => '以引用替代已读工具结果';
@@ -15920,13 +15716,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get compressionNativeScopeChanged =>
-      '此原生上下文来自其他连接或账号。请撤销该次压缩，或用原始历史生成文本摘要后继续。';
+      '此原生上下文属于其他连接或账号。请切回原连接继续，或在保留原文的会话中撤销压缩、重新生成文字摘要。';
 
   @override
   String get compressionNativeTokenHint => '原生上下文的 token 用量以服务端统计为准。';
 
   @override
-  String get compressionNativeCopyHint => '新会话会保留原始消息，以便撤销原生压缩。';
+  String get compressionNativeCopyHint =>
+      '新会话仅保存完整的原生压缩结果和保留的最近对话。原文留在原会话，无法在新会话中撤销恢复。';
 
   @override
   String get compressionNativeInputOverride =>
@@ -15984,6 +15781,327 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themePaletteCustom => '自定义';
+
+  @override
+  String get settingsPageExternalAutoSend => '允许外部自动发送';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      '允许 kelivo://v1/... 链接从其他应用发送消息或填入输入框。关闭时，外部文本仅填入供您确认。';
+
+  @override
+  String get settingsPageDeepLinks => '深链接';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      '通过 kelivo://v1/... URL 从其他应用打开 Kelivo';
+
+  @override
+  String get aboutPageDeepLinksSection => '深链接';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo 支持 kelivo://v1/... URL 协议，其他应用可通过链接打开聊天、编辑或发送消息：';
+
+  @override
+  String get aboutPageDeepLinkChat => '打开聊天页面';
+
+  @override
+  String get aboutPageDeepLinkNewChat => '新建会话';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => '打开指定会话';
+
+  @override
+  String get aboutPageDeepLinkCompose => '填入消息框（替换或追加）';
+
+  @override
+  String get aboutPageDeepLinkSend => '直接发送消息（需开启对应设置）';
+
+  @override
+  String get aboutPageDeepLinkSettings => '跳转到设置页面';
+
+  @override
+  String get aboutPageDeepLinkAssistant => '打开助手设置页面';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      '出于安全考虑，自动发送默认关闭；可在 设置 → 允许外部自动发送 中开启。';
+
+  @override
+  String get deepLinkAutoSendDisabled => '外部自动发送已关闭。请检查消息后手动发送。';
+
+  @override
+  String get deepLinkAssistantNotFound => '找不到指定的助手。';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous => '存在多个同名助手，请改用助手 ID。';
+
+  @override
+  String get deepLinkConversationNotFound => '找不到指定的会话。';
+
+  @override
+  String get deepLinkPayloadTooLarge => '外部文本过长，无法通过 URL 链接处理。';
+
+  @override
+  String get deepLinkAssistantTargetConflict => '仅新建会话时可以指定助手。';
+
+  @override
+  String get deepLinkSendRejected => 'Kelivo 无法发送外部消息。';
+
+  @override
+  String get deepLinkUnsupportedRoute => '不支持此 Kelivo 链接。';
+
+  @override
+  String get deepLinkFailed => 'Kelivo 无法处理此外部链接。';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme 生成器';
+
+  @override
+  String get deepLinkGenSubtitle => '生成 kelivo:// 链接，用于快捷指令、自动化和其他应用';
+
+  @override
+  String get deepLinkGenSectionAction => '动作';
+
+  @override
+  String get deepLinkGenSectionMessage => '消息';
+
+  @override
+  String get deepLinkGenSectionTarget => '会话';
+
+  @override
+  String get deepLinkGenSectionOptions => '选项';
+
+  @override
+  String get deepLinkGenSectionResult => '生成的链接';
+
+  @override
+  String get deepLinkGenText => '消息内容';
+
+  @override
+  String get deepLinkGenTextHint => '要填入或发送的文字';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max 字节';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => '输入框已有内容时';
+
+  @override
+  String get deepLinkGenInsertReplace => '替换';
+
+  @override
+  String get deepLinkGenInsertAppend => '追加';
+
+  @override
+  String get deepLinkGenTarget => '发送到';
+
+  @override
+  String get deepLinkGenTargetCurrent => '当前会话';
+
+  @override
+  String get deepLinkGenTargetNew => '新会话';
+
+  @override
+  String get deepLinkGenTargetConversation => '指定会话';
+
+  @override
+  String get deepLinkGenConversation => '会话';
+
+  @override
+  String get deepLinkGenConversationPick => '选择会话';
+
+  @override
+  String get deepLinkGenConversationId => '会话 ID';
+
+  @override
+  String get deepLinkGenConversationIdHint => '粘贴 ID，或在上方选择';
+
+  @override
+  String get deepLinkGenConversationEmpty => '还没有会话';
+
+  @override
+  String get deepLinkGenAssistant => '助手';
+
+  @override
+  String get deepLinkGenAssistantDefault => '默认（当前助手）';
+
+  @override
+  String get deepLinkGenAssistantPick => '选择助手';
+
+  @override
+  String get deepLinkGenAssistantRef => '助手引用方式';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => '名称';
+
+  @override
+  String get deepLinkGenAssistantId => '助手 ID';
+
+  @override
+  String get deepLinkGenAssistantName => '助手名称';
+
+  @override
+  String get deepLinkGenTemporary => '临时聊天';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => '不保存到历史记录';
+
+  @override
+  String get deepLinkGenSettingsSection => '设置页面';
+
+  @override
+  String get deepLinkGenSettingsHome => '设置首页';
+
+  @override
+  String get deepLinkGenCopy => '复制链接';
+
+  @override
+  String get deepLinkGenCopyMarkdown => '复制为 Markdown';
+
+  @override
+  String get deepLinkGenCopied => '链接已复制';
+
+  @override
+  String get deepLinkGenRun => '立即运行';
+
+  @override
+  String get deepLinkGenNeedText => '请输入消息内容以生成链接。';
+
+  @override
+  String get deepLinkGenNeedConversation => '请选择会话或输入会话 ID。';
+
+  @override
+  String get deepLinkGenNeedAssistant => '请选择助手。';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      '自动发送已关闭，此链接只会把内容填入输入框供确认。可在 设置 → 允许外部自动发送 中开启。';
+
+  @override
+  String get deepLinkGenNewOnlyHint => '助手和临时聊天仅对新会话生效。';
+
+  @override
+  String contextUsagePartialSummary(String tokens) {
+    return '已估算 $tokens + 压缩块未知';
+  }
+
+  @override
+  String get contextUsageBucketNativeCompaction => '原生压缩块';
+
+  @override
+  String get contextUsageUnknownTokens => '未知';
+
+  @override
+  String contextUsageLastRequestInput(String tokens) {
+    return '上次请求输入（实测）：$tokens';
+  }
+
+  @override
+  String get compressionNativeImported => '已载入原生压缩上下文';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      '此会话以完整的原生压缩结果和保留的最近对话开始。压缩结果无法作为文本查看或编辑；较早的原文保留在原会话，不能在此撤销恢复。';
+
+  @override
+  String get compressionNativeOpenSource => '查看原会话';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      '此会话没有已载入原生上下文对应的原文。可继续使用原生压缩，或返回原会话查看原文、重新生成文字摘要。';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      '新的临时会话仅保留完整的原生压缩结果和最近对话。离开旧临时会话后，它及未保留的原文会被清除，无法在新会话中恢复。';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      '此会话保存了完整的原生压缩结果和保留的最近对话。原会话已不可用，未复制到此处的原文无法恢复，原生结果也无法作为文本查看或编辑。';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => '生图模型';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => '自动';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => '生图复杂度';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => '默认';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => '低';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => '中';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => '高';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      '独立控制生图规划程度。默认使用服务端行为，可能沿用聊天思考档位。';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT 登录通道可能替换所选生图模型，模型和复杂度设置能否生效取决于服务端支持。';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      '请将聊天思考档位切换为“自动”，生图复杂度设为“默认”，然后重试生图。ChatGPT 登录通道可能替换所选生图模型或不支持显式复杂度。';
+
+  @override
+  String get workspaceEnvNativeShellTitle => '默认 Shell';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      '留空时自动检测，也可填写 PowerShell、cmd 或支持 -lc 的 Shell（如 bash、zsh、fish）的绝对路径。此设置仅用于本机。';
+
+  @override
+  String get workspaceEnvNativeShellInvalid => '无法启动此 Shell，请检查绝对路径及其支持的命令语法。';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Shell 不可用';
+
+  @override
+  String get workspaceEnvNativeShellDetect => '重新检测';
+
+  @override
+  String get workspaceEnvNativeShellSave => '保存';
+
+  @override
+  String get desktopAutostartTitle => '开机自启动';
+
+  @override
+  String get desktopAutostartDescription => '登录这台电脑后自动启动 Kelivo。';
+
+  @override
+  String get desktopAutostartHiddenTitle => '自启动后隐藏到托盘';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      '需要开启自启动和托盘图标。手动打开 Kelivo 时仍会显示窗口。';
+
+  @override
+  String get desktopAutostartUnsupported => '开机自启动需要 macOS 13 或更高版本。';
+
+  @override
+  String get desktopAutostartError => '无法应用启动设置。请检查系统启动项或登录项中的 Kelivo 设置后重试。';
+
+  @override
+  String get compressionOutputBudget => '总输出上限（tokens）';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      '包含推理和摘要正文。留空时使用摘要目标长度；开启思考时可单独提高此上限，不会增加摘要目标长度。实际额度仍受模型输出上限限制。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -24754,79 +24872,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get imageSettingsPageQualitySaverSubtitle => '最长边 1024 像素 · 质量 70';
 
   @override
-  String get settingsPageExternalAutoSend => '允许外部自动发送';
-
-  @override
-  String get settingsPageExternalAutoSendSubtitle =>
-      '允许 kelivo://v1/... 链接从其他应用发送消息或填入输入框。关闭时，外部文本仅填入供您确认。';
-
-  @override
-  String get settingsPageDeepLinks => '深链接';
-
-  @override
-  String get settingsPageDeepLinksSubtitle =>
-      '通过 kelivo://v1/... URL 从其他应用打开 Kelivo';
-
-  @override
-  String get aboutPageDeepLinksSection => '深链接';
-
-  @override
-  String get aboutPageDeepLinksDescription =>
-      'Kelivo 支持 kelivo://v1/... URL 协议，其他应用可通过链接打开聊天、编辑或发送消息：';
-
-  @override
-  String get aboutPageDeepLinkChat => '打开聊天页面';
-
-  @override
-  String get aboutPageDeepLinkNewChat => '新建会话';
-
-  @override
-  String get aboutPageDeepLinkOpenConversation => '打开指定会话';
-
-  @override
-  String get aboutPageDeepLinkCompose => '填入消息框（替换或追加）';
-
-  @override
-  String get aboutPageDeepLinkSend => '直接发送消息（需开启对应设置）';
-
-  @override
-  String get aboutPageDeepLinkSettings => '跳转到设置页面';
-
-  @override
-  String get aboutPageDeepLinkAssistant => '打开助手设置页面';
-
-  @override
-  String get aboutPageDeepLinksFooter =>
-      '出于安全考虑，自动发送默认关闭；可在 设置 → 允许外部自动发送 中开启。';
-
-  @override
-  String get deepLinkAutoSendDisabled => '外部自动发送已关闭。请检查消息后手动发送。';
-
-  @override
-  String get deepLinkAssistantNotFound => '找不到指定的助手。';
-
-  @override
-  String get deepLinkAssistantNameAmbiguous => '存在多个同名助手，请改用助手 ID。';
-
-  @override
-  String get deepLinkConversationNotFound => '找不到指定的会话。';
-
-  @override
-  String get deepLinkPayloadTooLarge => '外部文本过长，无法通过 URL 链接处理。';
-
-  @override
-  String get deepLinkAssistantTargetConflict => '仅新建会话时可以指定助手。';
-
-  @override
-  String get deepLinkSendRejected => 'Kelivo 无法发送外部消息。';
-
-  @override
-  String get deepLinkUnsupportedRoute => '不支持此 Kelivo 链接。';
-
-  @override
-  String get deepLinkFailed => 'Kelivo 无法处理此外部链接。';
-
-  @override
   String get imageSettingsPageQualityCustom => '自定义';
 
   @override
@@ -28777,138 +28822,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get mcpOAuthExchangingToken => '正在完成登录…';
 
   @override
-  String get deepLinkGenTitle => 'URL Scheme 生成器';
-
-  @override
-  String get deepLinkGenSubtitle => '生成 kelivo:// 链接，用于快捷指令、自动化和其他应用';
-
-  @override
-  String get deepLinkGenSectionAction => '动作';
-
-  @override
-  String get deepLinkGenSectionMessage => '消息';
-
-  @override
-  String get deepLinkGenSectionTarget => '会话';
-
-  @override
-  String get deepLinkGenSectionOptions => '选项';
-
-  @override
-  String get deepLinkGenSectionResult => '生成的链接';
-
-  @override
-  String get deepLinkGenText => '消息内容';
-
-  @override
-  String get deepLinkGenTextHint => '要填入或发送的文字';
-
-  @override
-  String deepLinkGenTextBytes(int used, int max) {
-    return '$used / $max 字节';
-  }
-
-  @override
-  String get deepLinkGenInsertMode => '输入框已有内容时';
-
-  @override
-  String get deepLinkGenInsertReplace => '替换';
-
-  @override
-  String get deepLinkGenInsertAppend => '追加';
-
-  @override
-  String get deepLinkGenTarget => '发送到';
-
-  @override
-  String get deepLinkGenTargetCurrent => '当前会话';
-
-  @override
-  String get deepLinkGenTargetNew => '新会话';
-
-  @override
-  String get deepLinkGenTargetConversation => '指定会话';
-
-  @override
-  String get deepLinkGenConversation => '会话';
-
-  @override
-  String get deepLinkGenConversationPick => '选择会话';
-
-  @override
-  String get deepLinkGenConversationId => '会话 ID';
-
-  @override
-  String get deepLinkGenConversationIdHint => '粘贴 ID，或在上方选择';
-
-  @override
-  String get deepLinkGenConversationEmpty => '还没有会话';
-
-  @override
-  String get deepLinkGenAssistant => '助手';
-
-  @override
-  String get deepLinkGenAssistantDefault => '默认（当前助手）';
-
-  @override
-  String get deepLinkGenAssistantPick => '选择助手';
-
-  @override
-  String get deepLinkGenAssistantRef => '助手引用方式';
-
-  @override
-  String get deepLinkGenRefId => 'ID';
-
-  @override
-  String get deepLinkGenRefName => '名称';
-
-  @override
-  String get deepLinkGenAssistantId => '助手 ID';
-
-  @override
-  String get deepLinkGenAssistantName => '助手名称';
-
-  @override
-  String get deepLinkGenTemporary => '临时聊天';
-
-  @override
-  String get deepLinkGenTemporarySubtitle => '不保存到历史记录';
-
-  @override
-  String get deepLinkGenSettingsSection => '设置页面';
-
-  @override
-  String get deepLinkGenSettingsHome => '设置首页';
-
-  @override
-  String get deepLinkGenCopy => '复制链接';
-
-  @override
-  String get deepLinkGenCopyMarkdown => '复制为 Markdown';
-
-  @override
-  String get deepLinkGenCopied => '链接已复制';
-
-  @override
-  String get deepLinkGenRun => '立即运行';
-
-  @override
-  String get deepLinkGenNeedText => '请输入消息内容以生成链接。';
-
-  @override
-  String get deepLinkGenNeedConversation => '请选择会话或输入会话 ID。';
-
-  @override
-  String get deepLinkGenNeedAssistant => '请选择助手。';
-
-  @override
-  String get deepLinkGenAutoSendOff =>
-      '自动发送已关闭，此链接只会把内容填入输入框供确认。可在 设置 → 允许外部自动发送 中开启。';
-
-  @override
-  String get deepLinkGenNewOnlyHint => '助手和临时聊天仅对新会话生效。';
-
-  @override
   String get markdownPlaygroundTitle => 'Markdown Playground';
 
   @override
@@ -31490,7 +31403,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get compressionKeepHint => '一轮包含一条用户消息及其后续回复、工具内容。';
 
   @override
-  String get compressionLength => '摘要上限（tokens）';
+  String get compressionLength => '摘要目标长度（tokens）';
 
   @override
   String get compressionTrigger => '触发阈值';
@@ -31505,10 +31418,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get compressionRequests => '最多调用';
 
   @override
-  String get compressionReference => '参考当前生效的世界书与记忆';
+  String get compressionReference => '参考世界书与历史记忆';
 
   @override
-  String get compressionReferenceHint => '参考用于理解人名与规则，不代表事件已经发生或角色已经知情。';
+  String get compressionReferenceHint =>
+      '仅按所选历史触发世界书，并使用其中已保存的记忆快照。参考用于理解人名与规则，不代表事件已经发生或角色已经知情。';
 
   @override
   String get compressionToolReferences => '以引用替代已读工具结果';
@@ -31902,13 +31816,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get compressionNativeScopeChanged =>
-      '此原生上下文来自其他连接或账号。请撤销该次压缩，或用原始历史生成文本摘要后继续。';
+      '此原生上下文属于其他连接或账号。请切回原连接继续，或在保留原文的会话中撤销压缩、重新生成文字摘要。';
 
   @override
   String get compressionNativeTokenHint => '原生上下文的 token 用量以服务端统计为准。';
 
   @override
-  String get compressionNativeCopyHint => '新会话会保留原始消息，以便撤销原生压缩。';
+  String get compressionNativeCopyHint =>
+      '新会话仅保存完整的原生压缩结果和保留的最近对话。原文留在原会话，无法在新会话中撤销恢复。';
 
   @override
   String get compressionNativeInputOverride =>
@@ -31966,6 +31881,327 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get themePaletteCustom => '自定义';
+
+  @override
+  String get settingsPageExternalAutoSend => '允许外部自动发送';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      '允许 kelivo://v1/... 链接从其他应用发送消息或填入输入框。关闭时，外部文本仅填入供您确认。';
+
+  @override
+  String get settingsPageDeepLinks => '深链接';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      '通过 kelivo://v1/... URL 从其他应用打开 Kelivo';
+
+  @override
+  String get aboutPageDeepLinksSection => '深链接';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo 支持 kelivo://v1/... URL 协议，其他应用可通过链接打开聊天、编辑或发送消息：';
+
+  @override
+  String get aboutPageDeepLinkChat => '打开聊天页面';
+
+  @override
+  String get aboutPageDeepLinkNewChat => '新建会话';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => '打开指定会话';
+
+  @override
+  String get aboutPageDeepLinkCompose => '填入消息框（替换或追加）';
+
+  @override
+  String get aboutPageDeepLinkSend => '直接发送消息（需开启对应设置）';
+
+  @override
+  String get aboutPageDeepLinkSettings => '跳转到设置页面';
+
+  @override
+  String get aboutPageDeepLinkAssistant => '打开助手设置页面';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      '出于安全考虑，自动发送默认关闭；可在 设置 → 允许外部自动发送 中开启。';
+
+  @override
+  String get deepLinkAutoSendDisabled => '外部自动发送已关闭。请检查消息后手动发送。';
+
+  @override
+  String get deepLinkAssistantNotFound => '找不到指定的助手。';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous => '存在多个同名助手，请改用助手 ID。';
+
+  @override
+  String get deepLinkConversationNotFound => '找不到指定的会话。';
+
+  @override
+  String get deepLinkPayloadTooLarge => '外部文本过长，无法通过 URL 链接处理。';
+
+  @override
+  String get deepLinkAssistantTargetConflict => '仅新建会话时可以指定助手。';
+
+  @override
+  String get deepLinkSendRejected => 'Kelivo 无法发送外部消息。';
+
+  @override
+  String get deepLinkUnsupportedRoute => '不支持此 Kelivo 链接。';
+
+  @override
+  String get deepLinkFailed => 'Kelivo 无法处理此外部链接。';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme 生成器';
+
+  @override
+  String get deepLinkGenSubtitle => '生成 kelivo:// 链接，用于快捷指令、自动化和其他应用';
+
+  @override
+  String get deepLinkGenSectionAction => '动作';
+
+  @override
+  String get deepLinkGenSectionMessage => '消息';
+
+  @override
+  String get deepLinkGenSectionTarget => '会话';
+
+  @override
+  String get deepLinkGenSectionOptions => '选项';
+
+  @override
+  String get deepLinkGenSectionResult => '生成的链接';
+
+  @override
+  String get deepLinkGenText => '消息内容';
+
+  @override
+  String get deepLinkGenTextHint => '要填入或发送的文字';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max 字节';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => '输入框已有内容时';
+
+  @override
+  String get deepLinkGenInsertReplace => '替换';
+
+  @override
+  String get deepLinkGenInsertAppend => '追加';
+
+  @override
+  String get deepLinkGenTarget => '发送到';
+
+  @override
+  String get deepLinkGenTargetCurrent => '当前会话';
+
+  @override
+  String get deepLinkGenTargetNew => '新会话';
+
+  @override
+  String get deepLinkGenTargetConversation => '指定会话';
+
+  @override
+  String get deepLinkGenConversation => '会话';
+
+  @override
+  String get deepLinkGenConversationPick => '选择会话';
+
+  @override
+  String get deepLinkGenConversationId => '会话 ID';
+
+  @override
+  String get deepLinkGenConversationIdHint => '粘贴 ID，或在上方选择';
+
+  @override
+  String get deepLinkGenConversationEmpty => '还没有会话';
+
+  @override
+  String get deepLinkGenAssistant => '助手';
+
+  @override
+  String get deepLinkGenAssistantDefault => '默认（当前助手）';
+
+  @override
+  String get deepLinkGenAssistantPick => '选择助手';
+
+  @override
+  String get deepLinkGenAssistantRef => '助手引用方式';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => '名称';
+
+  @override
+  String get deepLinkGenAssistantId => '助手 ID';
+
+  @override
+  String get deepLinkGenAssistantName => '助手名称';
+
+  @override
+  String get deepLinkGenTemporary => '临时聊天';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => '不保存到历史记录';
+
+  @override
+  String get deepLinkGenSettingsSection => '设置页面';
+
+  @override
+  String get deepLinkGenSettingsHome => '设置首页';
+
+  @override
+  String get deepLinkGenCopy => '复制链接';
+
+  @override
+  String get deepLinkGenCopyMarkdown => '复制为 Markdown';
+
+  @override
+  String get deepLinkGenCopied => '链接已复制';
+
+  @override
+  String get deepLinkGenRun => '立即运行';
+
+  @override
+  String get deepLinkGenNeedText => '请输入消息内容以生成链接。';
+
+  @override
+  String get deepLinkGenNeedConversation => '请选择会话或输入会话 ID。';
+
+  @override
+  String get deepLinkGenNeedAssistant => '请选择助手。';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      '自动发送已关闭，此链接只会把内容填入输入框供确认。可在 设置 → 允许外部自动发送 中开启。';
+
+  @override
+  String get deepLinkGenNewOnlyHint => '助手和临时聊天仅对新会话生效。';
+
+  @override
+  String contextUsagePartialSummary(String tokens) {
+    return '已估算 $tokens + 压缩块未知';
+  }
+
+  @override
+  String get contextUsageBucketNativeCompaction => '原生压缩块';
+
+  @override
+  String get contextUsageUnknownTokens => '未知';
+
+  @override
+  String contextUsageLastRequestInput(String tokens) {
+    return '上次请求输入（实测）：$tokens';
+  }
+
+  @override
+  String get compressionNativeImported => '已载入原生压缩上下文';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      '此会话以完整的原生压缩结果和保留的最近对话开始。压缩结果无法作为文本查看或编辑；较早的原文保留在原会话，不能在此撤销恢复。';
+
+  @override
+  String get compressionNativeOpenSource => '查看原会话';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      '此会话没有已载入原生上下文对应的原文。可继续使用原生压缩，或返回原会话查看原文、重新生成文字摘要。';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      '新的临时会话仅保留完整的原生压缩结果和最近对话。离开旧临时会话后，它及未保留的原文会被清除，无法在新会话中恢复。';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      '此会话保存了完整的原生压缩结果和保留的最近对话。原会话已不可用，未复制到此处的原文无法恢复，原生结果也无法作为文本查看或编辑。';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => '生图模型';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => '自动';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => '生图复杂度';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => '默认';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => '低';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => '中';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => '高';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      '独立控制生图规划程度。默认使用服务端行为，可能沿用聊天思考档位。';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT 登录通道可能替换所选生图模型，模型和复杂度设置能否生效取决于服务端支持。';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      '请将聊天思考档位切换为“自动”，生图复杂度设为“默认”，然后重试生图。ChatGPT 登录通道可能替换所选生图模型或不支持显式复杂度。';
+
+  @override
+  String get workspaceEnvNativeShellTitle => '默认 Shell';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      '留空时自动检测，也可填写 PowerShell、cmd 或支持 -lc 的 Shell（如 bash、zsh、fish）的绝对路径。此设置仅用于本机。';
+
+  @override
+  String get workspaceEnvNativeShellInvalid => '无法启动此 Shell，请检查绝对路径及其支持的命令语法。';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Shell 不可用';
+
+  @override
+  String get workspaceEnvNativeShellDetect => '重新检测';
+
+  @override
+  String get workspaceEnvNativeShellSave => '保存';
+
+  @override
+  String get desktopAutostartTitle => '开机自启动';
+
+  @override
+  String get desktopAutostartDescription => '登录这台电脑后自动启动 Kelivo。';
+
+  @override
+  String get desktopAutostartHiddenTitle => '自启动后隐藏到托盘';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      '需要开启自启动和托盘图标。手动打开 Kelivo 时仍会显示窗口。';
+
+  @override
+  String get desktopAutostartUnsupported => '开机自启动需要 macOS 13 或更高版本。';
+
+  @override
+  String get desktopAutostartError => '无法应用启动设置。请检查系统启动项或登录项中的 Kelivo 设置后重试。';
+
+  @override
+  String get compressionOutputBudget => '总输出上限（tokens）';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      '包含推理和摘要正文。留空时使用摘要目标长度；开启思考时可单独提高此上限，不会增加摘要目标长度。实际额度仍受模型输出上限限制。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -40737,79 +40973,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get imageSettingsPageQualitySaverSubtitle => '最長邊 1024 像素 · 品質 70';
 
   @override
-  String get settingsPageExternalAutoSend => '允許外部自動發送';
-
-  @override
-  String get settingsPageExternalAutoSendSubtitle =>
-      '允許 kelivo://v1/... 連結從其他應用程式傳送訊息或填入輸入框。關閉時，外部文字僅填入供您確認。';
-
-  @override
-  String get settingsPageDeepLinks => '深層連結';
-
-  @override
-  String get settingsPageDeepLinksSubtitle =>
-      '透過 kelivo://v1/... URL 從其他應用程式開啟 Kelivo';
-
-  @override
-  String get aboutPageDeepLinksSection => '深層連結';
-
-  @override
-  String get aboutPageDeepLinksDescription =>
-      'Kelivo 支援 kelivo://v1/... URL 協定，其他應用程式可透過連結開啟聊天、編輯或傳送訊息：';
-
-  @override
-  String get aboutPageDeepLinkChat => '開啟聊天頁面';
-
-  @override
-  String get aboutPageDeepLinkNewChat => '新增對話';
-
-  @override
-  String get aboutPageDeepLinkOpenConversation => '開啟指定對話';
-
-  @override
-  String get aboutPageDeepLinkCompose => '填入訊息框（取代或附加）';
-
-  @override
-  String get aboutPageDeepLinkSend => '直接傳送訊息（需開啟對應設定）';
-
-  @override
-  String get aboutPageDeepLinkSettings => '跳轉到設定頁面';
-
-  @override
-  String get aboutPageDeepLinkAssistant => '開啟助手設定頁面';
-
-  @override
-  String get aboutPageDeepLinksFooter =>
-      '出於安全考量，自動傳送預設關閉；可在 設定 → 允許外部自動傳送 中開啟。';
-
-  @override
-  String get deepLinkAutoSendDisabled => '外部自動傳送已關閉。請檢查訊息後手動傳送。';
-
-  @override
-  String get deepLinkAssistantNotFound => '找不到指定的助手。';
-
-  @override
-  String get deepLinkAssistantNameAmbiguous => '有多個同名助手，請改用助手 ID。';
-
-  @override
-  String get deepLinkConversationNotFound => '找不到指定的對話。';
-
-  @override
-  String get deepLinkPayloadTooLarge => '外部文字過長，無法透過 URL 連結處理。';
-
-  @override
-  String get deepLinkAssistantTargetConflict => '只有新增對話時可以指定助手。';
-
-  @override
-  String get deepLinkSendRejected => 'Kelivo 無法傳送外部訊息。';
-
-  @override
-  String get deepLinkUnsupportedRoute => '不支援此 Kelivo 連結。';
-
-  @override
-  String get deepLinkFailed => 'Kelivo 無法處理此外部連結。';
-
-  @override
   String get imageSettingsPageQualityCustom => '自訂';
 
   @override
@@ -44763,138 +44926,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mcpOAuthExchangingToken => '正在完成登入…';
 
   @override
-  String get deepLinkGenTitle => 'URL Scheme 產生器';
-
-  @override
-  String get deepLinkGenSubtitle => '產生 kelivo:// 連結，用於捷徑、自動化和其他應用';
-
-  @override
-  String get deepLinkGenSectionAction => '動作';
-
-  @override
-  String get deepLinkGenSectionMessage => '訊息';
-
-  @override
-  String get deepLinkGenSectionTarget => '對話';
-
-  @override
-  String get deepLinkGenSectionOptions => '選項';
-
-  @override
-  String get deepLinkGenSectionResult => '產生的連結';
-
-  @override
-  String get deepLinkGenText => '訊息內容';
-
-  @override
-  String get deepLinkGenTextHint => '要填入或傳送的文字';
-
-  @override
-  String deepLinkGenTextBytes(int used, int max) {
-    return '$used / $max 位元組';
-  }
-
-  @override
-  String get deepLinkGenInsertMode => '輸入框已有內容時';
-
-  @override
-  String get deepLinkGenInsertReplace => '取代';
-
-  @override
-  String get deepLinkGenInsertAppend => '附加';
-
-  @override
-  String get deepLinkGenTarget => '傳送到';
-
-  @override
-  String get deepLinkGenTargetCurrent => '目前對話';
-
-  @override
-  String get deepLinkGenTargetNew => '新對話';
-
-  @override
-  String get deepLinkGenTargetConversation => '指定對話';
-
-  @override
-  String get deepLinkGenConversation => '對話';
-
-  @override
-  String get deepLinkGenConversationPick => '選擇對話';
-
-  @override
-  String get deepLinkGenConversationId => '對話 ID';
-
-  @override
-  String get deepLinkGenConversationIdHint => '貼上 ID，或在上方選擇';
-
-  @override
-  String get deepLinkGenConversationEmpty => '還沒有對話';
-
-  @override
-  String get deepLinkGenAssistant => '助理';
-
-  @override
-  String get deepLinkGenAssistantDefault => '預設（目前助理）';
-
-  @override
-  String get deepLinkGenAssistantPick => '選擇助理';
-
-  @override
-  String get deepLinkGenAssistantRef => '助理引用方式';
-
-  @override
-  String get deepLinkGenRefId => 'ID';
-
-  @override
-  String get deepLinkGenRefName => '名稱';
-
-  @override
-  String get deepLinkGenAssistantId => '助理 ID';
-
-  @override
-  String get deepLinkGenAssistantName => '助理名稱';
-
-  @override
-  String get deepLinkGenTemporary => '臨時聊天';
-
-  @override
-  String get deepLinkGenTemporarySubtitle => '不儲存到歷史記錄';
-
-  @override
-  String get deepLinkGenSettingsSection => '設定頁面';
-
-  @override
-  String get deepLinkGenSettingsHome => '設定首頁';
-
-  @override
-  String get deepLinkGenCopy => '複製連結';
-
-  @override
-  String get deepLinkGenCopyMarkdown => '複製為 Markdown';
-
-  @override
-  String get deepLinkGenCopied => '連結已複製';
-
-  @override
-  String get deepLinkGenRun => '立即執行';
-
-  @override
-  String get deepLinkGenNeedText => '請輸入訊息內容以產生連結。';
-
-  @override
-  String get deepLinkGenNeedConversation => '請選擇對話或輸入對話 ID。';
-
-  @override
-  String get deepLinkGenNeedAssistant => '請選擇助理。';
-
-  @override
-  String get deepLinkGenAutoSendOff =>
-      '自動傳送已關閉，此連結只會把內容填入輸入框供確認。可在 設定 → 允許外部自動傳送 中開啟。';
-
-  @override
-  String get deepLinkGenNewOnlyHint => '助理和臨時聊天僅對新對話生效。';
-
-  @override
   String get markdownPlaygroundTitle => 'Markdown Playground';
 
   @override
@@ -47479,7 +47510,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get compressionKeepHint => '一輪包含一則使用者訊息及其後續回覆、工具內容。';
 
   @override
-  String get compressionLength => '摘要上限（tokens）';
+  String get compressionLength => '摘要目標長度（tokens）';
 
   @override
   String get compressionTrigger => '觸發門檻';
@@ -47494,10 +47525,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get compressionRequests => '最多呼叫';
 
   @override
-  String get compressionReference => '參考目前生效的世界書與記憶';
+  String get compressionReference => '參考世界書與歷史記憶';
 
   @override
-  String get compressionReferenceHint => '參考用於理解人名與規則，不代表事件已發生或角色已知情。';
+  String get compressionReferenceHint =>
+      '僅按所選歷史觸發世界書，並使用其中已儲存的記憶快照。參考用於理解人名與規則，不代表事件已經發生或角色已經知情。';
 
   @override
   String get compressionToolReferences => '以引用替代已讀工具結果';
@@ -47891,13 +47923,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get compressionNativeScopeChanged =>
-      '此原生上下文來自其他連線或帳號。請復原該次壓縮，或用原始歷史產生文字摘要後繼續。';
+      '此原生上下文屬於其他連線或帳號。請切回原連線繼續，或在保留原文的會話中復原壓縮、重新產生文字摘要。';
 
   @override
   String get compressionNativeTokenHint => '原生上下文的 token 用量以服務端統計為準。';
 
   @override
-  String get compressionNativeCopyHint => '新對話會保留原始訊息，以便復原原生壓縮。';
+  String get compressionNativeCopyHint =>
+      '新會話僅儲存完整的原生壓縮結果和保留的最近對話。原文留在原會話，無法在新會話中透過復原找回原文。';
 
   @override
   String get compressionNativeInputOverride =>
@@ -47955,4 +47988,326 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get themePaletteCustom => '自訂';
+
+  @override
+  String get settingsPageExternalAutoSend => '允許外部自動發送';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      '允許 kelivo://v1/... 連結從其他應用程式傳送訊息或填入輸入框。關閉時，外部文字僅填入供您確認。';
+
+  @override
+  String get settingsPageDeepLinks => '深層連結';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      '透過 kelivo://v1/... URL 從其他應用程式開啟 Kelivo';
+
+  @override
+  String get aboutPageDeepLinksSection => '深層連結';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo 支援 kelivo://v1/... URL 協定，其他應用程式可透過連結開啟聊天、編輯或傳送訊息：';
+
+  @override
+  String get aboutPageDeepLinkChat => '開啟聊天頁面';
+
+  @override
+  String get aboutPageDeepLinkNewChat => '新增對話';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => '開啟指定對話';
+
+  @override
+  String get aboutPageDeepLinkCompose => '填入訊息框（取代或附加）';
+
+  @override
+  String get aboutPageDeepLinkSend => '直接傳送訊息（需開啟對應設定）';
+
+  @override
+  String get aboutPageDeepLinkSettings => '跳轉到設定頁面';
+
+  @override
+  String get aboutPageDeepLinkAssistant => '開啟助手設定頁面';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      '出於安全考量，自動傳送預設關閉；可在 設定 → 允許外部自動傳送 中開啟。';
+
+  @override
+  String get deepLinkAutoSendDisabled => '外部自動傳送已關閉。請檢查訊息後手動傳送。';
+
+  @override
+  String get deepLinkAssistantNotFound => '找不到指定的助手。';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous => '有多個同名助手，請改用助手 ID。';
+
+  @override
+  String get deepLinkConversationNotFound => '找不到指定的對話。';
+
+  @override
+  String get deepLinkPayloadTooLarge => '外部文字過長，無法透過 URL 連結處理。';
+
+  @override
+  String get deepLinkAssistantTargetConflict => '只有新增對話時可以指定助手。';
+
+  @override
+  String get deepLinkSendRejected => 'Kelivo 無法傳送外部訊息。';
+
+  @override
+  String get deepLinkUnsupportedRoute => '不支援此 Kelivo 連結。';
+
+  @override
+  String get deepLinkFailed => 'Kelivo 無法處理此外部連結。';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme 產生器';
+
+  @override
+  String get deepLinkGenSubtitle => '產生 kelivo:// 連結，用於捷徑、自動化和其他應用';
+
+  @override
+  String get deepLinkGenSectionAction => '動作';
+
+  @override
+  String get deepLinkGenSectionMessage => '訊息';
+
+  @override
+  String get deepLinkGenSectionTarget => '對話';
+
+  @override
+  String get deepLinkGenSectionOptions => '選項';
+
+  @override
+  String get deepLinkGenSectionResult => '產生的連結';
+
+  @override
+  String get deepLinkGenText => '訊息內容';
+
+  @override
+  String get deepLinkGenTextHint => '要填入或傳送的文字';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max 位元組';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => '輸入框已有內容時';
+
+  @override
+  String get deepLinkGenInsertReplace => '取代';
+
+  @override
+  String get deepLinkGenInsertAppend => '附加';
+
+  @override
+  String get deepLinkGenTarget => '傳送到';
+
+  @override
+  String get deepLinkGenTargetCurrent => '目前對話';
+
+  @override
+  String get deepLinkGenTargetNew => '新對話';
+
+  @override
+  String get deepLinkGenTargetConversation => '指定對話';
+
+  @override
+  String get deepLinkGenConversation => '對話';
+
+  @override
+  String get deepLinkGenConversationPick => '選擇對話';
+
+  @override
+  String get deepLinkGenConversationId => '對話 ID';
+
+  @override
+  String get deepLinkGenConversationIdHint => '貼上 ID，或在上方選擇';
+
+  @override
+  String get deepLinkGenConversationEmpty => '還沒有對話';
+
+  @override
+  String get deepLinkGenAssistant => '助理';
+
+  @override
+  String get deepLinkGenAssistantDefault => '預設（目前助理）';
+
+  @override
+  String get deepLinkGenAssistantPick => '選擇助理';
+
+  @override
+  String get deepLinkGenAssistantRef => '助理引用方式';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => '名稱';
+
+  @override
+  String get deepLinkGenAssistantId => '助理 ID';
+
+  @override
+  String get deepLinkGenAssistantName => '助理名稱';
+
+  @override
+  String get deepLinkGenTemporary => '臨時聊天';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => '不儲存到歷史記錄';
+
+  @override
+  String get deepLinkGenSettingsSection => '設定頁面';
+
+  @override
+  String get deepLinkGenSettingsHome => '設定首頁';
+
+  @override
+  String get deepLinkGenCopy => '複製連結';
+
+  @override
+  String get deepLinkGenCopyMarkdown => '複製為 Markdown';
+
+  @override
+  String get deepLinkGenCopied => '連結已複製';
+
+  @override
+  String get deepLinkGenRun => '立即執行';
+
+  @override
+  String get deepLinkGenNeedText => '請輸入訊息內容以產生連結。';
+
+  @override
+  String get deepLinkGenNeedConversation => '請選擇對話或輸入對話 ID。';
+
+  @override
+  String get deepLinkGenNeedAssistant => '請選擇助理。';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      '自動傳送已關閉，此連結只會把內容填入輸入框供確認。可在 設定 → 允許外部自動傳送 中開啟。';
+
+  @override
+  String get deepLinkGenNewOnlyHint => '助理和臨時聊天僅對新對話生效。';
+
+  @override
+  String contextUsagePartialSummary(String tokens) {
+    return '已估算 $tokens + 壓縮塊未知';
+  }
+
+  @override
+  String get contextUsageBucketNativeCompaction => '原生壓縮塊';
+
+  @override
+  String get contextUsageUnknownTokens => '未知';
+
+  @override
+  String contextUsageLastRequestInput(String tokens) {
+    return '上次請求輸入（實測）：$tokens';
+  }
+
+  @override
+  String get compressionNativeImported => '已載入原生壓縮上下文';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      '此會話以完整的原生壓縮結果和保留的最近對話開始。壓縮結果無法作為文字檢視或編輯；較早的原文保留在原會話，無法在此透過復原找回原文。';
+
+  @override
+  String get compressionNativeOpenSource => '檢視原會話';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      '此會話沒有已載入原生上下文對應的原文。可繼續使用原生壓縮，或返回原會話檢視原文、重新產生文字摘要。';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      '新的臨時對話僅保留完整的原生壓縮結果與保留的最近對話。離開來源臨時對話後，該對話及未保留的原文將被刪除，且無法在此處還原。';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      '此對話保留了完整的原生壓縮結果與保留的最近對話。來源對話已無法使用。未複製到此處的原文無法還原，且原生結果無法以文字形式檢視或編輯。';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => '生圖模型';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => '自動';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => '生圖複雜度';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => '預設';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => '低';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => '中';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => '高';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      '獨立控制生圖規劃程度。預設使用伺服器行為，可能沿用聊天思考檔位。';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT 登入通道可能替換所選生圖模型，模型和複雜度設定能否生效取決於伺服器支援。';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      '請將聊天思考檔位切換為「自動」，生圖複雜度設為「預設」，然後重試生圖。ChatGPT 登入通道可能替換所選生圖模型或不支援明確複雜度。';
+
+  @override
+  String get workspaceEnvNativeShellTitle => '預設 Shell';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      '留空時自動偵測，也可填寫 PowerShell、cmd 或支援 -lc 的 Shell（如 bash、zsh、fish）的絕對路徑。此設定僅用於本機。';
+
+  @override
+  String get workspaceEnvNativeShellInvalid => '無法啟動此 Shell，請檢查絕對路徑及其支援的命令語法。';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Shell 無法使用';
+
+  @override
+  String get workspaceEnvNativeShellDetect => '重新偵測';
+
+  @override
+  String get workspaceEnvNativeShellSave => '儲存';
+
+  @override
+  String get desktopAutostartTitle => '開機時啟動';
+
+  @override
+  String get desktopAutostartDescription => '登入這台電腦後自動啟動 Kelivo。';
+
+  @override
+  String get desktopAutostartHiddenTitle => '自動啟動後隱藏至系統匣';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      '需要開啟開機時啟動及系統匣圖示。手動開啟 Kelivo 時仍會顯示視窗。';
+
+  @override
+  String get desktopAutostartUnsupported => '開機時啟動需要 macOS 13 或以上版本。';
+
+  @override
+  String get desktopAutostartError =>
+      '無法套用啟動設定。請檢查系統啟動項目或登入項目中的 Kelivo 設定後再試一次。';
+
+  @override
+  String get compressionOutputBudget => '總輸出上限（tokens）';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      '包含推理與摘要正文。留空時使用摘要目標長度；開啟思考時可單獨提高此上限，不會增加摘要目標長度。實際額度仍受模型輸出上限限制。';
 }

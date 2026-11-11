@@ -1,3 +1,5 @@
+import 'dart:async';
+import '../../../support/compression_options_pump.dart';
 import 'package:Kelivo/shared/widgets/form_sheet.dart';
 import 'package:Kelivo/shared/widgets/segmented_tabs.dart';
 import 'package:Kelivo/shared/widgets/ios_form_text_field.dart';
@@ -122,7 +124,218 @@ void main() {
     ),
   );
 
+  check('compression settings paint while metadata is pending', (tester) async {
+    await prepare(tester, TargetPlatform.macOS);
+    final history = Completer<CompressionHistory>();
+    await tester.pumpWidget(
+      app(CompressContextOptionsDialog(loadHistory: () => history.future)),
+    );
+    await tester.pump();
+    expect(find.text(AppLocalizationsEn().contextLogLoading), findsOneWidget);
+    expect(
+      tester.widget<FormSheetActions>(find.byType(FormSheetActions)).onConfirm,
+      isNull,
+    );
+    history.complete(
+      CompressionHistory.fromMessages([
+        for (var i = 0; i < 10; i++)
+          ChatMessage(
+            id: 'u$i',
+            role: 'user',
+            content: 'Turn $i',
+            conversationId: 'chat',
+          ),
+      ], const []),
+    );
+    await settleCompressionOptions(tester);
+    expect(
+      tester.widget<FormSheetActions>(find.byType(FormSheetActions)).onConfirm,
+      isNotNull,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  check(
+    'compression preview coalesces edits and waits for the running request',
+    (tester) async {
+      await prepare(tester, TargetPlatform.macOS);
+      final requests = <CompressContextOptions>[];
+      final pending = <Completer<CompressionRequestPreview>>[];
+      await tester.pumpWidget(
+        app(
+          CompressContextOptionsDialog(
+            loadHistory: () async => CompressionHistory.fromMessages([
+              for (var i = 0; i < 20; i++)
+                ChatMessage(
+                  id: 'u$i',
+                  role: 'user',
+                  content: 'Turn $i',
+                  conversationId: 'chat',
+                ),
+            ], const []),
+            previewRequest: (options, _) {
+              requests.add(options);
+              final completer = Completer<CompressionRequestPreview>();
+              pending.add(completer);
+              return completer.future;
+            },
+          ),
+        ),
+      );
+      await settleCompressionOptions(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(requests, hasLength(1));
+      final field = find.descendant(
+        of: find.widgetWithText(IosFormTextField, 'Keep recent'),
+        matching: find.byType(TextField),
+      );
+      for (final value in ['2', '3']) {
+        await tester.enterText(field, value);
+        await settleCompressionOptions(tester);
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+      expect(requests, hasLength(1));
+      pending.first.complete((
+        prompt: 'old',
+        estimatedRequests: 99,
+        maxRequestAttempts: 1,
+      ));
+      await tester.pump();
+      expect(requests, hasLength(2));
+      expect(requests.last.keepUserMessages, 3);
+      pending.last.complete((
+        prompt: 'latest',
+        estimatedRequests: 1,
+        maxRequestAttempts: 1,
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  check('explicit preview explains invalid numeric settings', (tester) async {
+    await prepare(tester, TargetPlatform.macOS);
+    final l10n = AppLocalizationsEn();
+    await tester.pumpWidget(
+      app(
+        CompressContextOptionsDialog(
+          loadHistory: () async => CompressionHistory.fromMessages([
+            for (var i = 0; i < 10; i++)
+              ChatMessage(
+                id: 'u$i',
+                role: 'user',
+                content: 'Turn $i',
+                conversationId: 'chat',
+              ),
+          ], const []),
+          previewRequest: (_, _) async =>
+              (prompt: 'Preview', estimatedRequests: 1, maxRequestAttempts: 1),
+        ),
+      ),
+    );
+    await settleCompressionOptions(tester);
+    await tester.ensureVisible(find.text('More settings'));
+    await tester.tap(find.text('More settings'));
+    await settleCompressionOptions(tester);
+    final field = find.descendant(
+      of: find.widgetWithText(IosFormTextField, l10n.compressionLength),
+      matching: find.byType(TextField),
+    );
+    await tester.ensureVisible(field);
+    await tester.enterText(field, '');
+    final preview = find.text(l10n.compressionPreviewAction);
+    await tester.ensureVisible(preview);
+    await tester.tap(preview);
+    await tester.pump();
+    expect(find.text(l10n.compressionInvalidSettings), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final platform in [TargetPlatform.iOS, TargetPlatform.macOS]) {
+    check(
+      'imported native details have source navigation but no undo on $platform',
+      (tester) async {
+        await prepare(tester, platform);
+        final l10n = AppLocalizationsEn();
+        var opened = false;
+        final imported = op
+            .copyWith(
+              summary: '',
+              originalSummary: '',
+              compressionDetails: {
+                'nativeCompaction': NativeCompactionPayload(
+                  protocol: NativeCompactionProtocol.compact,
+                  scope: 'fixture',
+                  modelId: 'private',
+                  output: [
+                    {'type': 'compaction', 'encrypted_content': 'opaque'},
+                  ],
+                ).toJson(),
+              },
+            )
+            .copiedTo(
+              ChatMessage(
+                id: 'seed',
+                conversationId: 'target',
+                role: 'user',
+                content: '',
+              ),
+              keepUserMessages: 1,
+              sourceConversationId: 'source',
+            );
+        await tester.pumpWidget(
+          app(
+            ContextOperationContent(
+              operation: imported,
+              onClose: () {},
+              onUndo: () async => true,
+              onViewOriginal: () => opened = true,
+            ),
+          ),
+        );
+        expect(
+          find.text(l10n.compressionNativeImportedDescription),
+          findsOneWidget,
+        );
+        expect(find.text(l10n.contextUndoCompressTooltip), findsNothing);
+        await tester.tap(
+          find.byKey(const ValueKey('context-summary-details-toggle')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.contextDetailAfterUndo), findsNothing);
+        expect(find.text(l10n.contextDetailReplaced), findsNothing);
+        await tester.tap(
+          platform == TargetPlatform.macOS
+              ? find.byIcon(LucideIcons.ellipsis)
+              : find.text(l10n.contextMore),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(l10n.compressionNativeOpenSource));
+        await tester.pumpAndSettle();
+        expect(opened, isTrue);
+        await tester.pumpWidget(
+          app(
+            ContextOperationContent(
+              operation: imported,
+              onClose: () {},
+              sourceConversationAvailable: false,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text(l10n.compressionNativeSourceUnavailable),
+          findsOneWidget,
+        );
+        expect(
+          find.text(l10n.compressionNativeImportedDescription),
+          findsNothing,
+        );
+        expect(find.text(l10n.compressionNativeOpenSource), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     check(
       'native details expose undo and metadata but no text editor on $platform',
       (tester) async {
@@ -503,12 +716,12 @@ void main() {
       await tester.pumpWidget(
         app(
           CompressContextOptionsDialog(
-            messages: messages,
-            operations: const [],
+            loadHistory: () async =>
+                CompressionHistory.fromMessages(messages, const []),
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       final start = find.byType(FormSheetActions);
       expect(tester.widget<FormSheetActions>(start).onConfirm, isNull);
       expect(find.byType(IosSwitch), findsNWidgets(2));
@@ -524,11 +737,11 @@ void main() {
       await tester.enterText(field, '1');
       await tester.ensureVisible(find.text('More settings'));
       await tester.tap(find.text('More settings'));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(tester.widget<SegmentedTabs>(find.byType(SegmentedTabs)).index, 0);
       expect(field, findsNothing);
       await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(tester.widget<FormSheetActions>(start).onConfirm, isNotNull);
       expect(
         find.text('Summarize 3 messages · keep 1 user turns verbatim'),
@@ -575,8 +788,9 @@ void main() {
                 selected = await showCompressContextOptions(
                   context: context,
                   builder: (sheet) => CompressContextOptionsDialog(
-                    messages: messages,
-                    operations: const [],
+                    loadHistory: () async =>
+                        CompressionHistory.fromMessages(messages, const []),
+
                     sheet: sheet,
                   ),
                 );
@@ -587,7 +801,7 @@ void main() {
         ),
       );
       await tester.tap(find.text('open range options'));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       final l10n = AppLocalizations.of(
         tester.element(find.byType(CompressContextOptionsDialog)),
       )!;
@@ -602,19 +816,19 @@ void main() {
       );
       Future<void> choose(String label) async {
         await tester.ensureVisible(scope);
-        await tester.pumpAndSettle();
+        await settleCompressionOptions(tester);
         await tester.tap(scope);
-        await tester.pumpAndSettle();
+        await settleCompressionOptions(tester);
         await tester.ensureVisible(find.text(label).last);
-        await tester.pumpAndSettle();
+        await settleCompressionOptions(tester);
         await tester.tap(find.text(label).last);
-        await tester.pumpAndSettle();
+        await settleCompressionOptions(tester);
       }
 
       expect(scope, findsOneWidget);
       await tester.ensureVisible(keep);
       await tester.enterText(keep, '2');
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(find.text(l10n.compressionRange(8, 2)), findsOneWidget);
       await choose(l10n.compressContextUnlimited);
       expect(keep, findsNothing);
@@ -634,16 +848,16 @@ void main() {
       await choose(l10n.compressContextUnlimited);
       await tester.ensureVisible(find.text(l10n.compressionMore));
       await tester.tap(find.text(l10n.compressionMore));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(scope, findsNothing);
       expect(keep, findsNothing);
       await tester.tap(find.text(l10n.compressionAutoOn));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(tester.widget<TextField>(keep).controller!.text, '2');
       expect(find.text(l10n.compressionAutoKeepHint), findsOneWidget);
       await tester.tap(find.text(l10n.compressionAutoOff));
       await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(
         tester
             .widget<DesktopSelectDropdown<CompressContextLimitMode>>(scope)
@@ -663,14 +877,14 @@ void main() {
         );
         await tester.pump();
       }
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(selected!.mode, CompressContextLimitMode.unlimited);
       expect(selected!.keepUserMessages, isNull);
       expect(selected!.maxChars, isNull);
       expect(settings.compressionDefaults.keepRecentUserTurns, 2);
       expect(settings.compressLimitMode, CompressContextLimitMode.unlimited);
       await tester.tap(find.text('open range options'));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(
         tester
             .widget<DesktopSelectDropdown<CompressContextLimitMode>>(scope)
@@ -682,17 +896,17 @@ void main() {
       // Cancel discards a draft range instead of changing the next default.
       await choose(l10n.compressContextKeepRecentMessages);
       await tester.tap(find.text(l10n.homePageCancel));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(settings.compressLimitMode, CompressContextLimitMode.unlimited);
       await tester.tap(find.text('open range options'));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
 
       // Save settings without running compression, including its character budget.
       await choose(l10n.compressContextKeepRecent);
       await tester.enterText(maxChars, '12000');
       await tester.ensureVisible(find.text(l10n.compressionMore));
       await tester.tap(find.text(l10n.compressionMore));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       await tester.tap(find.text(l10n.multiKeyPageSave));
       for (var i = 0; i < 100 && scope.evaluate().isEmpty; i++) {
         await tester.runAsync(
@@ -700,14 +914,14 @@ void main() {
         );
         await tester.pump();
       }
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(scope, findsOneWidget);
       expect(settings.compressLimitMode, CompressContextLimitMode.recent);
       expect(settings.compressMaxChars, 12000);
       await tester.tap(find.text(l10n.homePageCancel));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       await tester.tap(find.text('open range options'));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(
         tester
             .widget<DesktopSelectDropdown<CompressContextLimitMode>>(scope)
@@ -721,10 +935,10 @@ void main() {
       await tester.enterText(maxChars, '18000');
       await tester.ensureVisible(find.text(l10n.compressionMore));
       await tester.tap(find.text(l10n.compressionMore));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       await tester.ensureVisible(find.text(l10n.compressionAdvancedOptions));
       await tester.tap(find.text(l10n.compressionAdvancedOptions));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       await tester.ensureVisible(find.text(l10n.compressionSetGlobal));
       await tester.tap(find.text(l10n.compressionSetGlobal));
       for (var i = 0; i < 100 && settings.compressMaxChars != 18000; i++) {
@@ -736,15 +950,15 @@ void main() {
       expect(settings.compressLimitMode, CompressContextLimitMode.start);
       expect(settings.compressMaxChars, 18000);
       await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       await choose(l10n.compressContextUnlimited);
       await tester.ensureVisible(find.text(l10n.compressionMore));
       await tester.tap(find.text(l10n.compressionMore));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       await tester.ensureVisible(find.text(l10n.compressionFollowGlobal));
       await tester.tap(find.text(l10n.compressionFollowGlobal));
       await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await tester.pumpAndSettle();
+      await settleCompressionOptions(tester);
       expect(
         tester
             .widget<DesktopSelectDropdown<CompressContextLimitMode>>(scope)
@@ -778,8 +992,8 @@ void main() {
               selected = await showDialog<CompressContextOptions>(
                 context: context,
                 builder: (_) => CompressContextOptionsDialog(
-                  messages: messages,
-                  operations: const [],
+                  loadHistory: () async =>
+                      CompressionHistory.fromMessages(messages, const []),
                 ),
               );
             },
@@ -789,13 +1003,13 @@ void main() {
       ),
     );
     await tester.tap(find.text('open options'));
-    await tester.pumpAndSettle();
+    await settleCompressionOptions(tester);
     final newChat = find.byWidgetPredicate(
       (w) => w is IosSwitch && w.semanticLabel == 'Compress into a new chat',
     );
     await tester.ensureVisible(newChat);
     await tester.tap(newChat);
-    await tester.pumpAndSettle();
+    await settleCompressionOptions(tester);
     await tester.tap(
       find.descendant(
         of: find.byType(FormSheetActions),
@@ -808,11 +1022,11 @@ void main() {
         () => Future<void>.delayed(const Duration(milliseconds: 10)),
       );
     }
-    await tester.pumpAndSettle();
+    await settleCompressionOptions(tester);
     expect(selected!.newConversation, isTrue);
     expect(settings.compressNewConversation, isTrue);
     await tester.tap(find.text('open options'));
-    await tester.pumpAndSettle();
+    await settleCompressionOptions(tester);
     expect(tester.widget<IosSwitch>(newChat).value, isTrue);
     expect(tester.takeException(), isNull);
   });

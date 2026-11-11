@@ -8903,81 +8903,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get imageSettingsPageQualitySaverSubtitle => '긴 변 1024px · 품질 70';
 
   @override
-  String get settingsPageExternalAutoSend => '외부 자동 전송 허용';
-
-  @override
-  String get settingsPageExternalAutoSendSubtitle =>
-      'kelivo://v1/... 링크가 다른 앱에서 메시지를 보내거나 입력창을 채우도록 허용합니다. 끄면 외부 텍스트는 확인용으로만 입력됩니다.';
-
-  @override
-  String get settingsPageDeepLinks => '딥 링크';
-
-  @override
-  String get settingsPageDeepLinksSubtitle =>
-      'kelivo://v1/... URL로 다른 앱에서 Kelivo를 엽니다';
-
-  @override
-  String get aboutPageDeepLinksSection => '딥 링크';
-
-  @override
-  String get aboutPageDeepLinksDescription =>
-      'Kelivo는 kelivo://v1/... URL 스킴을 지원하여 다른 앱에서 채팅을 열고, 메시지를 작성하거나 보낼 수 있습니다:';
-
-  @override
-  String get aboutPageDeepLinkChat => '채팅 페이지 열기';
-
-  @override
-  String get aboutPageDeepLinkNewChat => '새 대화 시작';
-
-  @override
-  String get aboutPageDeepLinkOpenConversation => '기존 대화 열기';
-
-  @override
-  String get aboutPageDeepLinkCompose => '메시지 입력창 채우기(바꾸기 또는 추가)';
-
-  @override
-  String get aboutPageDeepLinkSend => '메시지 바로 보내기(설정이 켜져 있어야 함)';
-
-  @override
-  String get aboutPageDeepLinkSettings => '설정 페이지로 이동';
-
-  @override
-  String get aboutPageDeepLinkAssistant => '어시스턴트 설정 페이지 열기';
-
-  @override
-  String get aboutPageDeepLinksFooter =>
-      '보안을 위해 자동 전송은 기본적으로 꺼져 있습니다. 설정 → 외부 자동 전송 허용에서 켤 수 있습니다.';
-
-  @override
-  String get deepLinkAutoSendDisabled =>
-      '외부 자동 전송이 꺼져 있습니다. 메시지를 확인한 뒤 직접 보내세요.';
-
-  @override
-  String get deepLinkAssistantNotFound => '요청한 어시스턴트를 찾을 수 없습니다.';
-
-  @override
-  String get deepLinkAssistantNameAmbiguous =>
-      '같은 이름의 어시스턴트가 둘 이상입니다. 어시스턴트 ID를 사용하세요.';
-
-  @override
-  String get deepLinkConversationNotFound => '요청한 대화를 찾을 수 없습니다.';
-
-  @override
-  String get deepLinkPayloadTooLarge => '외부 텍스트가 너무 길어 URL 링크로 처리할 수 없습니다.';
-
-  @override
-  String get deepLinkAssistantTargetConflict => '어시스턴트 선택은 새 대화에서만 사용할 수 있습니다.';
-
-  @override
-  String get deepLinkSendRejected => 'Kelivo가 외부 메시지를 보내지 못했습니다.';
-
-  @override
-  String get deepLinkUnsupportedRoute => '이 Kelivo 링크는 지원되지 않습니다.';
-
-  @override
-  String get deepLinkFailed => 'Kelivo가 이 외부 링크를 처리하지 못했습니다.';
-
-  @override
   String get imageSettingsPageQualityCustom => '사용자 지정';
 
   @override
@@ -13011,138 +12936,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get mcpOAuthExchangingToken => '로그인 완료 중…';
 
   @override
-  String get deepLinkGenTitle => 'URL Scheme 생성기';
-
-  @override
-  String get deepLinkGenSubtitle => '단축어, 자동화 및 다른 앱에서 쓸 kelivo:// 링크를 만듭니다';
-
-  @override
-  String get deepLinkGenSectionAction => '동작';
-
-  @override
-  String get deepLinkGenSectionMessage => '메시지';
-
-  @override
-  String get deepLinkGenSectionTarget => '대화';
-
-  @override
-  String get deepLinkGenSectionOptions => '옵션';
-
-  @override
-  String get deepLinkGenSectionResult => '생성된 링크';
-
-  @override
-  String get deepLinkGenText => '메시지 내용';
-
-  @override
-  String get deepLinkGenTextHint => '입력하거나 보낼 텍스트';
-
-  @override
-  String deepLinkGenTextBytes(int used, int max) {
-    return '$used / $max바이트';
-  }
-
-  @override
-  String get deepLinkGenInsertMode => '입력창에 내용이 있을 때';
-
-  @override
-  String get deepLinkGenInsertReplace => '바꾸기';
-
-  @override
-  String get deepLinkGenInsertAppend => '뒤에 추가';
-
-  @override
-  String get deepLinkGenTarget => '보낼 대상';
-
-  @override
-  String get deepLinkGenTargetCurrent => '현재 대화';
-
-  @override
-  String get deepLinkGenTargetNew => '새 대화';
-
-  @override
-  String get deepLinkGenTargetConversation => '특정 대화';
-
-  @override
-  String get deepLinkGenConversation => '대화';
-
-  @override
-  String get deepLinkGenConversationPick => '대화 선택';
-
-  @override
-  String get deepLinkGenConversationId => '대화 ID';
-
-  @override
-  String get deepLinkGenConversationIdHint => 'ID를 붙여 넣거나 위에서 선택';
-
-  @override
-  String get deepLinkGenConversationEmpty => '아직 대화가 없습니다';
-
-  @override
-  String get deepLinkGenAssistant => '어시스턴트';
-
-  @override
-  String get deepLinkGenAssistantDefault => '기본값(현재 어시스턴트)';
-
-  @override
-  String get deepLinkGenAssistantPick => '어시스턴트 선택';
-
-  @override
-  String get deepLinkGenAssistantRef => '어시스턴트 지정 방식';
-
-  @override
-  String get deepLinkGenRefId => 'ID';
-
-  @override
-  String get deepLinkGenRefName => '이름';
-
-  @override
-  String get deepLinkGenAssistantId => '어시스턴트 ID';
-
-  @override
-  String get deepLinkGenAssistantName => '어시스턴트 이름';
-
-  @override
-  String get deepLinkGenTemporary => '임시 채팅';
-
-  @override
-  String get deepLinkGenTemporarySubtitle => '기록에 저장하지 않음';
-
-  @override
-  String get deepLinkGenSettingsSection => '설정 페이지';
-
-  @override
-  String get deepLinkGenSettingsHome => '설정 홈';
-
-  @override
-  String get deepLinkGenCopy => '링크 복사';
-
-  @override
-  String get deepLinkGenCopyMarkdown => 'Markdown으로 복사';
-
-  @override
-  String get deepLinkGenCopied => '링크를 복사했습니다';
-
-  @override
-  String get deepLinkGenRun => '지금 실행';
-
-  @override
-  String get deepLinkGenNeedText => '링크를 만들려면 메시지 내용을 입력하세요.';
-
-  @override
-  String get deepLinkGenNeedConversation => '대화를 선택하거나 ID를 입력하세요.';
-
-  @override
-  String get deepLinkGenNeedAssistant => '어시스턴트를 선택하세요.';
-
-  @override
-  String get deepLinkGenAutoSendOff =>
-      '자동 전송이 꺼져 있어 이 링크는 확인용으로 입력창만 채웁니다. 설정 → 외부 자동 전송 허용에서 켤 수 있습니다.';
-
-  @override
-  String get deepLinkGenNewOnlyHint => '어시스턴트와 임시 채팅은 새 대화에만 적용됩니다.';
-
-  @override
   String get markdownPlaygroundTitle => 'Markdown Playground';
 
   @override
@@ -15839,7 +15632,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get compressionKeepHint => '한 턴에는 사용자 메시지와 그에 대한 답변 및 도구 내용이 포함됩니다.';
 
   @override
-  String get compressionLength => '요약 상한 (토큰)';
+  String get compressionLength => '요약 목표 (토큰)';
 
   @override
   String get compressionTrigger => '시작 기준';
@@ -15854,11 +15647,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get compressionRequests => '최대 호출';
 
   @override
-  String get compressionReference => '현재 적용 중인 세계관과 기억 참조';
+  String get compressionReference => '세계관 책과 과거 기억 참조';
 
   @override
   String get compressionReferenceHint =>
-      '참조는 인물 이름과 규칙을 이해하기 위한 것이며, 사건이 발생했거나 캐릭터가 알고 있음을 의미하지 않습니다.';
+      '선택한 기록에 대해서만 세계관 책을 트리거하고, 그 안에 저장된 기억 스냅샷을 사용합니다. 참조는 인물 이름과 규칙을 이해하기 위한 것이며, 사건이 이미 발생했거나 캐릭터가 알고 있음을 의미하지 않습니다.';
 
   @override
   String get compressionToolReferences => '이미 읽은 도구 결과를 참조로 대체';
@@ -16272,7 +16065,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get compressionNativeScopeChanged =>
-      '이 네이티브 컨텍스트는 다른 연결 또는 계정에 속합니다. 해당 압축을 취소하거나 원본 기록으로 텍스트 요약을 생성한 후 계속하세요.';
+      '이 네이티브 컨텍스트는 다른 연결 또는 계정에 속합니다. 원래 연결로 계속하거나, 원본이 포함된 대화에서 압축을 취소하거나 텍스트 요약을 생성하세요.';
 
   @override
   String get compressionNativeTokenHint =>
@@ -16280,7 +16073,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get compressionNativeCopyHint =>
-      '새 대화는 네이티브 압축을 취소할 수 있도록 원본 메시지를 유지합니다.';
+      '새 대화에는 완전한 네이티브 압축 결과와 유지된 최근 대화만 저장됩니다. 원본은 원래 대화에 남아 있으며 여기서 취소하여 복원할 수 없습니다.';
 
   @override
   String get compressionNativeInputOverride =>
@@ -16338,4 +16131,329 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get themePaletteCustom => '사용자 지정';
+
+  @override
+  String get settingsPageExternalAutoSend => '외부 자동 전송 허용';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      'kelivo://v1/... 링크가 다른 앱에서 메시지를 보내거나 입력창을 채우도록 허용합니다. 끄면 외부 텍스트는 확인용으로만 입력됩니다.';
+
+  @override
+  String get settingsPageDeepLinks => '딥 링크';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      'kelivo://v1/... URL로 다른 앱에서 Kelivo를 엽니다';
+
+  @override
+  String get aboutPageDeepLinksSection => '딥 링크';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo는 kelivo://v1/... URL 스킴을 지원하여 다른 앱에서 채팅을 열고, 메시지를 작성하거나 보낼 수 있습니다:';
+
+  @override
+  String get aboutPageDeepLinkChat => '채팅 페이지 열기';
+
+  @override
+  String get aboutPageDeepLinkNewChat => '새 대화 시작';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => '기존 대화 열기';
+
+  @override
+  String get aboutPageDeepLinkCompose => '메시지 입력창 채우기(바꾸기 또는 추가)';
+
+  @override
+  String get aboutPageDeepLinkSend => '메시지 바로 보내기(설정이 켜져 있어야 함)';
+
+  @override
+  String get aboutPageDeepLinkSettings => '설정 페이지로 이동';
+
+  @override
+  String get aboutPageDeepLinkAssistant => '어시스턴트 설정 페이지 열기';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      '보안을 위해 자동 전송은 기본적으로 꺼져 있습니다. 설정 → 외부 자동 전송 허용에서 켤 수 있습니다.';
+
+  @override
+  String get deepLinkAutoSendDisabled =>
+      '외부 자동 전송이 꺼져 있습니다. 메시지를 확인한 뒤 직접 보내세요.';
+
+  @override
+  String get deepLinkAssistantNotFound => '요청한 어시스턴트를 찾을 수 없습니다.';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous =>
+      '같은 이름의 어시스턴트가 둘 이상입니다. 어시스턴트 ID를 사용하세요.';
+
+  @override
+  String get deepLinkConversationNotFound => '요청한 대화를 찾을 수 없습니다.';
+
+  @override
+  String get deepLinkPayloadTooLarge => '외부 텍스트가 너무 길어 URL 링크로 처리할 수 없습니다.';
+
+  @override
+  String get deepLinkAssistantTargetConflict => '어시스턴트 선택은 새 대화에서만 사용할 수 있습니다.';
+
+  @override
+  String get deepLinkSendRejected => 'Kelivo가 외부 메시지를 보내지 못했습니다.';
+
+  @override
+  String get deepLinkUnsupportedRoute => '이 Kelivo 링크는 지원되지 않습니다.';
+
+  @override
+  String get deepLinkFailed => 'Kelivo가 이 외부 링크를 처리하지 못했습니다.';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme 생성기';
+
+  @override
+  String get deepLinkGenSubtitle => '단축어, 자동화 및 다른 앱에서 쓸 kelivo:// 링크를 만듭니다';
+
+  @override
+  String get deepLinkGenSectionAction => '동작';
+
+  @override
+  String get deepLinkGenSectionMessage => '메시지';
+
+  @override
+  String get deepLinkGenSectionTarget => '대화';
+
+  @override
+  String get deepLinkGenSectionOptions => '옵션';
+
+  @override
+  String get deepLinkGenSectionResult => '생성된 링크';
+
+  @override
+  String get deepLinkGenText => '메시지 내용';
+
+  @override
+  String get deepLinkGenTextHint => '입력하거나 보낼 텍스트';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max바이트';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => '입력창에 내용이 있을 때';
+
+  @override
+  String get deepLinkGenInsertReplace => '바꾸기';
+
+  @override
+  String get deepLinkGenInsertAppend => '뒤에 추가';
+
+  @override
+  String get deepLinkGenTarget => '보낼 대상';
+
+  @override
+  String get deepLinkGenTargetCurrent => '현재 대화';
+
+  @override
+  String get deepLinkGenTargetNew => '새 대화';
+
+  @override
+  String get deepLinkGenTargetConversation => '특정 대화';
+
+  @override
+  String get deepLinkGenConversation => '대화';
+
+  @override
+  String get deepLinkGenConversationPick => '대화 선택';
+
+  @override
+  String get deepLinkGenConversationId => '대화 ID';
+
+  @override
+  String get deepLinkGenConversationIdHint => 'ID를 붙여 넣거나 위에서 선택';
+
+  @override
+  String get deepLinkGenConversationEmpty => '아직 대화가 없습니다';
+
+  @override
+  String get deepLinkGenAssistant => '어시스턴트';
+
+  @override
+  String get deepLinkGenAssistantDefault => '기본값(현재 어시스턴트)';
+
+  @override
+  String get deepLinkGenAssistantPick => '어시스턴트 선택';
+
+  @override
+  String get deepLinkGenAssistantRef => '어시스턴트 지정 방식';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => '이름';
+
+  @override
+  String get deepLinkGenAssistantId => '어시스턴트 ID';
+
+  @override
+  String get deepLinkGenAssistantName => '어시스턴트 이름';
+
+  @override
+  String get deepLinkGenTemporary => '임시 채팅';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => '기록에 저장하지 않음';
+
+  @override
+  String get deepLinkGenSettingsSection => '설정 페이지';
+
+  @override
+  String get deepLinkGenSettingsHome => '설정 홈';
+
+  @override
+  String get deepLinkGenCopy => '링크 복사';
+
+  @override
+  String get deepLinkGenCopyMarkdown => 'Markdown으로 복사';
+
+  @override
+  String get deepLinkGenCopied => '링크를 복사했습니다';
+
+  @override
+  String get deepLinkGenRun => '지금 실행';
+
+  @override
+  String get deepLinkGenNeedText => '링크를 만들려면 메시지 내용을 입력하세요.';
+
+  @override
+  String get deepLinkGenNeedConversation => '대화를 선택하거나 ID를 입력하세요.';
+
+  @override
+  String get deepLinkGenNeedAssistant => '어시스턴트를 선택하세요.';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      '자동 전송이 꺼져 있어 이 링크는 확인용으로 입력창만 채웁니다. 설정 → 외부 자동 전송 허용에서 켤 수 있습니다.';
+
+  @override
+  String get deepLinkGenNewOnlyHint => '어시스턴트와 임시 채팅은 새 대화에만 적용됩니다.';
+
+  @override
+  String contextUsagePartialSummary(String tokens) {
+    return '추정 $tokens + 알 수 없는 압축';
+  }
+
+  @override
+  String get contextUsageBucketNativeCompaction => '네이티브 압축';
+
+  @override
+  String get contextUsageUnknownTokens => '알 수 없음';
+
+  @override
+  String contextUsageLastRequestInput(String tokens) {
+    return '마지막 요청 입력(측정됨): $tokens';
+  }
+
+  @override
+  String get compressionNativeImported => '네이티브 컨텍스트 로드됨';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      '이 대화는 완전한 네이티브 압축 결과와 유지된 최근 대화로 시작합니다. 이 결과는 텍스트로 읽거나 편집할 수 없습니다. 이전 원본은 원래 대화에 남아 있으므로 여기서 취소하여 복원할 수 없습니다.';
+
+  @override
+  String get compressionNativeOpenSource => '원래 대화 열기';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      '이 대화에는 로드된 네이티브 컨텍스트에 해당하는 원본이 없습니다. 네이티브 압축으로 계속하거나, 원래 대화로 돌아가 원본을 확인하거나 텍스트 요약을 생성하세요.';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      '새 임시 대화에는 완전한 네이티브 압축 결과와 유지된 최근 대화만 보관됩니다. 원본 임시 대화를 떠나면 해당 대화와 이전되지 않은 원문이 삭제되며, 여기서 복원할 수 없습니다.';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      '이 대화에는 완전한 네이티브 압축 결과와 유지된 최근 대화가 보관되어 있습니다. 원본 대화는 더 이상 사용할 수 없습니다. 여기로 복사되지 않은 원문은 복원할 수 없으며, 네이티브 결과는 텍스트로 읽거나 편집할 수 없습니다.';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => '이미지 모델';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => '자동';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => '이미지 복잡도';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => '기본';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => '낮음';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => '중간';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => '높음';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      '채팅 추론과 별도로 이미지 계획을 제어합니다. 기본은 서버 동작을 사용하며 채팅 추론을 따를 수 있습니다.';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT 로그인은 다른 이미지 모델을 사용할 수 있습니다. 모델 및 복잡도 설정은 서버 지원 여부에 따라 달라집니다.';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      '채팅 추론을 자동으로, 이미지 복잡도를 기본으로 설정한 후 이미지 생성을 다시 시도하세요. ChatGPT 로그인은 다른 이미지 모델을 사용하거나 명시적 복잡도를 거부할 수 있습니다.';
+
+  @override
+  String get workspaceEnvNativeShellTitle => '기본 셸';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      '비워 두면 자동으로 감지합니다. 그렇지 않으면 PowerShell, cmd 또는 -lc를 지원하는 셸(bash, zsh, fish 등)의 절대 경로를 입력하세요. 이 설정은 이 기기에만 적용됩니다.';
+
+  @override
+  String get workspaceEnvNativeShellInvalid =>
+      '이 셸을 시작할 수 없습니다. 절대 경로와 지원되는 명령 구문을 확인하세요.';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => '셸을 사용할 수 없음';
+
+  @override
+  String get workspaceEnvNativeShellDetect => '다시 감지';
+
+  @override
+  String get workspaceEnvNativeShellSave => '저장';
+
+  @override
+  String get desktopAutostartTitle => '시작 시 실행';
+
+  @override
+  String get desktopAutostartDescription => '이 컴퓨터에 로그인하면 Kelivo를 시작합니다.';
+
+  @override
+  String get desktopAutostartHiddenTitle => '자동 시작 시 트레이로 숨기기';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      '시작 시 실행과 트레이 아이콘이 필요합니다. Kelivo를 직접 열면 창이 계속 표시됩니다.';
+
+  @override
+  String get desktopAutostartUnsupported => '시작 시 실행은 macOS 13 이상이 필요합니다.';
+
+  @override
+  String get desktopAutostartError =>
+      '시작 설정을 적용할 수 없습니다. 시스템 시작 항목 또는 로그인 항목 설정에서 이 앱을 확인한 후 다시 시도하세요.';
+
+  @override
+  String get compressionOutputBudget => '총 출력 한도 (토큰)';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      '추론과 요약 본문을 포함합니다. 비워 두면 요약 목표를 사용하며, 사고를 켤 때 이 한도만 높여도 요약 목표 길이는 늘어나지 않습니다. 실제 한도는 여전히 모델 출력 한도의 제약을 받습니다.';
 }

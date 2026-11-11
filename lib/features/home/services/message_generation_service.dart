@@ -33,6 +33,8 @@ import '../../../core/services/chat/chat_service.dart';
 import '../../../core/services/chat/document_text_extractor.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/services/logging/context_logger.dart';
+import '../../../core/services/logging/context_log_models.dart';
+import '../../../core/services/memory/memory_block_builder.dart';
 import '../../../core/services/skills/skills_service.dart';
 import '../../../core/services/workspace/workspace_runtime.dart';
 import '../../../core/services/mcp/mcp_tool_service.dart';
@@ -166,10 +168,12 @@ class MessageGenerationService {
 
   /// Packs system prompt, injections, history, and tool definitions without
   /// OCR, document extraction, or inline-image encoding.
+  /// Disable [applyMessageLimit] when compression already selected its range.
   Future<UnprocessedRequestContext> assembleUnprocessedRequestContext({
     bool? fixedContextStart,
     DateTime? promptTime,
     bool forceResponses = false,
+    bool applyMessageLimit = true,
     required List<ChatMessage> messages,
     required Map<String, int> versionSelections,
     required Conversation? currentConversation,
@@ -263,7 +267,7 @@ class MessageGenerationService {
                   chatService.contextOperationsFor(currentConversation.id),
                 ) !=
                 null);
-    if (!hasFixedStart) {
+    if (applyMessageLimit && !hasFixedStart) {
       messageBuilderService.applyContextLimit(apiMessages, assistant);
     }
 
@@ -382,10 +386,83 @@ class MessageGenerationService {
     );
   }
 
+  /// References for a historical summary must not assemble a new chat request:
+  /// that would refresh memory and world-book state from beyond its range.
+  Future<String> compressionReferenceText({
+    required String conversationId,
+    required String modelId,
+    required String? assistantId,
+    required List<ChatMessage> messages,
+    required DateTime promptTime,
+  }) async {
+    final assistant = assistantId == null
+        ? null
+        : contextProvider.read<AssistantProvider>().getById(assistantId);
+    final conversation = chatService.getConversation(conversationId);
+    final apiMessages = messageBuilderService.buildApiMessages(
+      messages: messages,
+      versionSelections: chatService.getVersionSelections(conversationId),
+      currentConversation: conversation?.copyWith(truncateIndex: -1),
+      includeToolMessages: false,
+    );
+    messageBuilderService.injectSystemPrompt(
+      apiMessages,
+      assistant,
+      modelId,
+      conversation: conversation,
+      promptTime: promptTime,
+    );
+    await messageBuilderService.injectInstructionPrompts(
+      apiMessages,
+      assistantId,
+      conversation: conversation,
+      conversationScoped: assistant?.allowConversationPromptInjection ?? false,
+    );
+    await messageBuilderService.injectWorldBookPrompts(
+      apiMessages,
+      assistantId,
+      conversation: conversation,
+      conversationScoped: assistant?.allowConversationPromptInjection ?? false,
+      sourceMessages: messages,
+      restrictToSourceMessages: true,
+      persistActivation: false,
+    );
+    // Use the last frozen snapshot in this range, without refreshing it from
+    // live memory or repeating superseded snapshots in a long conversation.
+    final prompts = await chatService.chatRepositoryOrNull?.getMessagePrompts(
+      messages.where((m) => m.role == 'user').map((m) => m.id),
+    );
+    for (final message in messages.reversed) {
+      final frozen = prompts?[message.id];
+      if (frozen == null || !frozen.carriesMemorySnapshot) continue;
+      final split = MemoryBlockBuilder.splitInjectedPrefix(frozen.payload);
+      if (split == null) continue;
+      final reference = <String, dynamic>{
+        'role': 'system',
+        'content': split.prefix,
+      };
+      ContextSegmentTags.replaceWithSingle(
+        reference,
+        source: ContextSource.memorySnapshot,
+        length: split.prefix.length,
+        meta: {'messageId': message.id},
+      );
+      apiMessages.add(reference);
+      break;
+    }
+    return ContextAssemblyPreview.fromApiMessages(
+      apiMessages: apiMessages,
+      tools: const [],
+      mcpToolNames: const {},
+      images: const [],
+    ).referenceText;
+  }
+
   Future<ContextAssemblyPreview> previewContextAssembly({
     bool? fixedContextStart,
     DateTime? promptTime,
     bool forceResponses = false,
+    bool applyMessageLimit = true,
     required String conversationId,
     required String providerKey,
     required String modelId,
@@ -395,6 +472,7 @@ class MessageGenerationService {
     fixedContextStart: fixedContextStart,
     promptTime: promptTime,
     forceResponses: forceResponses,
+    applyMessageLimit: applyMessageLimit,
     conversationId: conversationId,
     providerKey: providerKey,
     modelId: modelId,
@@ -424,6 +502,7 @@ class MessageGenerationService {
     bool? fixedContextStart,
     DateTime? promptTime,
     bool forceResponses = false,
+    bool applyMessageLimit = true,
     required String conversationId,
     required String providerKey,
     required String modelId,
@@ -442,7 +521,7 @@ class MessageGenerationService {
         messagesOverride ??
         await chatService.loadSelectedContextMessages(
           conversationId,
-          limit: assistant?.limitContextMessages == true
+          limit: applyMessageLimit && assistant?.limitContextMessages == true
               ? assistant!.contextMessageSize
               : 0x7fffffff,
         );
@@ -450,6 +529,7 @@ class MessageGenerationService {
       fixedContextStart: fixedContextStart,
       promptTime: promptTime,
       forceResponses: forceResponses,
+      applyMessageLimit: applyMessageLimit,
       messages: messages,
       versionSelections: chatService.getVersionSelections(conversationId),
       currentConversation: conversation?.copyWith(truncateIndex: -1),

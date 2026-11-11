@@ -9153,89 +9153,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Long edge 1024 px · quality 70';
 
   @override
-  String get settingsPageExternalAutoSend => 'Allow External Auto-Send';
-
-  @override
-  String get settingsPageExternalAutoSendSubtitle =>
-      'Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.';
-
-  @override
-  String get settingsPageDeepLinks => 'Deep Links';
-
-  @override
-  String get settingsPageDeepLinksSubtitle =>
-      'Open Kelivo from other apps with kelivo://v1/... URLs';
-
-  @override
-  String get aboutPageDeepLinksSection => 'Deep Links';
-
-  @override
-  String get aboutPageDeepLinksDescription =>
-      'Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:';
-
-  @override
-  String get aboutPageDeepLinkChat => 'Open the chat page';
-
-  @override
-  String get aboutPageDeepLinkNewChat => 'Start a new conversation';
-
-  @override
-  String get aboutPageDeepLinkOpenConversation =>
-      'Open an existing conversation';
-
-  @override
-  String get aboutPageDeepLinkCompose =>
-      'Fill the message box (replace or append)';
-
-  @override
-  String get aboutPageDeepLinkSend =>
-      'Send a message directly (requires the setting to be enabled)';
-
-  @override
-  String get aboutPageDeepLinkSettings => 'Jump to a settings page';
-
-  @override
-  String get aboutPageDeepLinkAssistant => 'Open an assistant settings page';
-
-  @override
-  String get aboutPageDeepLinksFooter =>
-      'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.';
-
-  @override
-  String get deepLinkAutoSendDisabled =>
-      'External auto-send is disabled. Review the message and send it manually.';
-
-  @override
-  String get deepLinkAssistantNotFound =>
-      'The requested assistant could not be found.';
-
-  @override
-  String get deepLinkAssistantNameAmbiguous =>
-      'More than one assistant has that name. Use the assistant ID instead.';
-
-  @override
-  String get deepLinkConversationNotFound =>
-      'The requested conversation could not be found.';
-
-  @override
-  String get deepLinkPayloadTooLarge =>
-      'The external text is too large for a URL link.';
-
-  @override
-  String get deepLinkAssistantTargetConflict =>
-      'Assistant selection can only be used with a new conversation.';
-
-  @override
-  String get deepLinkSendRejected =>
-      'Kelivo could not send the external message.';
-
-  @override
-  String get deepLinkUnsupportedRoute => 'This Kelivo link is not supported.';
-
-  @override
-  String get deepLinkFailed => 'Kelivo could not handle this external link.';
-
-  @override
   String get imageSettingsPageQualityCustom => 'Custom';
 
   @override
@@ -13425,143 +13342,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpOAuthExchangingToken => 'Completing sign-in…';
 
   @override
-  String get deepLinkGenTitle => 'URL Scheme Generator';
-
-  @override
-  String get deepLinkGenSubtitle =>
-      'Build kelivo:// links for Shortcuts, automation and other apps';
-
-  @override
-  String get deepLinkGenSectionAction => 'Action';
-
-  @override
-  String get deepLinkGenSectionMessage => 'Message';
-
-  @override
-  String get deepLinkGenSectionTarget => 'Conversation';
-
-  @override
-  String get deepLinkGenSectionOptions => 'Options';
-
-  @override
-  String get deepLinkGenSectionResult => 'Generated link';
-
-  @override
-  String get deepLinkGenText => 'Message text';
-
-  @override
-  String get deepLinkGenTextHint => 'Text to fill in or send';
-
-  @override
-  String deepLinkGenTextBytes(int used, int max) {
-    return '$used / $max bytes';
-  }
-
-  @override
-  String get deepLinkGenInsertMode => 'If the input box has text';
-
-  @override
-  String get deepLinkGenInsertReplace => 'Replace it';
-
-  @override
-  String get deepLinkGenInsertAppend => 'Append to it';
-
-  @override
-  String get deepLinkGenTarget => 'Send to';
-
-  @override
-  String get deepLinkGenTargetCurrent => 'Current conversation';
-
-  @override
-  String get deepLinkGenTargetNew => 'New conversation';
-
-  @override
-  String get deepLinkGenTargetConversation => 'Specific conversation';
-
-  @override
-  String get deepLinkGenConversation => 'Conversation';
-
-  @override
-  String get deepLinkGenConversationPick => 'Choose a conversation';
-
-  @override
-  String get deepLinkGenConversationId => 'Conversation ID';
-
-  @override
-  String get deepLinkGenConversationIdHint =>
-      'Paste an ID, or choose one above';
-
-  @override
-  String get deepLinkGenConversationEmpty => 'No conversations yet';
-
-  @override
-  String get deepLinkGenAssistant => 'Assistant';
-
-  @override
-  String get deepLinkGenAssistantDefault => 'Default (current assistant)';
-
-  @override
-  String get deepLinkGenAssistantPick => 'Choose an assistant';
-
-  @override
-  String get deepLinkGenAssistantRef => 'Reference assistant by';
-
-  @override
-  String get deepLinkGenRefId => 'ID';
-
-  @override
-  String get deepLinkGenRefName => 'Name';
-
-  @override
-  String get deepLinkGenAssistantId => 'Assistant ID';
-
-  @override
-  String get deepLinkGenAssistantName => 'Assistant name';
-
-  @override
-  String get deepLinkGenTemporary => 'Temporary chat';
-
-  @override
-  String get deepLinkGenTemporarySubtitle => 'Not saved to history';
-
-  @override
-  String get deepLinkGenSettingsSection => 'Settings page';
-
-  @override
-  String get deepLinkGenSettingsHome => 'Settings home';
-
-  @override
-  String get deepLinkGenCopy => 'Copy link';
-
-  @override
-  String get deepLinkGenCopyMarkdown => 'Copy as Markdown';
-
-  @override
-  String get deepLinkGenCopied => 'Link copied';
-
-  @override
-  String get deepLinkGenRun => 'Run now';
-
-  @override
-  String get deepLinkGenNeedText =>
-      'Enter the message text to generate a link.';
-
-  @override
-  String get deepLinkGenNeedConversation =>
-      'Choose a conversation or enter its ID.';
-
-  @override
-  String get deepLinkGenNeedAssistant => 'Choose an assistant.';
-
-  @override
-  String get deepLinkGenAutoSendOff =>
-      'Auto-send is off, so this link will only fill the input box for review. Enable it in Settings → Allow External Auto-Send.';
-
-  @override
-  String get deepLinkGenNewOnlyHint =>
-      'Assistant and temporary chat only apply to a new conversation.';
-
-  @override
   String get markdownPlaygroundTitle => 'Markdown Playground';
 
   @override
@@ -16350,7 +16130,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'A turn includes a user message, its replies and tools.';
 
   @override
-  String get compressionLength => 'Summary limit (tokens)';
+  String get compressionLength => 'Summary target (tokens)';
 
   @override
   String get compressionTrigger => 'Start at';
@@ -16365,11 +16145,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get compressionRequests => 'Maximum calls';
 
   @override
-  String get compressionReference => 'Reference active world books and memory';
+  String get compressionReference =>
+      'Reference world books and historical memory';
 
   @override
   String get compressionReferenceHint =>
-      'Reference explains names and rules; it is not evidence that events happened or characters know them.';
+      'Scan only the selected history for world books and use its saved memory snapshots. References explain names and rules; they do not establish events or character knowledge.';
 
   @override
   String get compressionToolReferences => 'Reference consumed tool results';
@@ -16798,7 +16579,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get compressionNativeScopeChanged =>
-      'This native context belongs to another connection or account. Undo its compaction, or create a text summary from the original history before continuing.';
+      'This native context belongs to another connection or account. Continue with the original connection, or undo the compaction or create a text summary in the chat that contains the originals.';
 
   @override
   String get compressionNativeTokenHint =>
@@ -16806,7 +16587,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get compressionNativeCopyHint =>
-      'A new conversation keeps original messages so native compaction can be undone.';
+      'The new chat keeps only the complete native compaction result and retained recent turns. Originals stay in the source chat and cannot be restored by undoing here.';
 
   @override
   String get compressionNativeInputOverride =>
@@ -16864,4 +16645,344 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themePaletteCustom => 'Custom';
+
+  @override
+  String get settingsPageExternalAutoSend => 'Allow External Auto-Send';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      'Let kelivo://v1/... links send messages or fill the input box from other apps. When off, external text is only inserted for review.';
+
+  @override
+  String get settingsPageDeepLinks => 'Deep Links';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      'Open Kelivo from other apps with kelivo://v1/... URLs';
+
+  @override
+  String get aboutPageDeepLinksSection => 'Deep Links';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo supports kelivo://v1/... URL scheme so other apps can open chats, compose or send messages:';
+
+  @override
+  String get aboutPageDeepLinkChat => 'Open the chat page';
+
+  @override
+  String get aboutPageDeepLinkNewChat => 'Start a new conversation';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation =>
+      'Open an existing conversation';
+
+  @override
+  String get aboutPageDeepLinkCompose =>
+      'Fill the message box (replace or append)';
+
+  @override
+  String get aboutPageDeepLinkSend =>
+      'Send a message directly (requires the setting to be enabled)';
+
+  @override
+  String get aboutPageDeepLinkSettings => 'Jump to a settings page';
+
+  @override
+  String get aboutPageDeepLinkAssistant => 'Open an assistant settings page';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      'Auto-send is disabled by default for security; enable it in Settings → Allow External Auto-Send.';
+
+  @override
+  String get deepLinkAutoSendDisabled =>
+      'External auto-send is disabled. Review the message and send it manually.';
+
+  @override
+  String get deepLinkAssistantNotFound =>
+      'The requested assistant could not be found.';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous =>
+      'More than one assistant has that name. Use the assistant ID instead.';
+
+  @override
+  String get deepLinkConversationNotFound =>
+      'The requested conversation could not be found.';
+
+  @override
+  String get deepLinkPayloadTooLarge =>
+      'The external text is too large for a URL link.';
+
+  @override
+  String get deepLinkAssistantTargetConflict =>
+      'Assistant selection can only be used with a new conversation.';
+
+  @override
+  String get deepLinkSendRejected =>
+      'Kelivo could not send the external message.';
+
+  @override
+  String get deepLinkUnsupportedRoute => 'This Kelivo link is not supported.';
+
+  @override
+  String get deepLinkFailed => 'Kelivo could not handle this external link.';
+
+  @override
+  String get deepLinkGenTitle => 'URL Scheme Generator';
+
+  @override
+  String get deepLinkGenSubtitle =>
+      'Build kelivo:// links for Shortcuts, automation and other apps';
+
+  @override
+  String get deepLinkGenSectionAction => 'Action';
+
+  @override
+  String get deepLinkGenSectionMessage => 'Message';
+
+  @override
+  String get deepLinkGenSectionTarget => 'Conversation';
+
+  @override
+  String get deepLinkGenSectionOptions => 'Options';
+
+  @override
+  String get deepLinkGenSectionResult => 'Generated link';
+
+  @override
+  String get deepLinkGenText => 'Message text';
+
+  @override
+  String get deepLinkGenTextHint => 'Text to fill in or send';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max bytes';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => 'If the input box has text';
+
+  @override
+  String get deepLinkGenInsertReplace => 'Replace it';
+
+  @override
+  String get deepLinkGenInsertAppend => 'Append to it';
+
+  @override
+  String get deepLinkGenTarget => 'Send to';
+
+  @override
+  String get deepLinkGenTargetCurrent => 'Current conversation';
+
+  @override
+  String get deepLinkGenTargetNew => 'New conversation';
+
+  @override
+  String get deepLinkGenTargetConversation => 'Specific conversation';
+
+  @override
+  String get deepLinkGenConversation => 'Conversation';
+
+  @override
+  String get deepLinkGenConversationPick => 'Choose a conversation';
+
+  @override
+  String get deepLinkGenConversationId => 'Conversation ID';
+
+  @override
+  String get deepLinkGenConversationIdHint =>
+      'Paste an ID, or choose one above';
+
+  @override
+  String get deepLinkGenConversationEmpty => 'No conversations yet';
+
+  @override
+  String get deepLinkGenAssistant => 'Assistant';
+
+  @override
+  String get deepLinkGenAssistantDefault => 'Default (current assistant)';
+
+  @override
+  String get deepLinkGenAssistantPick => 'Choose an assistant';
+
+  @override
+  String get deepLinkGenAssistantRef => 'Reference assistant by';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => 'Name';
+
+  @override
+  String get deepLinkGenAssistantId => 'Assistant ID';
+
+  @override
+  String get deepLinkGenAssistantName => 'Assistant name';
+
+  @override
+  String get deepLinkGenTemporary => 'Temporary chat';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => 'Not saved to history';
+
+  @override
+  String get deepLinkGenSettingsSection => 'Settings page';
+
+  @override
+  String get deepLinkGenSettingsHome => 'Settings home';
+
+  @override
+  String get deepLinkGenCopy => 'Copy link';
+
+  @override
+  String get deepLinkGenCopyMarkdown => 'Copy as Markdown';
+
+  @override
+  String get deepLinkGenCopied => 'Link copied';
+
+  @override
+  String get deepLinkGenRun => 'Run now';
+
+  @override
+  String get deepLinkGenNeedText =>
+      'Enter the message text to generate a link.';
+
+  @override
+  String get deepLinkGenNeedConversation =>
+      'Choose a conversation or enter its ID.';
+
+  @override
+  String get deepLinkGenNeedAssistant => 'Choose an assistant.';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      'Auto-send is off, so this link will only fill the input box for review. Enable it in Settings → Allow External Auto-Send.';
+
+  @override
+  String get deepLinkGenNewOnlyHint =>
+      'Assistant and temporary chat only apply to a new conversation.';
+
+  @override
+  String contextUsagePartialSummary(String tokens) {
+    return 'Estimated $tokens + unknown compaction';
+  }
+
+  @override
+  String get contextUsageBucketNativeCompaction => 'Native compaction';
+
+  @override
+  String get contextUsageUnknownTokens => 'Unknown';
+
+  @override
+  String contextUsageLastRequestInput(String tokens) {
+    return 'Last request input (measured): $tokens';
+  }
+
+  @override
+  String get compressionNativeImported => 'Native context loaded';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      'This chat starts with the complete native compaction result and retained recent turns. The result cannot be read or edited as text. Earlier originals remain in the source chat, so they cannot be restored by undoing here.';
+
+  @override
+  String get compressionNativeOpenSource => 'Open source chat';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      'This chat has no originals for the imported native context. Continue with native compaction, or return to the source chat to view or summarize the originals.';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      'The new temporary chat keeps only the complete native compaction result and retained recent turns. Leaving the source temporary chat deletes it and the originals not carried over; they cannot be restored here.';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      'This chat keeps the complete native compaction result and retained recent turns. The source chat is no longer available. Originals not copied here cannot be restored, and the native result cannot be read or edited as text.';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => 'Image model';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => 'Auto';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => 'Image complexity';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => 'Default';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => 'Low';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => 'Medium';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => 'High';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      'Controls image planning separately from chat reasoning. Default uses server behavior and may inherit chat reasoning.';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT sign-in may use a different image model. Model and complexity settings depend on server support.';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      'Set chat reasoning to Auto and image complexity to Default, then retry image generation. ChatGPT sign-in may use a different image model or reject explicit complexity.';
+
+  @override
+  String get workspaceEnvNativeShellTitle => 'Default shell';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      'Leave empty for automatic detection. Otherwise, enter the absolute path to PowerShell, cmd, or a shell that supports -lc (such as bash, zsh, or fish). This setting applies only to this device.';
+
+  @override
+  String get workspaceEnvNativeShellInvalid =>
+      'Could not start this shell. Check its absolute path and supported command syntax.';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Shell unavailable';
+
+  @override
+  String get workspaceEnvNativeShellDetect => 'Detect again';
+
+  @override
+  String get workspaceEnvNativeShellSave => 'Save';
+
+  @override
+  String get desktopAutostartTitle => 'Launch at startup';
+
+  @override
+  String get desktopAutostartDescription =>
+      'Start Kelivo when you sign in to this computer.';
+
+  @override
+  String get desktopAutostartHiddenTitle => 'Hide to tray on automatic startup';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      'Requires launch at startup and the tray icon. Opening Kelivo manually still shows the window.';
+
+  @override
+  String get desktopAutostartUnsupported =>
+      'Launch at startup requires macOS 13 or later.';
+
+  @override
+  String get desktopAutostartError =>
+      'Could not apply the startup setting. Check this app in your system startup or login-item settings and try again.';
+
+  @override
+  String get compressionOutputBudget => 'Total output limit (tokens)';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      'Includes reasoning and summary text. Leave blank to use the summary target, or set a higher limit for thinking without lengthening the summary. The model output limit still applies.';
 }

@@ -9288,87 +9288,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Длинная сторона 1024 пикс. · качество 70';
 
   @override
-  String get settingsPageExternalAutoSend => 'Разрешить внешнюю автоотправку';
-
-  @override
-  String get settingsPageExternalAutoSendSubtitle =>
-      'Разрешает ссылкам kelivo://v1/... отправлять сообщения или заполнять поле ввода из других приложений. Если выключено, внешний текст только подставляется для проверки.';
-
-  @override
-  String get settingsPageDeepLinks => 'Глубокие ссылки';
-
-  @override
-  String get settingsPageDeepLinksSubtitle =>
-      'Открывайте Kelivo из других приложений по URL kelivo://v1/...';
-
-  @override
-  String get aboutPageDeepLinksSection => 'Глубокие ссылки';
-
-  @override
-  String get aboutPageDeepLinksDescription =>
-      'Kelivo поддерживает схему kelivo://v1/..., чтобы другие приложения могли открывать чаты, составлять или отправлять сообщения:';
-
-  @override
-  String get aboutPageDeepLinkChat => 'Открыть страницу чата';
-
-  @override
-  String get aboutPageDeepLinkNewChat => 'Начать новый чат';
-
-  @override
-  String get aboutPageDeepLinkOpenConversation => 'Открыть существующий чат';
-
-  @override
-  String get aboutPageDeepLinkCompose =>
-      'Заполнить поле сообщения (заменить или добавить)';
-
-  @override
-  String get aboutPageDeepLinkSend =>
-      'Отправить сообщение сразу (нужно включить настройку)';
-
-  @override
-  String get aboutPageDeepLinkSettings => 'Перейти на страницу настроек';
-
-  @override
-  String get aboutPageDeepLinkAssistant => 'Открыть настройки ассистента';
-
-  @override
-  String get aboutPageDeepLinksFooter =>
-      'Автоотправка по умолчанию выключена из соображений безопасности. Включите её в Настройки → Разрешить внешнюю автоотправку.';
-
-  @override
-  String get deepLinkAutoSendDisabled =>
-      'Внешняя автоотправка выключена. Проверьте сообщение и отправьте его вручную.';
-
-  @override
-  String get deepLinkAssistantNotFound => 'Запрошенный ассистент не найден.';
-
-  @override
-  String get deepLinkAssistantNameAmbiguous =>
-      'Несколько ассистентов с таким именем. Используйте ID ассистента.';
-
-  @override
-  String get deepLinkConversationNotFound => 'Запрошенный чат не найден.';
-
-  @override
-  String get deepLinkPayloadTooLarge =>
-      'Внешний текст слишком длинный для URL-ссылки.';
-
-  @override
-  String get deepLinkAssistantTargetConflict =>
-      'Выбор ассистента доступен только для нового чата.';
-
-  @override
-  String get deepLinkSendRejected =>
-      'Kelivo не удалось отправить внешнее сообщение.';
-
-  @override
-  String get deepLinkUnsupportedRoute => 'Эта ссылка Kelivo не поддерживается.';
-
-  @override
-  String get deepLinkFailed =>
-      'Kelivo не удалось обработать эту внешнюю ссылку.';
-
-  @override
   String get imageSettingsPageQualityCustom => 'Своё';
 
   @override
@@ -13614,141 +13533,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mcpOAuthExchangingToken => 'Завершение входа…';
 
   @override
-  String get deepLinkGenTitle => 'Генератор URL-схем';
-
-  @override
-  String get deepLinkGenSubtitle =>
-      'Создавайте ссылки kelivo:// для команд, автоматизации и других приложений';
-
-  @override
-  String get deepLinkGenSectionAction => 'Действие';
-
-  @override
-  String get deepLinkGenSectionMessage => 'Сообщение';
-
-  @override
-  String get deepLinkGenSectionTarget => 'Чат';
-
-  @override
-  String get deepLinkGenSectionOptions => 'Параметры';
-
-  @override
-  String get deepLinkGenSectionResult => 'Созданная ссылка';
-
-  @override
-  String get deepLinkGenText => 'Текст сообщения';
-
-  @override
-  String get deepLinkGenTextHint => 'Текст для вставки или отправки';
-
-  @override
-  String deepLinkGenTextBytes(int used, int max) {
-    return '$used / $max байт';
-  }
-
-  @override
-  String get deepLinkGenInsertMode => 'Если в поле ввода уже есть текст';
-
-  @override
-  String get deepLinkGenInsertReplace => 'Заменить';
-
-  @override
-  String get deepLinkGenInsertAppend => 'Добавить в конец';
-
-  @override
-  String get deepLinkGenTarget => 'Отправить в';
-
-  @override
-  String get deepLinkGenTargetCurrent => 'Текущий чат';
-
-  @override
-  String get deepLinkGenTargetNew => 'Новый чат';
-
-  @override
-  String get deepLinkGenTargetConversation => 'Конкретный чат';
-
-  @override
-  String get deepLinkGenConversation => 'Чат';
-
-  @override
-  String get deepLinkGenConversationPick => 'Выбрать чат';
-
-  @override
-  String get deepLinkGenConversationId => 'ID чата';
-
-  @override
-  String get deepLinkGenConversationIdHint => 'Вставьте ID или выберите выше';
-
-  @override
-  String get deepLinkGenConversationEmpty => 'Пока нет чатов';
-
-  @override
-  String get deepLinkGenAssistant => 'Ассистент';
-
-  @override
-  String get deepLinkGenAssistantDefault => 'По умолчанию (текущий ассистент)';
-
-  @override
-  String get deepLinkGenAssistantPick => 'Выбрать ассистента';
-
-  @override
-  String get deepLinkGenAssistantRef => 'Указать ассистента по';
-
-  @override
-  String get deepLinkGenRefId => 'ID';
-
-  @override
-  String get deepLinkGenRefName => 'Имени';
-
-  @override
-  String get deepLinkGenAssistantId => 'ID ассистента';
-
-  @override
-  String get deepLinkGenAssistantName => 'Имя ассистента';
-
-  @override
-  String get deepLinkGenTemporary => 'Временный чат';
-
-  @override
-  String get deepLinkGenTemporarySubtitle => 'Не сохраняется в истории';
-
-  @override
-  String get deepLinkGenSettingsSection => 'Страница настроек';
-
-  @override
-  String get deepLinkGenSettingsHome => 'Главная настроек';
-
-  @override
-  String get deepLinkGenCopy => 'Копировать ссылку';
-
-  @override
-  String get deepLinkGenCopyMarkdown => 'Копировать как Markdown';
-
-  @override
-  String get deepLinkGenCopied => 'Ссылка скопирована';
-
-  @override
-  String get deepLinkGenRun => 'Запустить сейчас';
-
-  @override
-  String get deepLinkGenNeedText =>
-      'Введите текст сообщения, чтобы создать ссылку.';
-
-  @override
-  String get deepLinkGenNeedConversation => 'Выберите чат или введите его ID.';
-
-  @override
-  String get deepLinkGenNeedAssistant => 'Выберите ассистента.';
-
-  @override
-  String get deepLinkGenAutoSendOff =>
-      'Автоотправка выключена, поэтому ссылка только заполнит поле ввода для проверки. Включите её в Настройки → Разрешить внешнюю автоотправку.';
-
-  @override
-  String get deepLinkGenNewOnlyHint =>
-      'Ассистент и временный чат применяются только к новому чату.';
-
-  @override
   String get markdownPlaygroundTitle => 'Markdown Playground';
 
   @override
@@ -16637,7 +16421,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Раунд включает сообщение пользователя, ответы на него и инструменты.';
 
   @override
-  String get compressionLength => 'Лимит сводки (токены)';
+  String get compressionLength => 'Целевой размер сводки (токены)';
 
   @override
   String get compressionTrigger => 'Начинать при';
@@ -16653,11 +16437,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compressionReference =>
-      'Учитывать активные мировые книги и память';
+      'Учитывать книги мира и историческую память';
 
   @override
   String get compressionReferenceHint =>
-      'Справочные данные поясняют имена и правила; они не доказывают, что события произошли или известны персонажам.';
+      'Искать книги мира только в выбранной истории и использовать сохранённые в ней снимки памяти. Справочные данные поясняют имена и правила; они не означают, что события произошли или что персонаж о них знает.';
 
   @override
   String get compressionToolReferences =>
@@ -17088,7 +16872,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compressionNativeScopeChanged =>
-      'Этот нативный контекст принадлежит другому подключению или аккаунту. Отмените его сжатие или создайте текстовую сводку из исходной истории, прежде чем продолжить.';
+      'Этот нативный контекст принадлежит другому подключению или аккаунту. Продолжите с исходным подключением либо отмените сжатие или создайте текстовое резюме в чате, содержащем оригиналы.';
 
   @override
   String get compressionNativeTokenHint =>
@@ -17096,7 +16880,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compressionNativeCopyHint =>
-      'Новый чат сохраняет исходные сообщения, чтобы нативное сжатие можно было отменить.';
+      'Новый чат сохраняет только полный результат нативного сжатия и сохранённые последние реплики. Оригиналы остаются в исходном чате, и их нельзя восстановить отменой здесь.';
 
   @override
   String get compressionNativeInputOverride =>
@@ -17154,4 +16938,341 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get themePaletteCustom => 'Пользовательская';
+
+  @override
+  String get settingsPageExternalAutoSend => 'Разрешить внешнюю автоотправку';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      'Разрешает ссылкам kelivo://v1/... отправлять сообщения или заполнять поле ввода из других приложений. Если выключено, внешний текст только подставляется для проверки.';
+
+  @override
+  String get settingsPageDeepLinks => 'Глубокие ссылки';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      'Открывайте Kelivo из других приложений по URL kelivo://v1/...';
+
+  @override
+  String get aboutPageDeepLinksSection => 'Глубокие ссылки';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo поддерживает схему kelivo://v1/..., чтобы другие приложения могли открывать чаты, составлять или отправлять сообщения:';
+
+  @override
+  String get aboutPageDeepLinkChat => 'Открыть страницу чата';
+
+  @override
+  String get aboutPageDeepLinkNewChat => 'Начать новый чат';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => 'Открыть существующий чат';
+
+  @override
+  String get aboutPageDeepLinkCompose =>
+      'Заполнить поле сообщения (заменить или добавить)';
+
+  @override
+  String get aboutPageDeepLinkSend =>
+      'Отправить сообщение сразу (нужно включить настройку)';
+
+  @override
+  String get aboutPageDeepLinkSettings => 'Перейти на страницу настроек';
+
+  @override
+  String get aboutPageDeepLinkAssistant => 'Открыть настройки ассистента';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      'Автоотправка по умолчанию выключена из соображений безопасности. Включите её в Настройки → Разрешить внешнюю автоотправку.';
+
+  @override
+  String get deepLinkAutoSendDisabled =>
+      'Внешняя автоотправка выключена. Проверьте сообщение и отправьте его вручную.';
+
+  @override
+  String get deepLinkAssistantNotFound => 'Запрошенный ассистент не найден.';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous =>
+      'Несколько ассистентов с таким именем. Используйте ID ассистента.';
+
+  @override
+  String get deepLinkConversationNotFound => 'Запрошенный чат не найден.';
+
+  @override
+  String get deepLinkPayloadTooLarge =>
+      'Внешний текст слишком длинный для URL-ссылки.';
+
+  @override
+  String get deepLinkAssistantTargetConflict =>
+      'Выбор ассистента доступен только для нового чата.';
+
+  @override
+  String get deepLinkSendRejected =>
+      'Kelivo не удалось отправить внешнее сообщение.';
+
+  @override
+  String get deepLinkUnsupportedRoute => 'Эта ссылка Kelivo не поддерживается.';
+
+  @override
+  String get deepLinkFailed =>
+      'Kelivo не удалось обработать эту внешнюю ссылку.';
+
+  @override
+  String get deepLinkGenTitle => 'Генератор URL-схем';
+
+  @override
+  String get deepLinkGenSubtitle =>
+      'Создавайте ссылки kelivo:// для команд, автоматизации и других приложений';
+
+  @override
+  String get deepLinkGenSectionAction => 'Действие';
+
+  @override
+  String get deepLinkGenSectionMessage => 'Сообщение';
+
+  @override
+  String get deepLinkGenSectionTarget => 'Чат';
+
+  @override
+  String get deepLinkGenSectionOptions => 'Параметры';
+
+  @override
+  String get deepLinkGenSectionResult => 'Созданная ссылка';
+
+  @override
+  String get deepLinkGenText => 'Текст сообщения';
+
+  @override
+  String get deepLinkGenTextHint => 'Текст для вставки или отправки';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max байт';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => 'Если в поле ввода уже есть текст';
+
+  @override
+  String get deepLinkGenInsertReplace => 'Заменить';
+
+  @override
+  String get deepLinkGenInsertAppend => 'Добавить в конец';
+
+  @override
+  String get deepLinkGenTarget => 'Отправить в';
+
+  @override
+  String get deepLinkGenTargetCurrent => 'Текущий чат';
+
+  @override
+  String get deepLinkGenTargetNew => 'Новый чат';
+
+  @override
+  String get deepLinkGenTargetConversation => 'Конкретный чат';
+
+  @override
+  String get deepLinkGenConversation => 'Чат';
+
+  @override
+  String get deepLinkGenConversationPick => 'Выбрать чат';
+
+  @override
+  String get deepLinkGenConversationId => 'ID чата';
+
+  @override
+  String get deepLinkGenConversationIdHint => 'Вставьте ID или выберите выше';
+
+  @override
+  String get deepLinkGenConversationEmpty => 'Пока нет чатов';
+
+  @override
+  String get deepLinkGenAssistant => 'Ассистент';
+
+  @override
+  String get deepLinkGenAssistantDefault => 'По умолчанию (текущий ассистент)';
+
+  @override
+  String get deepLinkGenAssistantPick => 'Выбрать ассистента';
+
+  @override
+  String get deepLinkGenAssistantRef => 'Указать ассистента по';
+
+  @override
+  String get deepLinkGenRefId => 'ID';
+
+  @override
+  String get deepLinkGenRefName => 'Имени';
+
+  @override
+  String get deepLinkGenAssistantId => 'ID ассистента';
+
+  @override
+  String get deepLinkGenAssistantName => 'Имя ассистента';
+
+  @override
+  String get deepLinkGenTemporary => 'Временный чат';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => 'Не сохраняется в истории';
+
+  @override
+  String get deepLinkGenSettingsSection => 'Страница настроек';
+
+  @override
+  String get deepLinkGenSettingsHome => 'Главная настроек';
+
+  @override
+  String get deepLinkGenCopy => 'Копировать ссылку';
+
+  @override
+  String get deepLinkGenCopyMarkdown => 'Копировать как Markdown';
+
+  @override
+  String get deepLinkGenCopied => 'Ссылка скопирована';
+
+  @override
+  String get deepLinkGenRun => 'Запустить сейчас';
+
+  @override
+  String get deepLinkGenNeedText =>
+      'Введите текст сообщения, чтобы создать ссылку.';
+
+  @override
+  String get deepLinkGenNeedConversation => 'Выберите чат или введите его ID.';
+
+  @override
+  String get deepLinkGenNeedAssistant => 'Выберите ассистента.';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      'Автоотправка выключена, поэтому ссылка только заполнит поле ввода для проверки. Включите её в Настройки → Разрешить внешнюю автоотправку.';
+
+  @override
+  String get deepLinkGenNewOnlyHint =>
+      'Ассистент и временный чат применяются только к новому чату.';
+
+  @override
+  String contextUsagePartialSummary(String tokens) {
+    return 'Оценка $tokens + неизвестное сжатие';
+  }
+
+  @override
+  String get contextUsageBucketNativeCompaction => 'Нативное сжатие';
+
+  @override
+  String get contextUsageUnknownTokens => 'Неизвестно';
+
+  @override
+  String contextUsageLastRequestInput(String tokens) {
+    return 'Вход последнего запроса (измерено): $tokens';
+  }
+
+  @override
+  String get compressionNativeImported => 'Нативный контекст загружен';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      'Этот чат начинается с полного результата нативного сжатия и сохранённых последних реплик. Результат нельзя просмотреть или отредактировать как текст. Более ранние оригиналы остаются в исходном чате, поэтому их нельзя восстановить отменой здесь.';
+
+  @override
+  String get compressionNativeOpenSource => 'Открыть исходный чат';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      'В этом чате нет оригиналов для загруженного нативного контекста. Продолжите с нативным сжатием или вернитесь в исходный чат, чтобы просмотреть оригиналы или создать текстовое резюме.';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      'Новый временный чат сохраняет только полный результат нативного сжатия и сохранённые последние ходы. При выходе из исходного временного чата он и не перенесённые оригиналы удаляются; восстановить их здесь невозможно.';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      'Этот чат сохраняет полный результат нативного сжатия и сохранённые последние ходы. Исходный чат больше недоступен. Оригиналы, не скопированные сюда, восстановить невозможно, а нативный результат нельзя просмотреть или отредактировать как текст.';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => 'Модель изображений';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => 'Авто';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity =>
+      'Сложность изображения';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => 'По умолчанию';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => 'Низкая';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => 'Средняя';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => 'Высокая';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      'Управляет планированием изображения отдельно от рассуждений чата. «По умолчанию» использует поведение сервера и может наследовать уровень рассуждений чата.';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'Вход через ChatGPT может использовать другую модель изображений. Настройки модели и сложности зависят от поддержки сервера.';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      'Установите рассуждения чата в «Авто», а сложность изображения — в «По умолчанию», затем повторите генерацию изображения. Вход через ChatGPT может использовать другую модель изображений или отклонять явную сложность.';
+
+  @override
+  String get workspaceEnvNativeShellTitle => 'Оболочка по умолчанию';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      'Оставьте пустым для автоматического определения. Иначе укажите абсолютный путь к PowerShell, cmd или оболочке, поддерживающей -lc (например, bash, zsh или fish). Эта настройка применяется только к этому устройству.';
+
+  @override
+  String get workspaceEnvNativeShellInvalid =>
+      'Не удалось запустить эту оболочку. Проверьте абсолютный путь и поддерживаемый синтаксис команд.';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Оболочка недоступна';
+
+  @override
+  String get workspaceEnvNativeShellDetect => 'Определить снова';
+
+  @override
+  String get workspaceEnvNativeShellSave => 'Сохранить';
+
+  @override
+  String get desktopAutostartTitle => 'Запускать при входе';
+
+  @override
+  String get desktopAutostartDescription =>
+      'Запускать Kelivo при входе в систему на этом компьютере.';
+
+  @override
+  String get desktopAutostartHiddenTitle => 'Скрывать в трей при автозапуске';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      'Требуется автозапуск и значок в трее. При ручном запуске Kelivo окно всё равно отображается.';
+
+  @override
+  String get desktopAutostartUnsupported =>
+      'Автозапуск требует macOS 13 или новее.';
+
+  @override
+  String get desktopAutostartError =>
+      'Не удалось применить настройку автозапуска. Проверьте Kelivo в настройках автозагрузки или элементов входа системы и повторите попытку.';
+
+  @override
+  String get compressionOutputBudget => 'Общий лимит вывода (токены)';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      'Включает рассуждение и текст сводки. Оставьте пустым, чтобы использовать целевой размер сводки, или задайте более высокий лимит для рассуждения без удлинения сводки. Лимит вывода модели по-прежнему действует.';
 }

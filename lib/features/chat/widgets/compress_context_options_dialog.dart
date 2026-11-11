@@ -1,12 +1,13 @@
 import '../../../core/models/native_compaction.dart';
 import 'dart:convert';
+import 'dart:isolate';
+import 'package:flutter/foundation.dart';
 import 'context_compression_status.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
-import '../../../core/models/chat_message.dart';
 import '../../../core/models/compress_context_options.dart';
 import '../../../core/models/compression_config.dart';
 import '../../../core/models/context_operation.dart';
@@ -15,7 +16,6 @@ import '../../../core/providers/settings_provider.dart';
 import '../../../core/providers/assistant_provider.dart';
 import '../../../core/services/chat/chat_service.dart';
 import '../../../core/services/chat/compression_templates.dart';
-import '../../../core/services/chat/compression_prompt.dart';
 import '../../../shared/widgets/ios_switch.dart';
 import '../../../shared/widgets/ios_form_text_field.dart';
 import '../../../theme/app_semantic_colors.dart';
@@ -42,25 +42,20 @@ Future<CompressContextOptions?> showCompressContextOptions({
 class CompressContextOptionsDialog extends StatefulWidget {
   const CompressContextOptionsDialog({
     super.key,
-    required this.messages,
-    required this.operations,
+    required this.loadHistory,
+    this.historyRevision,
     this.messageWindow,
     this.initialOptions,
-    this.prepareInput,
-    this.estimateContext,
     this.conversationId,
     this.sheet = false,
     this.previewRequest,
   });
-  final List<ChatMessage> messages;
-  final List<ContextOperation> operations;
+  final Future<CompressionHistory> Function() loadHistory;
+  final ValueListenable<int>? historyRevision;
   final int? messageWindow;
   final CompressContextOptions? initialOptions;
   final String? conversationId;
   final bool sheet;
-  final Future<List<ChatMessage>> Function(List<ChatMessage>, bool)?
-  prepareInput;
-  final Future<CompressionBudget> Function(List<ChatMessage>)? estimateContext;
   final Future<CompressionRequestPreview> Function(
     CompressContextOptions,
     CompressionConfig,
@@ -92,6 +87,7 @@ class _CompressContextOptionsDialogState
   final _focus = TextEditingController();
   final _keep = TextEditingController();
   final _length = TextEditingController();
+  final _outputBudget = TextEditingController();
   final _trigger = TextEditingController();
   final _nativeTrigger = TextEditingController();
   final _target = TextEditingController();
@@ -99,7 +95,17 @@ class _CompressContextOptionsDialogState
   final _attempts = TextEditingController();
   final _maxChars = TextEditingController();
   String? _planKey;
-  Future<CompressionRequestPreview>? _planFuture;
+  Future<CompressionRequestPreview?>? _planFuture;
+  Future<CompressionRequestPreview>? _runningPlan;
+  int _planGeneration = 0;
+  Timer? _planTimer;
+  Completer<void>? _planDelay;
+  Future<CompressionHistory>? _history;
+  CompressionHistory? _loadedHistory;
+  CompressionRangeSelection? _selection;
+  Object? _rangeKey;
+  int _rangeGeneration = 0;
+  String? _rangeError;
   bool _includeManual = true;
   bool _includeAttachments = true;
   String? _locale;
@@ -108,6 +114,7 @@ class _CompressContextOptionsDialogState
   @override
   void initState() {
     super.initState();
+    widget.historyRevision?.addListener(_historyChanged);
     final settings = context.read<SettingsProvider>();
     final initial = widget.initialOptions?.native == true
         ? null
@@ -147,6 +154,78 @@ class _CompressContextOptionsDialogState
       _native = true;
       _restoreNativeFields();
     }
+  }
+
+  @override
+  void didUpdateWidget(covariant CompressContextOptionsDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.historyRevision != widget.historyRevision ||
+        oldWidget.conversationId != widget.conversationId) {
+      oldWidget.historyRevision?.removeListener(_historyChanged);
+      widget.historyRevision?.addListener(_historyChanged);
+      _historyChanged();
+    }
+  }
+
+  void _cancelPlanDelay() {
+    _planTimer?.cancel();
+    _planTimer = null;
+    _planDelay?.complete();
+    _planDelay = null;
+  }
+
+  void _historyChanged() {
+    setState(() {
+      _history = null;
+      _loadedHistory = null;
+      _rangeKey = null;
+      _selection = null;
+      _rangeGeneration++;
+      _planKey = null;
+      _planGeneration++;
+      _cancelPlanDelay();
+    });
+  }
+
+  void _ensureSelection() {
+    final options = _options();
+    final key = (
+      options.mode,
+      options.maxChars,
+      options.keepUserMessages,
+      options.historySource,
+      options.includeEditedSummaries,
+      options.native,
+      options.regenerateExisting,
+    );
+    if (_rangeKey == key) return;
+    _planGeneration++;
+    _planKey = null;
+    _cancelPlanDelay();
+    _rangeKey = key;
+    _selection = null;
+    _rangeError = null;
+    final generation = ++_rangeGeneration;
+    Future<void> load() async {
+      try {
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted || generation != _rangeGeneration) return;
+        final history = await (_history ??= widget.loadHistory());
+        if (!mounted || generation != _rangeGeneration) return;
+        final selection = await _selectCompressionRange(history, options);
+        if (!mounted || generation != _rangeGeneration) return;
+        setState(() {
+          _loadedHistory = history;
+          _selection = selection;
+        });
+      } catch (error) {
+        if (mounted && generation == _rangeGeneration) {
+          setState(() => _rangeError = error.toString());
+        }
+      }
+    }
+
+    unawaited(load());
   }
 
   void _restoreNativeFields() {
@@ -207,6 +286,7 @@ class _CompressContextOptionsDialogState
   void _fillFields() {
     _keep.text = '${_config.keepRecentUserTurns}';
     _length.text = '${_config.summaryTokens}';
+    _outputBudget.text = _config.maxOutputTokens?.toString() ?? '';
     _trigger.text = '${(_config.triggerInputRatio * 100).round()}';
     _nativeTrigger.text = '${(_config.nativeTriggerInputRatio * 100).round()}';
     _target.text = '${(_config.targetInputRatio * 100).round()}';
@@ -270,10 +350,15 @@ class _CompressContextOptionsDialogState
 
   @override
   void dispose() {
+    widget.historyRevision?.removeListener(_historyChanged);
+    _rangeGeneration++;
+    _planGeneration++;
+    _cancelPlanDelay();
     for (final controller in [
       _focus,
       _keep,
       _length,
+      _outputBudget,
       _trigger,
       _nativeTrigger,
       _target,
@@ -289,6 +374,9 @@ class _CompressContextOptionsDialogState
   CompressionConfig _values() => _config.withOverrides({
     'keepRecentUserTurns': int.parse(_keep.text),
     'summaryTokens': int.parse(_length.text),
+    'maxOutputTokens': _outputBudget.text.trim().isEmpty
+        ? null
+        : int.parse(_outputBudget.text),
     'triggerInputRatio': double.parse(_trigger.text) / 100,
     'targetInputRatio': double.parse(_target.text) / 100,
     'planningWindow': _window.text.trim().isEmpty
@@ -479,54 +567,86 @@ class _CompressContextOptionsDialogState
     }
   }
 
-  Future<CompressionRequestPreview>? _plan() {
-    if (widget.previewRequest == null) return null;
+  Future<CompressionRequestPreview?>? _plan() {
+    if (widget.previewRequest == null || _selection == null) return null;
     try {
       final values = _values();
       final options = _options(regenerate: true);
-      final key = jsonEncode([_locale, values.toJson(), options.toJson()]);
+      final key = jsonEncode([
+        _locale,
+        values.toJson(),
+        options.toJson(),
+        widget.historyRevision?.value,
+      ]);
       if (_planKey != key) {
         _planKey = key;
-        _planFuture = widget.previewRequest!(options, values);
+        final generation = ++_planGeneration;
+        _planFuture = _runPlan(generation, options, values);
       }
       return _planFuture;
     } catch (_) {
+      _planGeneration++;
+      _planKey = null;
+      _cancelPlanDelay();
       return null;
+    }
+  }
+
+  Future<CompressionRequestPreview?> _runPlan(
+    int generation,
+    CompressContextOptions options,
+    CompressionConfig config,
+  ) async {
+    _cancelPlanDelay();
+    final delay = Completer<void>();
+    _planDelay = delay;
+    _planTimer = Timer(const Duration(milliseconds: 250), () {
+      _planTimer = null;
+      _planDelay = null;
+      delay.complete();
+    });
+    await delay.future;
+    if (!mounted || generation != _planGeneration) return null;
+    try {
+      await _runningPlan;
+    } catch (_) {
+      /* A failed older preview does not block the latest settings. */
+    }
+    if (!mounted || generation != _planGeneration) return null;
+    final running = widget.previewRequest!(options, config);
+    _runningPlan = running;
+    try {
+      final result = await running;
+      return mounted && generation == _planGeneration ? result : null;
+    } finally {
+      if (identical(_runningPlan, running)) _runningPlan = null;
     }
   }
 
   Future<void> _preview() async {
     try {
-      final options = _options(regenerate: true);
-      final values = _values();
-      final selection = selectCompressionHistory(
-        widget.messages,
-        widget.operations,
-        options,
-      );
-      final input =
-          await widget.prepareInput?.call(
-            selection.input,
-            _includeAttachments,
-          ) ??
-          selection.input;
-      if (!mounted) return;
-      final prompt = widget.previewRequest == null
-          ? renderCompressionPrompt(
-              template: _templates.firstWhere((t) => t.id == values.templateId),
-              content: buildConversationTextForCompression(
-                input,
-                quoteMarker: AppLocalizations.of(context)!.selectionQuoteMarker,
-              ),
-              focus: options.focus,
-              locale: _locale!,
-              targetTokens: values.summaryTokens,
-            )
-          : (await widget.previewRequest!(options, values)).prompt;
-      if (!mounted) return;
-      await showCompressionPromptPreview(context, prompt);
+      // Automatic previews tolerate unfinished fields; an explicit click must
+      // explain why a request cannot be previewed.
+      _values();
+      final plan = await _plan();
+      if (!mounted || plan == null) return;
+      await showCompressionPromptPreview(context, plan.prompt);
+    } on FormatException {
+      if (mounted) {
+        setState(
+          () =>
+              _error = AppLocalizations.of(context)!.compressionInvalidSettings,
+        );
+      }
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        setState(
+          () => _error = compressionErrorLabel(
+            AppLocalizations.of(context)!,
+            error.toString(),
+          ),
+        );
+      }
     }
   }
 
@@ -647,7 +767,7 @@ class _CompressContextOptionsDialogState
     CompressContextLimitMode.recent => l10n.compressionScopeRecentHint,
   };
 
-  Widget _rangeSettings(CompressionSelection selection) {
+  Widget _rangeSettings(CompressionRangeSelection selection) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
     return _section(l10n.compressionManualRange, [
@@ -709,12 +829,21 @@ class _CompressContextOptionsDialogState
             ],
             const SizedBox(height: 8),
             Text(
-              l10n.compressionRange(
-                selection.covered.length,
-                countUserMessages(selection.retained),
-              ),
+              _rangeError != null
+                  ? l10n.contextOperationsLoadFailed
+                  : _selection == null
+                  ? l10n.contextLogLoading
+                  : l10n.compressionRange(
+                      selection.covered.length,
+                      selection.retained.where((m) => m.isUserMessage).length,
+                    ),
               style: TextStyle(fontSize: 12, height: 1.4, color: cs.onSurface),
             ),
+            if (_rangeError != null)
+              IosTextButton(
+                label: l10n.compressTaskRetry,
+                onPressed: _historyChanged,
+              ),
           ],
         ),
       ),
@@ -741,11 +870,18 @@ class _CompressContextOptionsDialogState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
-    final selection = selectCompressionHistory(
-      widget.messages,
-      widget.operations,
-      _options(),
-    );
+    _ensureSelection();
+    final selection =
+        _selection ??
+        (
+          effective: <ContextMessageMetadata>[],
+          retained: <ContextMessageMetadata>[],
+          covered: <ContextMessageMetadata>[],
+          input: <ContextMessageMetadata>[],
+          dependencies: <String>[],
+          needsRegeneration: false,
+          missingOriginals: false,
+        );
     final settings = context.watch<SettingsProvider>();
     final chat = context.read<ChatService?>();
     final conversation = chat?.getConversation(widget.conversationId ?? '');
@@ -919,7 +1055,10 @@ class _CompressContextOptionsDialogState
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        l10n.compressionNativeCopyHint,
+                        chat?.isTemporaryConversation(widget.conversationId) ==
+                                true
+                            ? l10n.compressionNativeTemporaryCopyHint
+                            : l10n.compressionNativeCopyHint,
                         style: hintStyle,
                       ),
                     ),
@@ -964,7 +1103,7 @@ class _CompressContextOptionsDialogState
                         if (!_native &&
                             widget.previewRequest != null &&
                             selection.covered.isNotEmpty)
-                          FutureBuilder<CompressionRequestPreview>(
+                          FutureBuilder<CompressionRequestPreview?>(
                             future: _plan(),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
@@ -987,15 +1126,15 @@ class _CompressContextOptionsDialogState
                               );
                             },
                           ),
-                        if (selection.covered.isEmpty)
+                        if (_selection != null && selection.covered.isEmpty)
                           Text(
                             l10n.compressContextKeepAllMessages,
                             style: hintStyle,
                           ),
                         if (!_native &&
-                            widget.operations.any(
-                              (op) => op.isCompression && !op.revoked,
-                            ))
+                            (_loadedHistory?.operations ??
+                                    const <ContextOperation>[])
+                                .any((op) => op.isCompression && !op.revoked))
                           Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
@@ -1010,6 +1149,18 @@ class _CompressContextOptionsDialogState
                   if (!_native)
                     _section(l10n.compressionOutputSettings, [
                       _number(l10n.compressionLength, _length),
+                      _number(
+                        l10n.compressionOutputBudget,
+                        _outputBudget,
+                        hint: _length.text,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                        child: Text(
+                          l10n.compressionOutputBudgetHint,
+                          style: hintStyle,
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Container(
@@ -1232,7 +1383,11 @@ class _CompressContextOptionsDialogState
                           label: l10n.compressionPreviewAction,
                           icon: LucideIcons.fileText,
                           padding: EdgeInsets.zero,
-                          onPressed: _preview,
+                          onPressed:
+                              _selection == null ||
+                                  widget.previewRequest == null
+                              ? null
+                              : _preview,
                         ),
                         IosTextButton(
                           label: l10n.compressionSaveRecipeAction,
@@ -1255,6 +1410,14 @@ class _CompressContextOptionsDialogState
                     ),
                   ],
                 ],
+                if (selection.missingOriginals)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      l10n.compressionNativeOriginalsUnavailable,
+                      style: TextStyle(fontSize: 13, color: cs.error),
+                    ),
+                  ),
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
@@ -1294,7 +1457,7 @@ class _CompressContextOptionsDialogState
                       }
                     }
                   }
-                : selection.covered.isEmpty
+                : selection.covered.isEmpty || selection.missingOriginals
                 ? null
                 : () => _submit(regenerate: selection.needsRegeneration),
           ),
@@ -1426,3 +1589,10 @@ class _SaveRecipeDialogState extends State<_SaveRecipeDialog> {
     );
   }
 }
+
+Future<CompressionRangeSelection> _selectCompressionRange(
+  CompressionHistory history,
+  CompressContextOptions options,
+) => Isolate.run(
+  () => selectCompressionRange(history.messages, history.operations, options),
+);

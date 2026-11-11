@@ -1,9 +1,8 @@
 import '../../../core/services/api/native_compaction_context.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import '../../../core/models/message_part.dart';
-import 'dart:math' as math;
-import '../../../core/services/chat/compression_engine.dart';
-import '../../../core/services/chat/compression_prompt.dart';
+import 'dart:isolate';
+import '../../../core/services/chat/compression_planner.dart';
 import '../../../core/models/compression_config.dart';
 import '../../../core/models/auto_retry_options.dart';
 import '../../../core/services/chat/compression_templates.dart';
@@ -251,15 +250,14 @@ class HomeViewModel extends ChangeNotifier {
       messagesOverride: messages,
       fixedContextStart: fixedContextStart,
     );
-    final estimate = estimateContextBuckets(
-      ContextEstimateJob(
-        preview: preview,
-        kind: ProviderConfig.classify(
-          model.providerKey!,
-          explicitType: config.providerType,
-        ),
+    final job = ContextEstimateJob(
+      preview: preview,
+      kind: ProviderConfig.classify(
+        model.providerKey!,
+        explicitType: config.providerType,
       ),
     );
+    final estimate = await Isolate.run(job.call);
     final window = ModelSpecResolver.instance
         .spec(config, model.modelId!)
         .contextWindow;
@@ -1378,13 +1376,11 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Fork conversation at a specific message.
   Future<void> forkConversation(ChatMessage message) async {
-    final title = getTitleForLocale(_contextProvider);
     final sourceConversation = currentConversation;
     if (sourceConversation == null) return;
     final newConvo = await _chatService.forkConversationAtRevision(
       sourceConversationId: sourceConversation.id,
       sourceRevisionId: message.id,
-      title: title,
       preserveVersions: _contextProvider
           .read<SettingsProvider>()
           .forkKeepMessageVersions,
@@ -1506,6 +1502,8 @@ class HomeViewModel extends ChangeNotifier {
             modelId: model,
             assistantId: conversation.assistantId,
             messagesOverride: selection.input,
+            // Coverage is recorded from this selection, so never trim it again.
+            applyMessageLimit: false,
             forceResponses: true,
             promptTime: referenceTime,
           );
@@ -1602,29 +1600,13 @@ class HomeViewModel extends ChangeNotifier {
               chatModel.modelId == null
           ? null
           : (selection) async =>
-                (await _messageGenerationService.previewContextAssembly(
+                _messageGenerationService.compressionReferenceText(
                   promptTime: referenceTime,
                   conversationId: conversationId,
-                  providerKey: chatModel.providerKey!,
                   modelId: chatModel.modelId!,
                   assistantId: conversation.assistantId,
-                  messagesOverride: selection.effective,
-                )).referenceText,
-      loadContinuation: (selection) async {
-        final recent = selection.retained.reversed
-            .take(2)
-            .toList()
-            .reversed
-            .toList();
-        final text = await _chatService.messagesForCompression(
-          recent,
-          quoteMarker: quoteMarker,
-        );
-        return buildConversationTextForCompression(
-          text,
-          quoteMarker: quoteMarker,
-        );
-      },
+                  messages: selection.input,
+                ),
       generate: (prompt, requestId, maxTokens, onUsage) =>
           ChatApiService.generateMessage(
             conversationId: conversationId,
@@ -1711,63 +1693,36 @@ class HomeViewModel extends ChangeNotifier {
   Future<CompressionRequestPreview> previewCompressionRequest(
     String conversationId,
     CompressContextOptions options,
-    CompressionConfig config,
-  ) async {
+    CompressionConfig config, {
+    required Future<ConversationContextHistory> history,
+  }) async {
+    final snapshot = await history;
     final request = await buildCompressionRequest(
       conversationId,
       options: options,
       configOverride: config,
     );
-    final snapshot = await _chatService.loadContextSnapshot(conversationId);
-    final selection = selectCompressionHistory(
-      snapshot.messages,
-      snapshot.operations,
-      options,
-    );
+    final selection = await _selectPreviewHistory(snapshot, options);
+    if (selection.missingOriginals) {
+      throw StateError('native_compaction_originals_unavailable');
+    }
     final messages = await _chatService.messagesForCompression(
       selection.input,
       includeAttachmentsAndTools: options.includeAttachmentsAndTools,
       quoteMarker: request.quoteMarker,
     );
-    final content = buildCompressRequestContents(
-      messages.where((m) => !ContextOperation.isSummary(m)).toList(),
-      options,
-      quoteMarker: request.quoteMarker,
-    ).join('\n\n');
-    final previous = messages
-        .where(ContextOperation.isSummary)
-        .map((m) => m.content)
-        .join('\n\n');
     final background = await request.loadReference?.call(selection) ?? '';
-    final continuation = await request.loadContinuation?.call(selection) ?? '';
-    final output = math.min(
-      config.summaryTokens,
-      request.maxOutputTokens ?? config.summaryTokens,
-    );
-    final window =
-        request.contextWindowTokens ??
-        CompressContextOptions.defaultContextWindowTokens;
-    String render(String history) => renderCompressionPrompt(
-      template: request.resolvedTemplate,
-      content: history,
-      previousSummary: previous,
+    final planner = CompressionPlanner(
+      request: request,
+      materials: [],
+      previousSummary: '',
       background: background,
-      continuation: continuation,
-      focus: options.focus,
-      locale: request.locale,
-      targetTokens: output,
     );
-    final prompt = render(content);
-    return (
-      prompt: prompt,
-      maxRequestAttempts: config.maxRequestAttempts,
-      estimatedRequests: plannedCompressionRequests(
-        prompt: prompt,
-        promptWithoutHistory: render(''),
-        history: content,
-        inputLimit: window - output - (window * .05).ceil(),
-        outputLimit: output,
-      ),
+    return _previewCompressionMaterials(
+      planner,
+      messages,
+      options,
+      request.quoteMarker,
     );
   }
 
@@ -2306,3 +2261,30 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 }
+
+Future<CompressionSelection> _selectPreviewHistory(
+  ConversationContextHistory history,
+  CompressContextOptions options,
+) => Isolate.run(
+  () => selectCompressionHistory(history.messages, history.operations, options),
+);
+
+Future<CompressionRequestPreview> _previewCompressionMaterials(
+  CompressionPlanner planner,
+  List<ChatMessage> messages,
+  CompressContextOptions options,
+  String Function(int) quoteMarker,
+) => Isolate.run(() {
+  planner.materials.addAll(
+    buildCompressRequestContents(
+      messages.where((m) => !ContextOperation.isSummary(m)).toList(),
+      options,
+      quoteMarker: quoteMarker,
+    ),
+  );
+  planner.previousSummary = messages
+      .where(ContextOperation.isSummary)
+      .map((m) => m.content)
+      .join('\n\n');
+  return planner.preview();
+});

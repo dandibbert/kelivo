@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.8] - 2026-11-11
+
+### Changed
+- Sync upstream through `24022697`: automatic desktop startup and launch to tray; compression output budgets; native compaction retention; image generation model and complexity settings; workspace shell selection; and browser, backup, input, and timeline fixes.
+- Preserve the fork's deep links, Share extension diagnostics, localization workflow, and pinned dependencies.
+- Bump version to 1.3.8+101 for test builds.
+
 ## [1.3.7] - 2026-11-08
 
 ### Changed

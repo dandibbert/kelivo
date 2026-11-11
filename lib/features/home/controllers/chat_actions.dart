@@ -1,5 +1,6 @@
 import '../../../core/models/image_context.dart';
 import '../../chat/utils/image_context_budget_error.dart';
+import '../../chat/utils/image_generation_error.dart';
 import 'dart:math' as math;
 import '../../../core/models/native_compaction.dart';
 import '../../../core/services/api/native_compaction_context.dart';
@@ -37,6 +38,7 @@ import '../../../core/services/api/stream/stream_chunk.dart';
 import '../../../core/services/api/stream/stream_chunk_handler.dart';
 import '../../../core/services/api/tool_call_cancellation.dart';
 import '../../../core/services/chat/chat_service.dart';
+import '../../../core/services/app_exit_flush.dart';
 import '../../../core/services/mobile_background.dart';
 import '../../../core/services/logging/flutter_logger.dart';
 import '../../../l10n/app_localizations.dart';
@@ -212,6 +214,41 @@ class ChatActions {
     await actions.flushConversationProgress(
       actions.chatController.currentConversation,
     );
+  }
+
+  /// Stop every conversation, including background generations and sends that
+  /// are still preparing. Cancellation persists their final checkpoints.
+  static Future<void> prepareForExit() async {
+    final actions = _current;
+    if (actions == null) return;
+    Future<void> cancelActive() async {
+      await Future.wait<void>([
+        for (final id in {
+          ...actions._conversationStreams.keys,
+          ...actions._activeAssistantMessages.conversationIds,
+          ...actions._cancelStreamingFutures.keys,
+        })
+          actions.cancelStreamingById(id),
+      ]);
+    }
+
+    try {
+      await cancelActive();
+    } finally {
+      while (actions._generationPreparations.isNotEmpty) {
+        await Future.wait([
+          for (final preparation in actions._generationPreparations)
+            preparation.future,
+        ]);
+      }
+      // A preparation may have created its assistant message while cancellation
+      // was running. No new preparations are admitted once shutdown starts.
+      try {
+        await cancelActive();
+      } finally {
+        await Future.wait(actions._finishStreamingFutures.values.toList());
+      }
+    }
   }
 
   /// Whether any conversation is generating right now.
@@ -406,9 +443,24 @@ class ChatActions {
   /// prevents a stale finally from clearing a newer claim.
   final Map<String, int> _sendInFlightClaims = <String, int>{};
   var _sendInFlightClaimSerial = 0;
+  final _generationPreparations = <Completer<void>>{};
+
+  Future<T> _trackGenerationPreparation<T>(
+    Future<T> Function() operation,
+  ) async {
+    final preparation = Completer<void>();
+    _generationPreparations.add(preparation);
+    try {
+      return await operation();
+    } finally {
+      _generationPreparations.remove(preparation);
+      preparation.complete();
+    }
+  }
 
   /// Whether send/regenerate or cancellation teardown owns [conversationId].
   bool isSendInFlight(String conversationId) =>
+      AppExitFlush.isExiting ||
       _sendInFlightClaims.containsKey(conversationId) ||
       isStopping(conversationId);
 
@@ -1137,6 +1189,8 @@ class ChatActions {
       return ChatActionResult.inFlight();
     }
     _sendInFlightClaims[conversation.id] = claimToken;
+    final preparation = Completer<void>();
+    _generationPreparations.add(preparation);
     try {
       return await _sendMessageClaimed(
         input: input,
@@ -1149,6 +1203,8 @@ class ChatActions {
         scheduledPreview: scheduledPreview,
       );
     } finally {
+      _generationPreparations.remove(preparation);
+      preparation.complete();
       if (_sendInFlightClaims[conversation.id] == claimToken) {
         _sendInFlightClaims.remove(conversation.id);
         chatService.contextCompression.resumeIfReady(conversation.id);
@@ -1262,22 +1318,24 @@ class ChatActions {
     // (or the keyboard) around for the whole generation. Failures past this
     // point surface through onStreamError and the message itself.
     unawaited(
-      _runSendGeneration(
-        input: input,
-        conversation: conversation,
-        settings: settings,
-        scheduled: scheduled,
-        scheduledNotify: scheduledNotify,
-        scheduledPreview: scheduledPreview,
-        assistant: assistant,
-        assistantId: assistantId,
-        providerKey: providerKey,
-        modelId: modelId,
-        userMessage: userMessage,
-        assistantMessage: assistantMessage,
-        generationRunId: generationRunId,
-        approvalService: approvalService,
-        askUserService: askUserService,
+      _trackGenerationPreparation(
+        () => _runSendGeneration(
+          input: input,
+          conversation: conversation,
+          settings: settings,
+          scheduled: scheduled,
+          scheduledNotify: scheduledNotify,
+          scheduledPreview: scheduledPreview,
+          assistant: assistant,
+          assistantId: assistantId,
+          providerKey: providerKey,
+          modelId: modelId,
+          userMessage: userMessage,
+          assistantMessage: assistantMessage,
+          generationRunId: generationRunId,
+          approvalService: approvalService,
+          askUserService: askUserService,
+        ),
       ),
     );
     return ChatActionResult.success(
@@ -1521,6 +1579,8 @@ class ChatActions {
       return ChatActionResult.inFlight();
     }
     _sendInFlightClaims[conversation.id] = claimToken;
+    final preparation = Completer<void>();
+    _generationPreparations.add(preparation);
     try {
       return await _regenerateAtMessageClaimed(
         expectedContextState: expectedContextState,
@@ -1537,6 +1597,8 @@ class ChatActions {
         scheduledPreview: scheduledPreview,
       );
     } finally {
+      _generationPreparations.remove(preparation);
+      preparation.complete();
       if (_sendInFlightClaims[conversation.id] == claimToken) {
         _sendInFlightClaims.remove(conversation.id);
         chatService.contextCompression.resumeIfReady(conversation.id);
@@ -1857,7 +1919,7 @@ class ChatActions {
     if (scheduled) {
       // The runner must be able to monitor approvals and cancellation while
       // preparation or a non-streaming tool round is still awaiting input.
-      unawaited(generate());
+      unawaited(_trackGenerationPreparation(generate));
       return ChatActionResult.success(
         assistantMessage,
         generationRunId: begin.runId,
@@ -1867,6 +1929,26 @@ class ChatActions {
   }
 
   Future<ChatActionResult> continueAssistantMessageAfterToolAnswer({
+    required ChatMessage message,
+    required Conversation conversation,
+    bool allowImagesApiRouting = true,
+  }) async {
+    if (AppExitFlush.isExiting) return ChatActionResult.inFlight();
+    final preparation = Completer<void>();
+    _generationPreparations.add(preparation);
+    try {
+      return await _continueAssistantMessageAfterToolAnswer(
+        message: message,
+        conversation: conversation,
+        allowImagesApiRouting: allowImagesApiRouting,
+      );
+    } finally {
+      _generationPreparations.remove(preparation);
+      preparation.complete();
+    }
+  }
+
+  Future<ChatActionResult> _continueAssistantMessageAfterToolAnswer({
     required ChatMessage message,
     required Conversation conversation,
     bool allowImagesApiRouting = true,
@@ -2382,6 +2464,13 @@ class ChatActions {
           protectedMessageId: userId,
           effectiveMessageIds: allowedMessageIds,
         );
+        if (selection.missingOriginals) {
+          if (!notified) {
+            notified = true;
+            viewModel.onError?.call('native_compaction_originals_unavailable');
+          }
+          return null;
+        }
         if (selection.covered.isEmpty || selection.needsRegeneration) {
           return null;
         }
@@ -2565,6 +2654,7 @@ class ChatActions {
 
   /// Execute generation with the given context.
   Future<void> _executeGeneration(stream_ctrl.GenerationContext ctx) async {
+    if (AppExitFlush.isExiting) return;
     final toolEvents = chatService.getToolEventsForMessage(
       ctx.assistantMessage,
     );
@@ -3241,6 +3331,14 @@ class ChatActions {
         e,
         AppLocalizations.of(contextProvider)!,
       );
+    } else if (!oauthFailure && contextProvider.mounted) {
+      if (AppLocalizations.of(contextProvider) case final l10n?) {
+        errorText = formatImageGenerationError(
+          e,
+          config: state.ctx.config,
+          l10n: l10n,
+        );
+      }
     }
     final tier = state.ctx.serviceTier;
     final speedL10n = tier != null && contextProvider.mounted

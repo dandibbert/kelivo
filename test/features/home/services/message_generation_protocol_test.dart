@@ -34,10 +34,10 @@ class _Settings extends Fake implements SettingsProvider {
   final ProviderConfig config;
 
   @override
-  ProviderConfig getProviderConfig(String key, {String? defaultName}) => config;
+  CompressionConfig get compressionDefaults => const CompressionConfig();
 
   @override
-  CompressionConfig get compressionDefaults => const CompressionConfig();
+  ProviderConfig getProviderConfig(String key, {String? defaultName}) => config;
 }
 
 class _Generation extends Fake implements GenerationController {}

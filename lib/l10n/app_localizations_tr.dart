@@ -9219,86 +9219,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Uzun kenar 1024 px · kalite 70';
 
   @override
-  String get settingsPageExternalAutoSend =>
-      'Harici otomatik gönderime izin ver';
-
-  @override
-  String get settingsPageExternalAutoSendSubtitle =>
-      'kelivo://v1/... bağlantılarının diğer uygulamalardan mesaj göndermesine veya giriş kutusunu doldurmasına izin verir. Kapalıyken harici metin yalnızca inceleme için eklenir.';
-
-  @override
-  String get settingsPageDeepLinks => 'Derin bağlantılar';
-
-  @override
-  String get settingsPageDeepLinksSubtitle =>
-      'Diğer uygulamalardan kelivo://v1/... URL\'leriyle Kelivo\'yu açın';
-
-  @override
-  String get aboutPageDeepLinksSection => 'Derin bağlantılar';
-
-  @override
-  String get aboutPageDeepLinksDescription =>
-      'Kelivo, diğer uygulamaların sohbet açması, mesaj yazması veya göndermesi için kelivo://v1/... URL şemasını destekler:';
-
-  @override
-  String get aboutPageDeepLinkChat => 'Sohbet sayfasını aç';
-
-  @override
-  String get aboutPageDeepLinkNewChat => 'Yeni bir sohbet başlat';
-
-  @override
-  String get aboutPageDeepLinkOpenConversation => 'Var olan bir sohbeti aç';
-
-  @override
-  String get aboutPageDeepLinkCompose =>
-      'Mesaj kutusunu doldur (değiştir veya ekle)';
-
-  @override
-  String get aboutPageDeepLinkSend =>
-      'Mesajı doğrudan gönder (ayarın açık olması gerekir)';
-
-  @override
-  String get aboutPageDeepLinkSettings => 'Bir ayarlar sayfasına git';
-
-  @override
-  String get aboutPageDeepLinkAssistant => 'Bir asistan ayarları sayfasını aç';
-
-  @override
-  String get aboutPageDeepLinksFooter =>
-      'Güvenlik için otomatik gönderim varsayılan olarak kapalıdır. Ayarlar → Harici otomatik gönderime izin ver bölümünden açın.';
-
-  @override
-  String get deepLinkAutoSendDisabled =>
-      'Harici otomatik gönderim kapalı. Mesajı inceleyip elle gönderin.';
-
-  @override
-  String get deepLinkAssistantNotFound => 'İstenen asistan bulunamadı.';
-
-  @override
-  String get deepLinkAssistantNameAmbiguous =>
-      'Bu ada sahip birden fazla asistan var. Bunun yerine asistan kimliğini kullanın.';
-
-  @override
-  String get deepLinkConversationNotFound => 'İstenen sohbet bulunamadı.';
-
-  @override
-  String get deepLinkPayloadTooLarge =>
-      'Harici metin bir URL bağlantısı için çok uzun.';
-
-  @override
-  String get deepLinkAssistantTargetConflict =>
-      'Asistan seçimi yalnızca yeni bir sohbetle kullanılabilir.';
-
-  @override
-  String get deepLinkSendRejected => 'Kelivo harici mesajı gönderemedi.';
-
-  @override
-  String get deepLinkUnsupportedRoute => 'Bu Kelivo bağlantısı desteklenmiyor.';
-
-  @override
-  String get deepLinkFailed => 'Kelivo bu harici bağlantıyı işleyemedi.';
-
-  @override
   String get imageSettingsPageQualityCustom => 'Özel';
 
   @override
@@ -13501,143 +13421,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get mcpOAuthExchangingToken => 'Oturum açma tamamlanıyor…';
 
   @override
-  String get deepLinkGenTitle => 'URL Şeması Oluşturucu';
-
-  @override
-  String get deepLinkGenSubtitle =>
-      'Kısayollar, otomasyon ve diğer uygulamalar için kelivo:// bağlantıları oluşturun';
-
-  @override
-  String get deepLinkGenSectionAction => 'Eylem';
-
-  @override
-  String get deepLinkGenSectionMessage => 'Mesaj';
-
-  @override
-  String get deepLinkGenSectionTarget => 'Sohbet';
-
-  @override
-  String get deepLinkGenSectionOptions => 'Seçenekler';
-
-  @override
-  String get deepLinkGenSectionResult => 'Oluşturulan bağlantı';
-
-  @override
-  String get deepLinkGenText => 'Mesaj metni';
-
-  @override
-  String get deepLinkGenTextHint => 'Doldurulacak veya gönderilecek metin';
-
-  @override
-  String deepLinkGenTextBytes(int used, int max) {
-    return '$used / $max bayt';
-  }
-
-  @override
-  String get deepLinkGenInsertMode => 'Giriş kutusunda metin varsa';
-
-  @override
-  String get deepLinkGenInsertReplace => 'Değiştir';
-
-  @override
-  String get deepLinkGenInsertAppend => 'Sona ekle';
-
-  @override
-  String get deepLinkGenTarget => 'Gönderileceği yer';
-
-  @override
-  String get deepLinkGenTargetCurrent => 'Geçerli sohbet';
-
-  @override
-  String get deepLinkGenTargetNew => 'Yeni sohbet';
-
-  @override
-  String get deepLinkGenTargetConversation => 'Belirli sohbet';
-
-  @override
-  String get deepLinkGenConversation => 'Sohbet';
-
-  @override
-  String get deepLinkGenConversationPick => 'Bir sohbet seçin';
-
-  @override
-  String get deepLinkGenConversationId => 'Sohbet kimliği';
-
-  @override
-  String get deepLinkGenConversationIdHint =>
-      'Bir kimlik yapıştırın veya yukarıdan seçin';
-
-  @override
-  String get deepLinkGenConversationEmpty => 'Henüz sohbet yok';
-
-  @override
-  String get deepLinkGenAssistant => 'Asistan';
-
-  @override
-  String get deepLinkGenAssistantDefault => 'Varsayılan (geçerli asistan)';
-
-  @override
-  String get deepLinkGenAssistantPick => 'Bir asistan seçin';
-
-  @override
-  String get deepLinkGenAssistantRef => 'Asistanı şuna göre belirt';
-
-  @override
-  String get deepLinkGenRefId => 'Kimlik';
-
-  @override
-  String get deepLinkGenRefName => 'Ad';
-
-  @override
-  String get deepLinkGenAssistantId => 'Asistan kimliği';
-
-  @override
-  String get deepLinkGenAssistantName => 'Asistan adı';
-
-  @override
-  String get deepLinkGenTemporary => 'Geçici sohbet';
-
-  @override
-  String get deepLinkGenTemporarySubtitle => 'Geçmişe kaydedilmez';
-
-  @override
-  String get deepLinkGenSettingsSection => 'Ayarlar sayfası';
-
-  @override
-  String get deepLinkGenSettingsHome => 'Ayarlar ana sayfası';
-
-  @override
-  String get deepLinkGenCopy => 'Bağlantıyı kopyala';
-
-  @override
-  String get deepLinkGenCopyMarkdown => 'Markdown olarak kopyala';
-
-  @override
-  String get deepLinkGenCopied => 'Bağlantı kopyalandı';
-
-  @override
-  String get deepLinkGenRun => 'Şimdi çalıştır';
-
-  @override
-  String get deepLinkGenNeedText =>
-      'Bağlantı oluşturmak için mesaj metnini girin.';
-
-  @override
-  String get deepLinkGenNeedConversation =>
-      'Bir sohbet seçin veya kimliğini girin.';
-
-  @override
-  String get deepLinkGenNeedAssistant => 'Bir asistan seçin.';
-
-  @override
-  String get deepLinkGenAutoSendOff =>
-      'Otomatik gönderim kapalı, bu yüzden bu bağlantı giriş kutusunu yalnızca inceleme için doldurur. Ayarlar → Harici otomatik gönderime izin ver bölümünden açın.';
-
-  @override
-  String get deepLinkGenNewOnlyHint =>
-      'Asistan ve geçici sohbet yalnızca yeni bir sohbete uygulanır.';
-
-  @override
   String get markdownPlaygroundTitle => 'Markdown Playground';
 
   @override
@@ -16442,7 +16225,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bir tur, bir kullanıcı mesajını ve onun yanıtlarını ve araçlarını içerir.';
 
   @override
-  String get compressionLength => 'Özet sınırı (token)';
+  String get compressionLength => 'Özet hedefi (token)';
 
   @override
   String get compressionTrigger => 'Başlangıç';
@@ -16458,11 +16241,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get compressionReference =>
-      'Etkin dünya kitaplarını ve belleği referans al';
+      'Dünya kitaplarına ve geçmiş belleğe başvur';
 
   @override
   String get compressionReferenceHint =>
-      'Referans, adları ve kuralları açıklar; olayların gerçekleştiğine veya karakterlerin bunları bildiğine dair kanıt değildir.';
+      'Dünya kitapları için yalnızca seçili geçmişi tarayın ve kaydedilmiş bellek anlık görüntülerini kullanın. Başvurular adları ve kuralları açıklar; olayların gerçekleştiğini veya karakterlerin bildiğini göstermez.';
 
   @override
   String get compressionToolReferences =>
@@ -16893,7 +16676,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get compressionNativeScopeChanged =>
-      'Bu yerel bağlam başka bir bağlantıya veya hesaba ait. Sıkıştırmayı geri alın ya da devam etmeden önce orijinal geçmişten bir metin özeti oluşturun.';
+      'Bu yerel bağlam başka bir bağlantıya veya hesaba ait. Özgün bağlantıyla devam edin ya da sıkıştırmayı geri alın veya özgün içeriği barındıran sohbette metin özeti oluşturun.';
 
   @override
   String get compressionNativeTokenHint =>
@@ -16901,7 +16684,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get compressionNativeCopyHint =>
-      'Yeni sohbet, yerel sıkıştırmanın geri alınabilmesi için orijinal mesajları korur.';
+      'Yeni sohbet yalnızca tam yerel sıkıştırma sonucunu ve korunan son turları saklar. Özgün içerik kaynak sohbette kalır ve burada geri alınarak kurtarılamaz.';
 
   @override
   String get compressionNativeInputOverride =>
@@ -16959,4 +16742,341 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get themePaletteCustom => 'Özel';
+
+  @override
+  String get settingsPageExternalAutoSend =>
+      'Harici otomatik gönderime izin ver';
+
+  @override
+  String get settingsPageExternalAutoSendSubtitle =>
+      'kelivo://v1/... bağlantılarının diğer uygulamalardan mesaj göndermesine veya giriş kutusunu doldurmasına izin verir. Kapalıyken harici metin yalnızca inceleme için eklenir.';
+
+  @override
+  String get settingsPageDeepLinks => 'Derin bağlantılar';
+
+  @override
+  String get settingsPageDeepLinksSubtitle =>
+      'Diğer uygulamalardan kelivo://v1/... URL\'leriyle Kelivo\'yu açın';
+
+  @override
+  String get aboutPageDeepLinksSection => 'Derin bağlantılar';
+
+  @override
+  String get aboutPageDeepLinksDescription =>
+      'Kelivo, diğer uygulamaların sohbet açması, mesaj yazması veya göndermesi için kelivo://v1/... URL şemasını destekler:';
+
+  @override
+  String get aboutPageDeepLinkChat => 'Sohbet sayfasını aç';
+
+  @override
+  String get aboutPageDeepLinkNewChat => 'Yeni bir sohbet başlat';
+
+  @override
+  String get aboutPageDeepLinkOpenConversation => 'Var olan bir sohbeti aç';
+
+  @override
+  String get aboutPageDeepLinkCompose =>
+      'Mesaj kutusunu doldur (değiştir veya ekle)';
+
+  @override
+  String get aboutPageDeepLinkSend =>
+      'Mesajı doğrudan gönder (ayarın açık olması gerekir)';
+
+  @override
+  String get aboutPageDeepLinkSettings => 'Bir ayarlar sayfasına git';
+
+  @override
+  String get aboutPageDeepLinkAssistant => 'Bir asistan ayarları sayfasını aç';
+
+  @override
+  String get aboutPageDeepLinksFooter =>
+      'Güvenlik için otomatik gönderim varsayılan olarak kapalıdır. Ayarlar → Harici otomatik gönderime izin ver bölümünden açın.';
+
+  @override
+  String get deepLinkAutoSendDisabled =>
+      'Harici otomatik gönderim kapalı. Mesajı inceleyip elle gönderin.';
+
+  @override
+  String get deepLinkAssistantNotFound => 'İstenen asistan bulunamadı.';
+
+  @override
+  String get deepLinkAssistantNameAmbiguous =>
+      'Bu ada sahip birden fazla asistan var. Bunun yerine asistan kimliğini kullanın.';
+
+  @override
+  String get deepLinkConversationNotFound => 'İstenen sohbet bulunamadı.';
+
+  @override
+  String get deepLinkPayloadTooLarge =>
+      'Harici metin bir URL bağlantısı için çok uzun.';
+
+  @override
+  String get deepLinkAssistantTargetConflict =>
+      'Asistan seçimi yalnızca yeni bir sohbetle kullanılabilir.';
+
+  @override
+  String get deepLinkSendRejected => 'Kelivo harici mesajı gönderemedi.';
+
+  @override
+  String get deepLinkUnsupportedRoute => 'Bu Kelivo bağlantısı desteklenmiyor.';
+
+  @override
+  String get deepLinkFailed => 'Kelivo bu harici bağlantıyı işleyemedi.';
+
+  @override
+  String get deepLinkGenTitle => 'URL Şeması Oluşturucu';
+
+  @override
+  String get deepLinkGenSubtitle =>
+      'Kısayollar, otomasyon ve diğer uygulamalar için kelivo:// bağlantıları oluşturun';
+
+  @override
+  String get deepLinkGenSectionAction => 'Eylem';
+
+  @override
+  String get deepLinkGenSectionMessage => 'Mesaj';
+
+  @override
+  String get deepLinkGenSectionTarget => 'Sohbet';
+
+  @override
+  String get deepLinkGenSectionOptions => 'Seçenekler';
+
+  @override
+  String get deepLinkGenSectionResult => 'Oluşturulan bağlantı';
+
+  @override
+  String get deepLinkGenText => 'Mesaj metni';
+
+  @override
+  String get deepLinkGenTextHint => 'Doldurulacak veya gönderilecek metin';
+
+  @override
+  String deepLinkGenTextBytes(int used, int max) {
+    return '$used / $max bayt';
+  }
+
+  @override
+  String get deepLinkGenInsertMode => 'Giriş kutusunda metin varsa';
+
+  @override
+  String get deepLinkGenInsertReplace => 'Değiştir';
+
+  @override
+  String get deepLinkGenInsertAppend => 'Sona ekle';
+
+  @override
+  String get deepLinkGenTarget => 'Gönderileceği yer';
+
+  @override
+  String get deepLinkGenTargetCurrent => 'Geçerli sohbet';
+
+  @override
+  String get deepLinkGenTargetNew => 'Yeni sohbet';
+
+  @override
+  String get deepLinkGenTargetConversation => 'Belirli sohbet';
+
+  @override
+  String get deepLinkGenConversation => 'Sohbet';
+
+  @override
+  String get deepLinkGenConversationPick => 'Bir sohbet seçin';
+
+  @override
+  String get deepLinkGenConversationId => 'Sohbet kimliği';
+
+  @override
+  String get deepLinkGenConversationIdHint =>
+      'Bir kimlik yapıştırın veya yukarıdan seçin';
+
+  @override
+  String get deepLinkGenConversationEmpty => 'Henüz sohbet yok';
+
+  @override
+  String get deepLinkGenAssistant => 'Asistan';
+
+  @override
+  String get deepLinkGenAssistantDefault => 'Varsayılan (geçerli asistan)';
+
+  @override
+  String get deepLinkGenAssistantPick => 'Bir asistan seçin';
+
+  @override
+  String get deepLinkGenAssistantRef => 'Asistanı şuna göre belirt';
+
+  @override
+  String get deepLinkGenRefId => 'Kimlik';
+
+  @override
+  String get deepLinkGenRefName => 'Ad';
+
+  @override
+  String get deepLinkGenAssistantId => 'Asistan kimliği';
+
+  @override
+  String get deepLinkGenAssistantName => 'Asistan adı';
+
+  @override
+  String get deepLinkGenTemporary => 'Geçici sohbet';
+
+  @override
+  String get deepLinkGenTemporarySubtitle => 'Geçmişe kaydedilmez';
+
+  @override
+  String get deepLinkGenSettingsSection => 'Ayarlar sayfası';
+
+  @override
+  String get deepLinkGenSettingsHome => 'Ayarlar ana sayfası';
+
+  @override
+  String get deepLinkGenCopy => 'Bağlantıyı kopyala';
+
+  @override
+  String get deepLinkGenCopyMarkdown => 'Markdown olarak kopyala';
+
+  @override
+  String get deepLinkGenCopied => 'Bağlantı kopyalandı';
+
+  @override
+  String get deepLinkGenRun => 'Şimdi çalıştır';
+
+  @override
+  String get deepLinkGenNeedText =>
+      'Bağlantı oluşturmak için mesaj metnini girin.';
+
+  @override
+  String get deepLinkGenNeedConversation =>
+      'Bir sohbet seçin veya kimliğini girin.';
+
+  @override
+  String get deepLinkGenNeedAssistant => 'Bir asistan seçin.';
+
+  @override
+  String get deepLinkGenAutoSendOff =>
+      'Otomatik gönderim kapalı, bu yüzden bu bağlantı giriş kutusunu yalnızca inceleme için doldurur. Ayarlar → Harici otomatik gönderime izin ver bölümünden açın.';
+
+  @override
+  String get deepLinkGenNewOnlyHint =>
+      'Asistan ve geçici sohbet yalnızca yeni bir sohbete uygulanır.';
+
+  @override
+  String contextUsagePartialSummary(String tokens) {
+    return 'Tahmini $tokens + bilinmeyen sıkıştırma';
+  }
+
+  @override
+  String get contextUsageBucketNativeCompaction => 'Yerel sıkıştırma';
+
+  @override
+  String get contextUsageUnknownTokens => 'Bilinmiyor';
+
+  @override
+  String contextUsageLastRequestInput(String tokens) {
+    return 'Son istek girdisi (ölçülen): $tokens';
+  }
+
+  @override
+  String get compressionNativeImported => 'Yerel bağlam yüklendi';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      'Bu sohbet, tam yerel sıkıştırma sonucu ve korunan son turlarla başlar. Sonuç metin olarak görüntülenemez veya düzenlenemez. Önceki özgün içerik kaynak sohbette kalır, bu nedenle burada geri alınarak kurtarılamaz.';
+
+  @override
+  String get compressionNativeOpenSource => 'Kaynak sohbeti aç';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      'Bu sohbette içe aktarılan yerel bağlama ait özgün içerik yok. Yerel sıkıştırmayla devam edin veya özgün içeriği görüntülemek ya da özetlemek için kaynak sohbete dönün.';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      'Yeni geçici sohbet yalnızca tam yerel sıkıştırma sonucunu ve korunan son turları tutar. Kaynak geçici sohbetten ayrılmak, onu ve aktarılmayan orijinalleri siler; bunlar burada geri yüklenemez.';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      'Bu sohbet tam yerel sıkıştırma sonucunu ve korunan son turları tutar. Kaynak sohbet artık kullanılamıyor. Buraya kopyalanmayan orijinaller geri yüklenemez ve yerel sonuç metin olarak okunamaz veya düzenlenemez.';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => 'Görsel modeli';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => 'Otomatik';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => 'Görsel karmaşıklığı';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => 'Varsayılan';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => 'Düşük';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => 'Orta';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => 'Yüksek';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      'Görsel planlamayı sohbet akıl yürütmesinden bağımsız olarak kontrol eder. Varsayılan, sunucu davranışını kullanır ve sohbet akıl yürütmesini devralabilir.';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT ile oturum açma farklı bir görsel modeli kullanabilir. Model ve karmaşıklık ayarları sunucu desteğine bağlıdır.';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      'Sohbet akıl yürütmesini Otomatik, görsel karmaşıklığını Varsayılan olarak ayarlayıp görsel oluşturmayı yeniden deneyin. ChatGPT ile oturum açma farklı bir görsel modeli kullanabilir veya açık karmaşıklığı reddedebilir.';
+
+  @override
+  String get workspaceEnvNativeShellTitle => 'Varsayılan kabuk';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      'Otomatik algılama için boş bırakın. Aksi takdirde PowerShell, cmd veya -lc destekleyen bir kabuğun (bash, zsh veya fish gibi) mutlak yolunu girin. Bu ayar yalnızca bu cihaz için geçerlidir.';
+
+  @override
+  String get workspaceEnvNativeShellInvalid =>
+      'Bu kabuk başlatılamadı. Mutlak yolunu ve desteklenen komut sözdizimini kontrol edin.';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Kabuk kullanılamıyor';
+
+  @override
+  String get workspaceEnvNativeShellDetect => 'Yeniden algıla';
+
+  @override
+  String get workspaceEnvNativeShellSave => 'Kaydet';
+
+  @override
+  String get desktopAutostartTitle => 'Başlangıçta başlat';
+
+  @override
+  String get desktopAutostartDescription =>
+      'Bu bilgisayarda oturum açtığınızda Kelivo\'yu başlat.';
+
+  @override
+  String get desktopAutostartHiddenTitle => 'Otomatik başlatmada tepsiye gizle';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      'Başlangıçta başlatma ve tepsi simgesi gerektirir. Kelivo\'yu elle açtığınızda pencere yine görünür.';
+
+  @override
+  String get desktopAutostartUnsupported =>
+      'Başlangıçta başlatma için macOS 13 veya üstü gerekir.';
+
+  @override
+  String get desktopAutostartError =>
+      'Başlangıç ayarı uygulanamadı. Sistem başlangıç veya oturum açma öğeleri ayarlarında bu uygulamayı kontrol edip tekrar deneyin.';
+
+  @override
+  String get compressionOutputBudget => 'Toplam çıktı sınırı (token)';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      'Akıl yürütme ve özet metnini içerir. Özet hedefini kullanmak için boş bırakın veya özeti uzatmadan düşünmek için daha yüksek bir sınır belirleyin. Model çıktı sınırı yine de geçerlidir.';
 }
