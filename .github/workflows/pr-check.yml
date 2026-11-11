@@ -73,7 +73,8 @@ jobs:
         run: dart analyze --fatal-infos lib test integration_test tool
 
       - name: flutter test
-        run: flutter test
+        timeout-minutes: 30
+        run: flutter test --concurrency=4 --reporter expanded
 
       - name: dart analyze (markstream)
         working-directory: dependencies/markstream
@@ -81,4 +82,5 @@ jobs:
 
       - name: flutter test (markstream)
         working-directory: dependencies/markstream
-        run: flutter test
+        timeout-minutes: 10
+        run: flutter test --concurrency=4 --reporter expanded
