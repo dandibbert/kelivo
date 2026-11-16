@@ -44,6 +44,159 @@ void main() {
     await dir.delete(recursive: true);
   });
 
+  for (final count in [0, 1, 3, 4, 13, 25]) {
+    test(
+      'operation history pages $count records without hydrating details',
+      () async {
+        final operations = [
+          for (var i = 0; i < count; i++)
+            ContextOperation(
+              id: 'operation-$i',
+              kind: ContextOperationKind.compress,
+              anchorGroupId: 'u1',
+              appliedAfterGroupId: 'a3',
+              sourceGroups: const ['u1'],
+              dependencies: const [],
+              createdAt: DateTime.utc(2026, 1, 1, 0, i),
+              revoked: true,
+              summary: '${'a' * 239}😀${'body' * 25000}',
+              originalSummary: 'original',
+              compressionDetails: i == count - 1
+                  ? {
+                      'nativeCompaction': {'opaque': 'payload' * 25000},
+                      'nativeContextImported': true,
+                    }
+                  : const {},
+            ),
+        ];
+        await repo.restoreContextOperations(
+          'chat',
+          operations,
+          expectedFingerprint: (await repo.readContextSnapshot(
+            'chat',
+          )).fingerprint,
+        );
+        observer.reset();
+        final ids = <String>[];
+        var page = await repo.readContextOperationPage(
+          'chat',
+          offset: 0,
+          limit: 3,
+        );
+        expect(page.items.length, count < 3 ? count : 3);
+        while (true) {
+          for (final item in page.items) {
+            expect(item.summaryPreview.length, lessThanOrEqualTo(240));
+            expect(item.summaryPreview, item.isNative ? '' : 'a' * 239);
+          }
+          ids.addAll(page.items.map((item) => item.id));
+          expect(page.hasMore, ids.length < count);
+          if (!page.hasMore) break;
+          page = await repo.readContextOperationPage(
+            'chat',
+            offset: ids.length,
+            limit: 10,
+          );
+          expect(page.items.length, lessThanOrEqualTo(10));
+        }
+        expect(ids, operations.reversed.map((operation) => operation.id));
+        expect(
+          observer.snapshot().operations.containsKey(
+            ChatDatabaseOperation.queryMessagesByIds,
+          ),
+          isFalse,
+        );
+        expect(
+          (await repo.readContextOperationPage(
+            'chat',
+            offset: count,
+            limit: 10,
+          )).items,
+          isEmpty,
+        );
+        expect(await repo.readContextOperation('chat', 'missing'), isNull);
+        if (operations.isNotEmpty) {
+          final detail = await repo.readContextOperation(
+            'chat',
+            operations.last.id,
+          );
+          expect(detail!.toJson(), operations.last.toJson());
+        }
+      },
+    );
+  }
+
+  test(
+    'paged status matches full history, with stable timestamp ordering',
+    () async {
+      ContextOperation operation(
+        String id,
+        ContextOperationKind kind, {
+        List<String> dependencies = const [],
+        bool revoked = false,
+        DateTime? createdAt,
+      }) => ContextOperation(
+        id: id,
+        kind: kind,
+        anchorGroupId: 'u1',
+        appliedAfterGroupId: 'a3',
+        sourceGroups: const ['u1'],
+        dependencies: dependencies,
+        createdAt: createdAt ?? DateTime.utc(2026),
+        revoked: revoked,
+      );
+      final operations = [
+        operation(
+          'summary',
+          ContextOperationKind.compress,
+          createdAt: DateTime.utc(2027),
+        ),
+        operation(
+          'replacement',
+          ContextOperationKind.compress,
+          dependencies: ['summary'],
+        ),
+        operation('clear', ContextOperationKind.clear),
+        operation('pin', ContextOperationKind.start),
+        operation('revoked-clear', ContextOperationKind.clear, revoked: true),
+        operation(
+          'latest',
+          ContextOperationKind.compress,
+          createdAt: DateTime.utc(2028).toLocal(),
+        ),
+      ];
+      await repo.restoreContextOperations(
+        'chat',
+        operations,
+        expectedFingerprint: (await repo.readContextSnapshot(
+          'chat',
+        )).fingerprint,
+      );
+      final statuses = ContextHistory.operationStatuses(operations);
+      final ids = <String>[];
+      for (var i = 0; i < operations.length; i++) {
+        final item = (await repo.readContextOperationPage(
+          'chat',
+          offset: i,
+          limit: 1,
+        )).items.single;
+        ids.add(item.id);
+        expect((
+          hidden: item.hidden,
+          superseded: item.superseded,
+        ), statuses[item.id]);
+      }
+      expect(ids, [
+        'latest',
+        'summary',
+        'revoked-clear',
+        'pin',
+        'clear',
+        'replacement',
+      ]);
+    },
+  );
+
   test(
     'range metadata preserves Unicode and attachment selection without loading bodies',
     () async {
@@ -511,9 +664,9 @@ void main() {
   });
 
   test(
-    'historical regeneration uses original history and keeps following assistant',
+    'historical regeneration reuses earlier summaries and keeps following assistant',
     () async {
-      await compact('S1', ['u1', 'a1']);
+      final summary = await compact('S1', ['u1', 'a1']);
       final selected = await repo.appendMessageVersion(
         messageId: 'u3',
         content: 'selected version',
@@ -526,8 +679,7 @@ void main() {
         includeFollowingAssistant: true,
       );
       expect(result.map((m) => m.id), [
-        'u1',
-        'a1',
+        summary.summaryMessageId,
         'u2',
         'a2',
         selected!.message.id,
@@ -554,6 +706,30 @@ void main() {
         'Original u3',
         'Original a3',
       ]);
+    },
+  );
+
+  test(
+    'deleting inactive versions keeps a summary of the selected revision',
+    () async {
+      final edited = (await repo.appendMessageVersion(
+        messageId: 'u1',
+        content: 'selected',
+      ))!.message;
+      await compact('S1', ['u1', 'a1']);
+      final before = await effective();
+      final result = await repo.deleteMessages(
+        conversationId: 'chat',
+        messageIds: {'u1'},
+        versionSelectionChanges: {},
+        retainedMessageId: edited.id,
+      );
+      expect(result?.messages.map((m) => m.id), ['u1']);
+      expect(
+        (await repo.readContextOperations('chat')).single.revoked,
+        isFalse,
+      );
+      expect(await effective(), before);
     },
   );
 

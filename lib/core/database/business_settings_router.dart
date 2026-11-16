@@ -33,6 +33,7 @@ final class BusinessKeyRegistry {
     'ios_native_selection_menu_enabled_v1',
     'flutter_log_enabled_v1',
     'model_catalog_auto_update_v1',
+    'ollama_model_metadata_v1',
   };
 
   static const discardedKeys = <String>{
@@ -72,6 +73,7 @@ final class BusinessKeyRegistry {
     'tts_auto_play_assistant_replies_v1',
     'tts_text_selection_mode_v1',
     'tts_speech_rate_v1',
+    'tts_playback_speed_v1',
     'tts_pitch_v1',
     'tts_engine_v1',
     'tts_language_v1',
@@ -81,6 +83,17 @@ final class BusinessKeyRegistry {
     'webdav_config_v1',
     's3_config_v1',
     'backup_encryption_enabled_v1',
+    'backup_auto_enabled_v1',
+    'backup_auto_destination_v1',
+    'backup_auto_last_destination_v1',
+    'backup_auto_local_dir_v1',
+    'backup_auto_local_bookmark_v1',
+    'backup_auto_local_retention_v1',
+    'backup_password_forget_pending_v1',
+    'backup_password_remember_manual_v1',
+    'backup_password_verifier_v1',
+    'backup_install_id_v1',
+    'backup_outstanding_partial_v1',
     'backup_reminder_enabled_v1',
     'backup_reminder_interval_days_v1',
     'backup_reminder_minutes_of_day_v1',

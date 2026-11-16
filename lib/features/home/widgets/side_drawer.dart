@@ -1,3 +1,7 @@
+import '../../../core/providers/external_backup_auto_provider.dart';
+import '../../../core/services/backup/backup_folder_access.dart';
+import '../../../core/services/backup/backup_secure_password_store.dart';
+import '../../backup/backup_restore_error_message.dart';
 import 'package:Kelivo/features/chat/widgets/tool_permission_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'
@@ -1545,7 +1549,14 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
   }) {
     if (widget.globalSearchMode || topicsOnly) return const SizedBox.shrink();
     final reminder = context.watch<BackupReminderProvider>();
-    if (!reminder.loaded || !reminder.shouldShowReminder) {
+    final auto = context.watch<ExternalBackupAutoProvider?>();
+    final autoEnabled = context.select<SettingsProvider, bool>(
+      (s) => s.autoBackupEnabled,
+    );
+    final failure = auto?.failure;
+    if (!reminder.loaded ||
+        !reminder.shouldShowReminder ||
+        (autoEnabled && (auto?.busy == true || failure == null))) {
       return const SizedBox.shrink();
     }
 
@@ -1594,7 +1605,13 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        l10n.backupReminderSidebarSubtitle,
+                        autoEnabled && failure != null
+                            ? (failure is BackupDestinationError ||
+                                      failure is BackupFolderError ||
+                                      failure is BackupKeychainUnavailable
+                                  ? automaticBackupErrorMessage(l10n, failure)
+                                  : l10n.backupReminderSidebarSubtitleAutoFailed)
+                            : l10n.backupReminderSidebarSubtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -1643,6 +1660,22 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
     final textBase = cs.onSurface; // 纯黑（白天），夜间自动适配
     final ap = context.watch<AssistantProvider>();
     final currentAssistantId = ap.currentAssistantId;
+    final loadingAssistantIds = context.select<ChatService, Set<String>>((
+      service,
+    ) {
+      final ids = <String>{};
+      // Only inspect active conversations; ownership changes must update the
+      // indicators even when the set of generating conversations is unchanged.
+      for (final id in widget.loadingConversationIds) {
+        final conversation = service.getConversation(id);
+        if (conversation == null) continue;
+        final assistantId = ap
+            .resolveConversationAssistant(conversation.assistantId)
+            ?.id;
+        if (assistantId != null) ids.add(assistantId);
+      }
+      return ids;
+    });
     final chatServiceForSelection = context.read<ChatService>();
     if (_selectionMode) {
       // Header/action bar live outside the conversation-list Selector.
@@ -2647,6 +2680,12 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                                         ),
                                       ),
                                     ),
+                                    if (loadingAssistantIds.contains(
+                                      currentAssistantId,
+                                    )) ...[
+                                      const SizedBox(width: 8),
+                                      _LoadingDot(),
+                                    ],
                                     const SizedBox(width: 8),
                                     AnimatedRotation(
                                       turns: _assistantsExpanded ? 0.5 : 0.0,
@@ -2685,7 +2724,11 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                       controller: _listController,
                       padding: const EdgeInsets.fromLTRB(10, 2, 10, 16),
                       children: [
-                        _buildAssistantsList(context, inlineMode: true),
+                        _buildAssistantsList(
+                          context,
+                          loadingAssistantIds: loadingAssistantIds,
+                          inlineMode: true,
+                        ),
                       ],
                     );
                   }
@@ -2725,7 +2768,10 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                             : 10.0;
                         return _DesktopTabViews(
                           controller: _tabController!,
-                          buildAssistants: () => _buildAssistantsList(context),
+                          buildAssistants: () => _buildAssistantsList(
+                            context,
+                            loadingAssistantIds: loadingAssistantIds,
+                          ),
                           buildConversations: () => _buildConversationsList(
                             context,
                             cs,
@@ -2758,8 +2804,11 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                       return _LegacyListArea(
                         isDesktop: _isDesktop,
                         assistantsExpanded: _assistantsExpanded,
-                        buildAssistants: () =>
-                            _buildAssistantsList(context, inlineMode: true),
+                        buildAssistants: () => _buildAssistantsList(
+                          context,
+                          loadingAssistantIds: loadingAssistantIds,
+                          inlineMode: true,
+                        ),
                         buildConversations: (leading, padding) =>
                             _buildConversationsList(
                               context,
@@ -3872,7 +3921,11 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
 
   // Build assistants list (ungrouped + grouped by tags). When inlineMode=false (desktop tabs),
   // apply search filter on assistant names.
-  Widget _buildAssistantsList(BuildContext context, {bool inlineMode = false}) {
+  Widget _buildAssistantsList(
+    BuildContext context, {
+    required Set<String> loadingAssistantIds,
+    bool inlineMode = false,
+  }) {
     final ap2 = context.watch<AssistantProvider>();
     final tp = context.watch<TagProvider>();
     final textBase2 = Theme.of(context).colorScheme.onSurface;
@@ -3911,6 +3964,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
           textColor: textBase2,
           embedded: widget.embedded,
           selected: ap2.currentAssistantId == a.id,
+          loading: loadingAssistantIds.contains(a.id),
           onTap: () => _handleSelectAssistant(a),
           onEditTap: () => _openAssistantSettings(a.id),
           onLongPress: () => _showAssistantItemMenu(a),
@@ -4900,6 +4954,7 @@ class _AssistantInlineTile extends StatefulWidget {
     this.onLongPress,
     this.onSecondaryTapDown,
     this.selected = false,
+    this.loading = false,
   });
 
   final Widget avatar;
@@ -4911,6 +4966,7 @@ class _AssistantInlineTile extends StatefulWidget {
   final VoidCallback? onLongPress;
   final void Function(Offset globalPosition)? onSecondaryTapDown;
   final bool selected;
+  final bool loading;
 
   @override
   State<_AssistantInlineTile> createState() => _AssistantInlineTileState();
@@ -4972,6 +5028,7 @@ class _AssistantInlineTileState extends State<_AssistantInlineTile> {
                 ),
               ),
             ),
+            if (widget.loading) ...[const SizedBox(width: 8), _LoadingDot()],
             if (!_isDesktop) ...[
               const SizedBox(width: 8),
               IosIconButton(

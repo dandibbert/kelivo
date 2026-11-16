@@ -1,3 +1,6 @@
+import '../models/image_upload_quality.dart';
+export '../models/image_upload_quality.dart';
+import '../models/attachment_retention.dart';
 import '../models/native_compaction.dart';
 import '../../l10n/app_language.dart';
 import '../models/compression_config.dart';
@@ -46,6 +49,8 @@ import '../../utils/provider_grouping_logic.dart';
 import '../../utils/brand_assets.dart';
 import '../../utils/image_compressor.dart';
 import '../database/business_preferences.dart';
+import '../services/backup/backup_secure_password_store.dart';
+import '../services/backup/backup_encryption.dart';
 import '../services/backup/backup_cancel_token.dart';
 import '../services/memory/memory_prompts.dart';
 import '../services/memory/memory_trace.dart';
@@ -74,8 +79,6 @@ enum DesktopMessageNavButtonsMode {
 
 // Mobile: message navigation buttons visibility mode
 enum MobileMessageNavButtonsMode { always, scroll, never }
-
-enum ImageUploadQuality { original, high, balanced, saver, custom }
 
 class SettingsProvider extends ChangeNotifier {
   static const String _providersOrderKey = 'providers_order_v1';
@@ -351,6 +354,8 @@ class SettingsProvider extends ChangeNotifier {
       'display_use_layered_surfaces_v1';
   static const String _displayUseLayeredSheetTilesKey =
       'display_use_layered_sheet_tiles_v1';
+  static const String _displayShowAssistantBodyBubbleKey =
+      'display_show_assistant_body_bubble_v1';
   static const String _displayAssistantBubbleFitContentKey =
       'display_assistant_bubble_fit_content_v1';
   static const String _displayAssistantBubbleSplitParagraphsKey =
@@ -558,13 +563,25 @@ class SettingsProvider extends ChangeNotifier {
   bool _useLayeredSheetTiles = false;
   bool get useLayeredSheetTiles => _useLayeredSheetTiles;
 
+  bool _showAssistantBodyBubble = true;
+  bool get assistantBodyBubbleVisible =>
+      _chatMessageBackgroundStyle != ChatMessageBackgroundStyle.defaultStyle &&
+      _showAssistantBodyBubble;
+
+  // The default style supports both layout options even though its body is bare.
+  bool get assistantBubbleLayoutEnabled =>
+      _chatMessageBackgroundStyle == ChatMessageBackgroundStyle.defaultStyle ||
+      _showAssistantBodyBubble;
+
   // When on, assistant bubbles hug their text instead of spanning the row.
   bool _assistantBubbleFitContent = false;
-  bool get assistantBubbleFitContent => _assistantBubbleFitContent;
+  bool get assistantBubbleFitContent =>
+      assistantBubbleLayoutEnabled && _assistantBubbleFitContent;
 
   // When on, blank lines split assistant text into one bubble per paragraph.
   bool _assistantBubbleSplitParagraphs = false;
-  bool get assistantBubbleSplitParagraphs => _assistantBubbleSplitParagraphs;
+  bool get assistantBubbleSplitParagraphs =>
+      assistantBubbleLayoutEnabled && _assistantBubbleSplitParagraphs;
 
   // Desktop UI persisted state
   double _desktopSidebarWidth = 240;
@@ -666,14 +683,19 @@ class SettingsProvider extends ChangeNotifier {
   int _appLaunchCount = 0;
   int get appLaunchCount => _appLaunchCount;
 
-  SettingsProvider(this._preferences, {this.onProviderModelsRetired}) {
+  SettingsProvider(
+    this._preferences, {
+    this.onProviderModelsRetired,
+    this.backupPasswordStore = const BackupSecurePasswordStore(),
+  }) {
     ProviderOAuthService.instance.bind(this);
     _appLocaleTag = _readAppLocaleTag(_preferences);
     _loaded = _load();
   }
 
   SettingsProvider._withoutLoad(this._preferences)
-    : onProviderModelsRetired = null,
+    : backupPasswordStore = const BackupSecurePasswordStore(),
+      onProviderModelsRetired = null,
       _loaded = Future<void>.value();
 
   final BusinessPreferences _preferences;
@@ -1110,6 +1132,9 @@ class SettingsProvider extends ChangeNotifier {
     _logElideLargePayloads = prefs.getBool(_logElideLargePayloadsKey) ?? true;
     RequestLogger.elideLargePayloads = _logElideLargePayloads;
     _logAutoDeleteDays = prefs.getInt(_logAutoDeleteDaysKey) ?? 0;
+    _attachmentRetentionDays = AttachmentRetention.days(
+      prefs.getInt(AttachmentRetention.preferenceKey),
+    );
     _logMaxSizeMB = prefs.getInt(_logMaxSizeMBKey) ?? 50;
     _appLaunchCount = prefs.getInt(_appLaunchCountKey) ?? 0;
     // Run log cleanup based on current settings
@@ -1170,6 +1195,8 @@ class SettingsProvider extends ChangeNotifier {
     _useLayeredSurfaces = prefs.getBool(_displayUseLayeredSurfacesKey) ?? false;
     _useLayeredSheetTiles =
         prefs.getBool(_displayUseLayeredSheetTilesKey) ?? false;
+    _showAssistantBodyBubble =
+        prefs.getBool(_displayShowAssistantBodyBubbleKey) ?? true;
     _assistantBubbleFitContent =
         prefs.getBool(_displayAssistantBubbleFitContentKey) ?? false;
     _assistantBubbleSplitParagraphs =
@@ -1181,7 +1208,7 @@ class SettingsProvider extends ChangeNotifier {
     _useLegacyInlineCodeStyle =
         prefs.getBool(_displayUseLegacyInlineCodeStyleKey) ?? false;
     _useLegacyCodeBlockStyle =
-        prefs.getBool(_displayUseLegacyCodeBlockStyleKey) ?? false;
+        prefs.getBool(_displayUseLegacyCodeBlockStyleKey) ?? true;
     _enableUserMarkdown = prefs.getBool(_displayEnableUserMarkdownKey) ?? true;
     _enableReasoningMarkdown =
         prefs.getBool(_displayEnableReasoningMarkdownKey) ?? true;
@@ -2195,33 +2222,253 @@ class SettingsProvider extends ChangeNotifier {
   String? _backupEncryptionPassword;
   bool get backupEncryptionEnabled => _backupEncryptionEnabled;
 
-  /// Persist only the preference. The password stays in this app session, so
-  /// navigating away cannot silently disable encryption or lose the password.
+  final BackupSecurePasswordStore backupPasswordStore;
+  static const autoBackupEnabledKey = 'backup_auto_enabled_v1';
+  bool get autoBackupEnabled =>
+      _preferences.getBool(autoBackupEnabledKey) ?? false;
+
+  static const _verifierKey = 'backup_password_verifier_v1';
+  static const _purgeKey = 'backup_password_forget_pending_v1';
+  static const _manualRememberKey = 'backup_password_remember_manual_v1';
+  bool get _rememberForManual =>
+      _preferences.getBool(_manualRememberKey) == true;
+  bool get backupPasswordRemembered =>
+      _backupEncryptionEnabled && (_rememberForManual || autoBackupEnabled);
+  bool get hasBackupPasswordVerifier =>
+      _preferences.getString(_verifierKey)?.isNotEmpty == true;
+
+  Future<void> _verifyPassword(String password) async {
+    final saved = _preferences.getString(_verifierKey);
+    if (saved != null &&
+        saved.isNotEmpty &&
+        await BackupEncryption.passwordVerifier(password, existing: saved) !=
+            saved) {
+      throw const BackupDecryptionException();
+    }
+  }
+
+  /// A user may revoke consent while the OS credential service is offline.
+  /// Keep the revocation until deletion succeeds, even across cold starts.
+  Future<void> retryBackupPasswordRemoval() async {
+    await loaded;
+    await _preferences.runExclusiveMutation(() async {
+      if (_preferences.getBool(_purgeKey) == true &&
+          !backupPasswordRemembered) {
+        await backupPasswordStore.requireUnlocked();
+        await _finishPasswordRemoval();
+      }
+    });
+  }
+
+  Future<void> _finishPasswordRemoval() async {
+    await backupPasswordStore.forget();
+    await _preferences.remove(_purgeKey);
+  }
+
+  /// Called inside a preference mutation. Publish consent only after the
+  /// keychain confirms the write. An interrupted new enrollment can be erased.
+  Future<void> _rememberBackupPassword(
+    String? password,
+    String consentKey,
+  ) async {
+    if (!_backupEncryptionEnabled || password == null || password.isEmpty) {
+      throw const BackupCancelledException();
+    }
+    await _verifyPassword(password);
+    final verifier = hasBackupPasswordVerifier
+        ? _preferences.getString(_verifierKey)!
+        : await BackupEncryption.passwordVerifier(password);
+    final newConsent = !backupPasswordRemembered;
+    final pending = _preferences.getBool(_purgeKey) == true;
+    if (newConsent && !pending) await _preferences.setBool(_purgeKey, true);
+    try {
+      String? stored;
+      var missing = newConsent;
+      if (!newConsent) {
+        try {
+          stored = await backupPasswordStore.read();
+          missing = stored == null;
+        } on BackupKeychainUnavailable {
+          // An explicit save can authorize a write where a silent read failed.
+          // Keep using the existing credential's location in that case.
+        }
+      }
+      if (stored != password) {
+        await backupPasswordStore.remember(
+          password,
+          newConsent: missing,
+          previousRemovalPending: pending,
+        );
+      }
+    } on BackupMacKeychainAccessError catch (error) {
+      if (newConsent &&
+          !pending &&
+          error.reason == MacBackupAuthorization.cancelled) {
+        await _preferences.remove(_purgeKey);
+      }
+      rethrow;
+    }
+    await _preferences.setMany({
+      consentKey: true,
+      _purgeKey: false,
+      _verifierKey: verifier,
+    });
+    _backupEncryptionPassword = password;
+  }
+
+  Future<void> rememberBackupPassword(String password) async {
+    await loaded;
+    await _preferences
+        .runExclusiveMutation(
+          () => _rememberBackupPassword(password, _manualRememberKey),
+        )
+        .whenComplete(notifyListeners);
+  }
+
+  Future<void> _forgetBackupPassword({required bool disableAutomatic}) async {
+    final purge =
+        backupPasswordRemembered || _preferences.getBool(_purgeKey) == true;
+    await _preferences.setMany({
+      _manualRememberKey: false,
+      if (disableAutomatic) autoBackupEnabledKey: false,
+      if (purge) _purgeKey: true,
+    });
+    _backupEncryptionPassword = null;
+    if (purge) await _finishPasswordRemoval();
+  }
+
+  Future<void> forgetBackupPassword() async {
+    await loaded;
+    await _preferences
+        .runExclusiveMutation(
+          () =>
+              _forgetBackupPassword(disableAutomatic: _backupEncryptionEnabled),
+        )
+        .whenComplete(notifyListeners);
+  }
+
+  Future<void> setAutomaticBackup(bool value, {String? password}) async {
+    await loaded;
+    await _preferences
+        .runExclusiveMutation(() async {
+          if (value && _backupEncryptionEnabled) {
+            await _rememberBackupPassword(password, autoBackupEnabledKey);
+          } else if (!value &&
+              !_rememberForManual &&
+              (backupPasswordRemembered ||
+                  _preferences.getBool(_purgeKey) == true)) {
+            await _forgetBackupPassword(disableAutomatic: true);
+          } else {
+            await _preferences.setBool(autoBackupEnabledKey, value);
+            if (!value && !_rememberForManual) _backupEncryptionPassword = null;
+          }
+        })
+        .whenComplete(notifyListeners);
+  }
+
   Future<void> setBackupEncryptionPassword(String? password) async {
     if (password != null && password.isEmpty) {
       throw ArgumentError('backup_password_empty');
     }
     await loaded;
-    await _preferences.setBool(_backupEncryptionEnabledKey, password != null);
-    _backupEncryptionEnabled = password != null;
-    _backupEncryptionPassword = password;
-    notifyListeners();
+    await _preferences
+        .runExclusiveMutation(() async {
+          final wasEnabled = _backupEncryptionEnabled;
+          final wasAutomatic = autoBackupEnabled;
+          final wasRemembered = backupPasswordRemembered;
+          final enabled = password != null;
+          final verifier = password == null
+              ? ''
+              : await BackupEncryption.passwordVerifier(password);
+          BackupKeychainUnavailable? failedWrite;
+          if (wasRemembered && password != null) {
+            try {
+              await backupPasswordStore.remember(password);
+            } on BackupKeychainUnavailable catch (error) {
+              // A dismissed native authorization dialog did not change the
+              // existing item. Keep the working password and its verifier.
+              if (error is BackupMacKeychainAccessError &&
+                  error.reason == MacBackupAuthorization.cancelled) {
+                rethrow;
+              }
+              failedWrite = error;
+            }
+          }
+          final purge =
+              failedWrite != null ||
+              (!enabled &&
+                  (wasRemembered || _preferences.getBool(_purgeKey) == true));
+          await _preferences.setMany({
+            _backupEncryptionEnabledKey: enabled,
+            _verifierKey: verifier,
+            if (!enabled || failedWrite != null) _manualRememberKey: false,
+            if (wasAutomatic &&
+                (!enabled || !wasEnabled || failedWrite != null))
+              autoBackupEnabledKey: false,
+            if (purge) _purgeKey: true,
+          });
+          _backupEncryptionEnabled = enabled;
+          _backupEncryptionPassword = failedWrite == null ? password : null;
+          if (purge) {
+            try {
+              await _finishPasswordRemoval();
+            } on BackupKeychainUnavailable {
+              // Keep the original write failure and the pending revocation.
+              if (failedWrite == null) rethrow;
+            }
+          }
+          if (failedWrite != null) throw failedWrite;
+        })
+        .whenComplete(notifyListeners);
   }
 
-  /// An enabled preference without a session password must prompt or cancel;
-  /// null is returned only when the user has disabled encryption.
+  Future<String?> automaticBackupPassword() async {
+    await loaded;
+    return _preferences.runExclusiveMutation(() async {
+      if (!_backupEncryptionEnabled) return null;
+      if (!autoBackupEnabled) throw const BackupKeychainUnavailable();
+      return _readRememberedBackupPassword();
+    });
+  }
+
+  Future<String> _readRememberedBackupPassword() async {
+    final password = await backupPasswordStore.read();
+    if (password == null || password.isEmpty) {
+      throw const BackupKeychainUnavailable();
+    }
+    if (_backupEncryptionPassword != password) await _verifyPassword(password);
+    _backupEncryptionPassword = password;
+    return password;
+  }
+
   Future<String?> resolveBackupEncryptionPassword(
     Future<String?> Function() prompt,
   ) async {
     await loaded;
+    final existing = await _preferences.runExclusiveMutation(() async {
+      if (!_backupEncryptionEnabled || _backupEncryptionPassword != null) {
+        return _backupEncryptionPassword;
+      }
+      if (!backupPasswordRemembered) return null;
+      try {
+        return await _readRememberedBackupPassword();
+      } on BackupKeychainUnavailable {
+        return null;
+      } on BackupDecryptionException {
+        return null;
+      }
+    });
     if (!_backupEncryptionEnabled) return null;
-    if (_backupEncryptionPassword case final String password) return password;
+    if (existing != null) return existing;
     final password = await prompt();
-    if (password == null || password.isEmpty || !_backupEncryptionEnabled) {
-      throw const BackupCancelledException();
-    }
-    _backupEncryptionPassword = password;
-    return password;
+    return _preferences.runExclusiveMutation(() async {
+      if (password == null || password.isEmpty || !_backupEncryptionEnabled) {
+        throw const BackupCancelledException();
+      }
+      await _verifyPassword(password);
+      _backupEncryptionPassword = password;
+      return password;
+    });
   }
 
   WebDavConfig _webDavConfig = const WebDavConfig();
@@ -2675,6 +2922,13 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = _preferences;
     await prefs.setBool(_displayUseLayeredSurfacesKey, v);
+  }
+
+  Future<void> setShowAssistantBodyBubble(bool value) async {
+    if (_showAssistantBodyBubble == value) return;
+    _showAssistantBodyBubble = value;
+    notifyListeners();
+    await _preferences.setBool(_displayShowAssistantBodyBubbleKey, value);
   }
 
   Future<void> setAssistantBubbleFitContent(bool v) async {
@@ -5265,8 +5519,8 @@ Requirements:
     await _preferences.setBool(_displayUseLegacyInlineCodeStyleKey, value);
   }
 
-  // Display: opt in to the previous fenced code block appearance.
-  bool _useLegacyCodeBlockStyle = false;
+  // Display: retain the original fenced code block appearance by default.
+  bool _useLegacyCodeBlockStyle = true;
   bool get useLegacyCodeBlockStyle => _useLegacyCodeBlockStyle;
   Future<void> setUseLegacyCodeBlockStyle(bool value) async {
     if (_useLegacyCodeBlockStyle == value) return;
@@ -5380,37 +5634,47 @@ Requirements:
     await _preferences.setBool(_sendMarkdownImageLinksAsImagesKey, value);
   }
 
-  ImageCompressConfig resolveImageCompressConfig() {
-    return switch (_imageUploadQuality) {
+  ImageCompressConfig resolveImageCompressConfig() => configFor(
+    _imageUploadQuality,
+    custom: _imageCompressCustomQuality,
+    includeTransparent: _imageCompressTransparentEnabled,
+  );
+
+  static ImageCompressConfig configFor(
+    ImageUploadQuality quality, {
+    int custom = 85,
+    bool includeTransparent = false,
+  }) {
+    return switch (quality) {
       ImageUploadQuality.original => ImageCompressConfig(
         enabled: false,
         quality: 100,
         maxLongEdge: 1568,
-        includeTransparent: _imageCompressTransparentEnabled,
+        includeTransparent: includeTransparent,
       ),
       ImageUploadQuality.high => ImageCompressConfig(
         enabled: true,
         quality: 90,
         maxLongEdge: 2048,
-        includeTransparent: _imageCompressTransparentEnabled,
+        includeTransparent: includeTransparent,
       ),
       ImageUploadQuality.balanced => ImageCompressConfig(
         enabled: true,
         quality: 85,
         maxLongEdge: 1568,
-        includeTransparent: _imageCompressTransparentEnabled,
+        includeTransparent: includeTransparent,
       ),
       ImageUploadQuality.saver => ImageCompressConfig(
         enabled: true,
         quality: 70,
         maxLongEdge: 1024,
-        includeTransparent: _imageCompressTransparentEnabled,
+        includeTransparent: includeTransparent,
       ),
       ImageUploadQuality.custom => ImageCompressConfig(
         enabled: true,
-        quality: _imageCompressCustomQuality,
+        quality: custom.clamp(10, 100),
         maxLongEdge: 1568,
-        includeTransparent: _imageCompressTransparentEnabled,
+        includeTransparent: includeTransparent,
       ),
     };
   }
@@ -5512,7 +5776,7 @@ Requirements:
   bool _desktopAutostartHidden = false;
   bool get desktopAutostartHidden => _desktopAutostartHidden;
 
-  Future<void> refreshDesktopStartup({bool notify = true}) async {
+  Future<void> refreshDesktopStartup() async {
     if (!DesktopStartupService.isDesktop || _desktopAutostartBusy) return;
     final revision = ++_desktopStartupRevision;
     try {
@@ -5525,7 +5789,7 @@ Requirements:
       if (revision != _desktopStartupRevision) return;
       _desktopAutostartFailed = true;
     }
-    if (notify) notifyListeners();
+    notifyListeners();
   }
 
   Future<void> setDesktopAutostartEnabled(bool enabled) async {
@@ -5782,6 +6046,15 @@ Requirements:
     notifyListeners();
     final prefs = _preferences;
     await prefs.setBool(_logElideLargePayloadsKey, v);
+  }
+
+  int _attachmentRetentionDays = AttachmentRetention.defaultDays;
+  int get attachmentRetentionDays => _attachmentRetentionDays;
+  Future<void> setAttachmentRetentionDays(int days) async {
+    final value = AttachmentRetention.days(days);
+    await _preferences.setInt(AttachmentRetention.preferenceKey, value);
+    _attachmentRetentionDays = value;
+    notifyListeners();
   }
 
   // Log settings: auto-delete (days)
@@ -6052,6 +6325,7 @@ Requirements:
     copy._logSaveOutput = _logSaveOutput;
     copy._logElideLargePayloads = _logElideLargePayloads;
     copy._logAutoDeleteDays = _logAutoDeleteDays;
+    copy._attachmentRetentionDays = _attachmentRetentionDays;
     copy._logMaxSizeMB = _logMaxSizeMB;
     copy._appLaunchCount = _appLaunchCount;
     copy._newChatOnLaunch = _newChatOnLaunch;
@@ -6089,6 +6363,7 @@ Requirements:
     copy._usePureBackground = _usePureBackground;
     copy._useLayeredSurfaces = _useLayeredSurfaces;
     copy._useLayeredSheetTiles = _useLayeredSheetTiles;
+    copy._showAssistantBodyBubble = _showAssistantBodyBubble;
     copy._assistantBubbleFitContent = _assistantBubbleFitContent;
     copy._assistantBubbleSplitParagraphs = _assistantBubbleSplitParagraphs;
     copy._chatMessageBackgroundStyle = _chatMessageBackgroundStyle;
@@ -6403,7 +6678,7 @@ class ProviderConfig {
   final KeyManagementConfig? keyManagement;
   // AIhubmix promo header opt-in
   final bool? aihubmixAppCodeEnabled;
-  // OpenAI-compatible provider account balance query.
+  // Provider account balance query, independent of the chat API format.
   final bool? balanceEnabled;
   final String? balanceApiPath;
   final String? balanceResultPath;

@@ -1,3 +1,5 @@
+import '../services/conversation_find_service.dart';
+import 'conversation_find_highlights.dart';
 import 'package:Kelivo/desktop/desktop_overlay_backdrop.dart';
 import '../utils/message_reasoning_source.dart';
 import '../../intelligent_ui/host/ui_copy_actions.dart';
@@ -10,6 +12,7 @@ import 'package:markstream/markstream_core.dart' show SourceSpan;
 import 'package:markstream/markstream.dart' show SelectableSpanAdapter;
 import 'tool_permission_widgets.dart';
 import '../../provider/widgets/oauth_message_recovery.dart';
+import 'response_truncation_notice.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/material.dart';
@@ -30,6 +33,7 @@ import 'dart:io';
 import 'package:open_filex/open_filex.dart';
 // import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'dart:convert';
+import 'package:crypto/crypto.dart' show sha256;
 import '../../home/widgets/file_processing_indicator.dart';
 import '../pages/image_viewer_page.dart';
 import '../../browser/browser_navigation.dart';
@@ -62,8 +66,12 @@ import '../../../shared/markdown/quote_syntax.dart';
 import '../controllers/quote_editing_controller.dart' show buildQuoteTextSpan;
 import 'quote_chip.dart';
 import 'quote_source_highlight.dart';
+import 'plain_message_text.dart';
+import 'quote_source_anchor.dart';
+import 'quote_interaction_scope.dart';
 import 'package:Kelivo/shared/widgets/app_selection_area.dart';
 import '../../../shared/widgets/snackbar.dart';
+import '../../../shared/widgets/scroll_layout_anchor.dart';
 import '../../../shared/widgets/audio_clip_player.dart';
 import '../../../core/utils/multimodal_input_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -93,6 +101,7 @@ import '../../../core/models/message_part_snapshot.dart';
 import 'select_copy_sheet.dart';
 import 'timeline_visibility.dart';
 import 'citation_sources_sheet.dart';
+import '../../../shared/markdown/citation_syntax.dart';
 import 'chat_surface.dart';
 import 'collapsible_user_text.dart';
 import 'chat_suggestion_bubbles.dart';
@@ -236,10 +245,7 @@ Uint8List? _decodeDataUriBytes(String path) {
   return bytes;
 }
 
-/// Shared image widget for tool thumbnails and message attachment previews.
-///
-/// Decodes through [SafeResizeImage] at the display area × device pixel ratio so
-/// 17K tool outputs are not materialized at full resolution.
+/// Builds a tool thumbnail without decoding large tool outputs at full resolution.
 Widget _buildResolvedImage(
   BuildContext context,
   String rawPath, {
@@ -247,49 +253,35 @@ Widget _buildResolvedImage(
   double? height,
   double? maxLogicalWidth,
   BoxFit fit = BoxFit.contain,
-  Widget Function()? placeholder,
 }) {
   final cs = Theme.of(context).colorScheme;
-  Widget errorWidget() =>
-      placeholder?.call() ??
-      Container(
-        width: width ?? (height != null ? height * 0.67 : 120),
-        height: height ?? 180,
-        color: cs.surfaceContainerHighest,
-        alignment: Alignment.center,
-        child: Icon(
-          Lucide.ImageOff,
-          size: 24,
-          color: cs.onSurface.withValues(alpha: 0.5),
-        ),
-      );
-
-  final path = rawPath.trim();
-  if (path.isEmpty) return errorWidget();
-
-  final provider = _toolImageProvider(path);
-  if (provider == null) return errorWidget();
+  Widget errorWidget() => Container(
+    width: width ?? (height != null ? height * 0.67 : 120),
+    height: height ?? 180,
+    color: cs.surfaceContainerHighest,
+    alignment: Alignment.center,
+    child: Icon(
+      Lucide.ImageOff,
+      size: 24,
+      color: cs.onSurface.withValues(alpha: 0.5),
+    ),
+  );
 
   final logicalHeight = height ?? width ?? kToolImageCardHeight;
   final logicalWidth =
       maxLogicalWidth ??
       width ??
       (height != null ? height * 2 : kToolImageTimelineMaxWidth);
-  final decode = toolImageDecodePixels(
+  final provider = _previewImageProvider(
+    rawPath,
     logicalWidth: logicalWidth,
     logicalHeight: logicalHeight,
     devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+    fit: fit,
   );
+  if (provider == null) return errorWidget();
   Widget image = Image(
-    image: SafeResizeImage.display(
-      provider,
-      width: decode.width,
-      height: decode.height,
-      fit: fit == BoxFit.cover ? SafeResizeFit.cover : SafeResizeFit.contain,
-      allowUpscaling: false,
-      maxEdge: kToolImageMaxDecodeEdge,
-      maxPixels: kToolImageMaxDecodePixels,
-    ),
+    image: provider,
     width: width,
     height: height,
     fit: fit,
@@ -303,6 +295,47 @@ Widget _buildResolvedImage(
     );
   }
   return image;
+}
+
+ImageProvider? _previewImageProvider(
+  String path, {
+  required double logicalWidth,
+  required double logicalHeight,
+  required double devicePixelRatio,
+  required BoxFit fit,
+}) {
+  final source = path.trim();
+  if (source.isEmpty) return null;
+  final base = _toolImageProvider(source);
+  if (base == null) return null;
+  final decode = toolImageDecodePixels(
+    logicalWidth: logicalWidth,
+    logicalHeight: logicalHeight,
+    devicePixelRatio: devicePixelRatio,
+  );
+  return SafeResizeImage.display(
+    base,
+    width: decode.width,
+    height: decode.height,
+    fit: fit == BoxFit.cover ? SafeResizeFit.cover : SafeResizeFit.contain,
+    allowUpscaling: false,
+    maxEdge: kToolImageMaxDecodeEdge,
+    maxPixels: kToolImageMaxDecodePixels,
+  );
+}
+
+Size? _cachedPreviewSize(BuildContext context, ImageProvider provider) {
+  // Only read the thumbnail's already-decoded frame. A pending or broken
+  // thumbnail can still open immediately with the ordinary viewer fade.
+  final stream = provider.resolve(createLocalImageConfiguration(context));
+  Size? size;
+  final listener = ImageStreamListener((info, _) {
+    size = Size(info.image.width.toDouble(), info.image.height.toDouble());
+    info.dispose();
+  }, onError: (_, _) {});
+  stream.addListener(listener);
+  stream.removeListener(listener);
+  return size;
 }
 
 ImageProvider<Object>? _toolImageProvider(String path) {
@@ -351,9 +384,41 @@ class _AssistantInlineImage extends StatefulWidget {
 }
 
 class _AssistantInlineImageState extends State<_AssistantInlineImage> {
+  late ImageProvider? _provider = _assistantInlineImageProvider(widget.uri);
+  late String _sourceId = sha256.convert(utf8.encode(widget.uri)).toString();
+  PageStorageBucket? _storage;
+  double? _aspect;
   ImageStream? _stream;
   ImageStreamListener? _listener;
-  String? _listenedIdentity;
+  ImageProvider? _listenedProvider;
+
+  Object get _aspectId => ('assistant-inline-image-aspect', _sourceId);
+
+  void _syncAspect({bool sourceChanged = false}) {
+    final storage = PageStorage.maybeOf(context);
+    if (!sourceChanged && identical(storage, _storage)) return;
+    _stopListening();
+    _listenedProvider = null;
+    _storage = storage;
+    _aspect = storage?.readState(context, identifier: _aspectId) as double?;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAspect();
+  }
+
+  @override
+  void didUpdateWidget(_AssistantInlineImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final changed = oldWidget.uri != widget.uri;
+    if (changed) {
+      _provider = _assistantInlineImageProvider(widget.uri);
+      _sourceId = sha256.convert(utf8.encode(widget.uri)).toString();
+    }
+    _syncAspect(sourceChanged: changed);
+  }
 
   @override
   void dispose() {
@@ -367,43 +432,46 @@ class _AssistantInlineImageState extends State<_AssistantInlineImage> {
     }
     _stream = null;
     _listener = null;
-    _listenedIdentity = null;
   }
 
   void _listenForAspect(ImageProvider provider) {
-    final identity = '${widget.imageKey}:${widget.uri.length}';
-    if (_listenedIdentity == identity) return;
+    if (_listenedProvider == provider) return;
     _stopListening();
-    _listenedIdentity = identity;
-    final stream = provider.resolve(ImageConfiguration.empty);
-    late final ImageStreamListener listener;
-    listener = ImageStreamListener((info, _) {
-      final width = info.image.width;
-      final height = info.image.height;
-      if (width > 0 && height > 0) {
-        widget.onAspectResolved?.call(widget.imageKey, width / height);
+    _listenedProvider = provider;
+    _stream = provider.resolve(createLocalImageConfiguration(context));
+    _listener = ImageStreamListener((info, synchronous) {
+      final aspect = info.image.width / info.image.height;
+      info.dispose();
+      _stopListening();
+      if (!mounted || !aspect.isFinite || aspect <= 0) return;
+      _storage?.writeState(context, aspect, identifier: _aspectId);
+      if (_aspect != aspect) {
+        if (synchronous) {
+          _aspect = aspect;
+        } else {
+          preserveScrollLayoutAnchor(context);
+          setState(() => _aspect = aspect);
+        }
       }
-    });
-    _stream = stream;
-    _listener = listener;
-    stream.addListener(listener);
+      widget.onAspectResolved?.call(widget.imageKey, aspect);
+    }, onError: (Object error, StackTrace? stack) => _stopListening());
+    _stream!.addListener(_listener!);
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = _assistantInlineImageProvider(widget.uri);
+    final provider = _provider ??= _assistantInlineImageProvider(widget.uri);
     return GestureDetector(
       key: ValueKey('assistant-inline-image:${widget.imageKey}'),
       onTap: widget.group.isEmpty
           ? null
-          : () => _openAssistantImageViewer(
-              context,
+          : () => ImageViewerPage(
               images: widget.group,
               initialIndex: widget.initialIndex.clamp(
                 0,
                 widget.group.length - 1,
               ),
-            ),
+            ).open(context),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final displayWidth = constraints.maxWidth;
@@ -411,61 +479,32 @@ class _AssistantInlineImageState extends State<_AssistantInlineImage> {
           final cacheWidth = displayWidth.isFinite
               ? math.max(1, (displayWidth * dpr).ceil())
               : null;
+          final resized = provider == null
+              ? null
+              : ResizeImage.resizeIfNeeded(cacheWidth, null, provider);
+          // Share Image's decoded stream; measuring must neither decode a
+          // second full-size copy nor keep animated images playing offscreen.
+          if (resized != null) _listenForAspect(resized);
+          final height = displayWidth.isFinite && _aspect != null
+              ? displayWidth / _aspect!
+              : 36.0;
           final image = provider == null
-              ? const Icon(Icons.broken_image)
+              ? const Icon(Lucide.ImageOff)
               : Image(
-                  image: ResizeImage.resizeIfNeeded(cacheWidth, null, provider),
+                  image: resized!,
                   width: displayWidth.isFinite ? displayWidth : null,
+                  height: height,
                   fit: BoxFit.contain,
-                  frameBuilder: (context, child, frame, _) {
-                    if (frame != null) {
-                      _listenForAspect(provider);
-                    }
-                    return child;
-                  },
-                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                  errorBuilder: (_, __, ___) => const Icon(Lucide.ImageOff),
                 );
           return ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: image,
+            child: SizedBox(height: height, child: image),
           );
         },
       ),
     );
   }
-}
-
-void _openAssistantImageViewer(
-  BuildContext context, {
-  required List<String> images,
-  required int initialIndex,
-}) {
-  Navigator.of(context).push(
-    PageRouteBuilder<void>(
-      opaque: false,
-      pageBuilder: (_, __, ___) =>
-          ImageViewerPage(images: images, initialIndex: initialIndex),
-      transitionDuration: const Duration(milliseconds: 360),
-      reverseTransitionDuration: const Duration(milliseconds: 280),
-      transitionsBuilder: (context, anim, sec, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.02),
-              end: Offset.zero,
-            ).animate(curved),
-            child: child,
-          ),
-        );
-      },
-    ),
-  );
 }
 
 IconData _toolIconFor(String name, [Map<String, dynamic> args = const {}]) {
@@ -733,33 +772,8 @@ Widget _buildToolImageFromPath(
   );
 }
 
-void _showToolFullImage(BuildContext context, String path) {
-  Navigator.of(context).push(
-    PageRouteBuilder<void>(
-      opaque: false,
-      pageBuilder: (_, __, ___) => ImageViewerPage(images: [path]),
-      transitionDuration: const Duration(milliseconds: 360),
-      reverseTransitionDuration: const Duration(milliseconds: 280),
-      transitionsBuilder: (context, anim, sec, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.02),
-              end: Offset.zero,
-            ).animate(curved),
-            child: child,
-          ),
-        );
-      },
-    ),
-  );
-}
+void _showToolFullImage(BuildContext context, String path) =>
+    unawaited(ImageViewerPage(images: [path]).open(context));
 
 void _showBrowserStepDetail(
   BuildContext context,
@@ -1267,6 +1281,7 @@ class ChatMessageWidget extends StatefulWidget {
   final bool showUserAvatar;
   final bool showTokenStats;
   final VoidCallback? onRegenerate;
+  final VoidCallback? onRetryWithoutImages;
   final VoidCallback? onResend;
   final VoidCallback? onCopy;
   final VoidCallback? onTranslate;
@@ -1334,6 +1349,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.showUserAvatar = true,
     this.showTokenStats = true,
     this.onRegenerate,
+    this.onRetryWithoutImages,
     this.onResend,
     this.onCopy,
     this.onTranslate,
@@ -2332,15 +2348,17 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.linux;
     final double baseUser = isDesktop ? 14.0 : 15.5;
-    final highlights = quoteSourceHighlights(
+    final quoteRanges = quoteSourceHighlights(
       context,
       widget.message,
       visualText,
       sourceMap: sourceMap,
     );
-    final highlightColor = Theme.of(
-      context,
-    ).colorScheme.primary.withValues(alpha: .22);
+    final find = ConversationFindHighlights.of(context);
+    final highlights = [...quoteRanges, ...?find?.ranges(FindPart.body, 0)];
+    final highlightColor = quoteRanges.isEmpty && highlights.isNotEmpty
+        ? context.appColors.searchHighlight
+        : Theme.of(context).colorScheme.primary.withValues(alpha: .22);
 
     Widget content;
     if (enableUserMarkdown) {
@@ -2351,22 +2369,33 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           baseStyle: TextStyle(fontSize: baseUser, height: 1.45),
           conversationId: widget.message.conversationId,
           highlightRanges: highlights,
+          highlightColor: highlightColor,
         ),
       );
     } else {
-      content = Text.rich(
-        widget.message.quotes.isNotEmpty
+      final text = widget.message.quotes.isEmpty
+          ? UnicodeSanitizer.sanitize(visualText)
+          : visualText;
+      content = plainMessageText(
+        text: text,
+        buildSpan: (start, end) => widget.message.quotes.isNotEmpty
             ? buildQuoteTextSpan(
-                text: visualText,
+                text: text.substring(start, end),
                 quotes: widget.message.quotes,
                 quoteAtOffset: (offset) => quoteAtSourceOffset(
                   widget.message.content,
                   widget.message.quotes,
-                  sourceMap.sourceRange(offset, offset + 1).start,
+                  sourceMap
+                      .sourceRange(start + offset, start + offset + 1)
+                      .start,
                 ),
                 highlights: [
                   for (final range in highlights)
-                    TextRange(start: range.start, end: range.end),
+                    if (range.start < end && range.end > start)
+                      TextRange(
+                        start: range.start.clamp(start, end) - start,
+                        end: range.end.clamp(start, end) - start,
+                      ),
                 ],
                 highlightColor: highlightColor,
                 token: (quote, offset) => SelectableSpanAdapter(
@@ -2374,16 +2403,20 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   child: QuoteChip(
                     quote: quote,
                     selected: highlights.any(
-                      (range) => range.start <= offset && range.end > offset,
+                      (range) =>
+                          range.start <= start + offset &&
+                          range.end > start + offset,
                     ),
                     style: TextStyle(fontSize: baseUser, height: 1.4),
                   ),
                 ),
               )
             : highlightedQuoteSource(
-                UnicodeSanitizer.sanitize(visualText),
+                text,
                 highlights,
                 highlightColor,
+                start: start,
+                end: end,
               ),
         style: TextStyle(
           fontSize: baseUser,
@@ -2397,7 +2430,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       source: widget.message.content,
       sourceMap: sourceMap,
       quotes: widget.message.quotes,
-      child: content,
+      child: DefaultTextStyle.merge(
+        textWidthBasis: TextWidthBasis.longestLine,
+        child: content,
+      ),
     );
     if (isDesktop) {
       content = AppSelectionArea(
@@ -2415,12 +2451,24 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       content = CollapsibleUserText(
         key: ValueKey('user-collapse:${widget.message.id}'),
         collapsedHeight: lineHeight * _collapsedUserTextLines,
-        reveal: highlights.isNotEmpty,
+        reveal:
+            quoteRanges.isNotEmpty ||
+            find?.current?.part == FindPart.body ||
+            QuoteInteractionScope.maybeOf(
+                  context,
+                )?.navigationFor(widget.message.id) !=
+                null,
         child: content,
       );
     }
 
-    return content;
+    return QuoteSourceAnchor(
+      message: widget.message,
+      source: visualText,
+      sourceMap: sourceMap,
+      markdown: enableUserMarkdown,
+      child: content,
+    );
   }
 
   /// Attachment previews in [parts] ordinal order (not images-then-files).
@@ -2454,14 +2502,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       child: Icon(Lucide.ImageOff, color: cs.onSurface.withValues(alpha: 0.45)),
     );
 
-    final viewablePaths = <String>[
-      for (final entry in attachmentEntries)
-        if (entry.part is ImagePart)
-          if (!(entry.part as ImagePart).unavailable &&
-              (entry.part as ImagePart).uri.trim().isNotEmpty)
-            _resolveAttachmentImageUri((entry.part as ImagePart).uri),
-    ];
-
+    final viewablePaths = <String>[];
+    final heroTags = <Object>[];
     final items = <Widget>[];
     for (final entry in attachmentEntries) {
       final part = entry.part;
@@ -2526,7 +2568,22 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       if (part is ImagePart) {
         final path = part.uri.trim();
         final fixed = path.isEmpty ? '' : _resolveAttachmentImageUri(path);
-        final viewIndex = viewablePaths.indexOf(fixed);
+        final viewIndex = viewablePaths.length;
+        final heroTag = (this, partIndex);
+        final available = !part.unavailable && fixed.isNotEmpty;
+        if (available) {
+          viewablePaths.add(fixed);
+          heroTags.add(heroTag);
+        }
+        final provider = available
+            ? _previewImageProvider(
+                fixed,
+                logicalWidth: 112,
+                logicalHeight: 112,
+                devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+                fit: BoxFit.cover,
+              )
+            : null;
         items.add(
           IosCardPress(
             key: ValueKey(
@@ -2536,55 +2593,39 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             pressedScale: 0.985,
             borderRadius: BorderRadius.circular(10),
             padding: EdgeInsets.zero,
-            onTap: part.unavailable || viewIndex < 0
+            onTap: !available
                 ? null
                 : () {
-                    Navigator.of(context).push(
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => ImageViewerPage(
-                          images: viewablePaths,
-                          initialIndex: viewIndex,
-                        ),
-                        transitionDuration: const Duration(milliseconds: 360),
-                        reverseTransitionDuration: const Duration(
-                          milliseconds: 280,
-                        ),
-                        transitionsBuilder: (context, anim, sec, child) {
-                          final curved = CurvedAnimation(
-                            parent: anim,
-                            curve: Curves.easeOutCubic,
-                            reverseCurve: Curves.easeInCubic,
-                          );
-                          return FadeTransition(
-                            opacity: curved,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0, 0.02),
-                                end: Offset.zero,
-                              ).animate(curved),
-                              child: child,
-                            ),
-                          );
-                        },
-                      ),
-                    );
+                    final size = provider == null
+                        ? null
+                        : _cachedPreviewSize(context, provider);
+                    ImageViewerPage(
+                      images: viewablePaths,
+                      initialIndex: viewIndex,
+                      heroTags: size == null ? null : heroTags,
+                      initialPreview: size == null
+                          ? null
+                          : (provider: provider!, size: size),
+                    ).open(context);
                   },
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Hero(
-                tag:
-                    'img:${fixed.isNotEmpty ? fixed : 'unavailable-$partIndex'}',
-                child: part.unavailable || fixed.isEmpty
-                    ? unavailableImagePlaceholder()
-                    : _buildResolvedImage(
-                        context,
-                        fixed,
+              child: provider == null
+                  ? unavailableImagePlaceholder()
+                  : Hero(
+                      tag: heroTag,
+                      createRectTween: ImageViewerPage.flightRect,
+                      flightShuttleBuilder: ImageViewerPage.thumbnailFlight,
+                      child: Image(
+                        image: provider,
                         width: 112,
                         height: 112,
                         fit: BoxFit.cover,
-                        placeholder: unavailableImagePlaceholder,
+                        gaplessPlayback: true,
+                        errorBuilder: (_, _, _) =>
+                            unavailableImagePlaceholder(),
                       ),
-              ),
+                    ),
             ),
           ),
         );
@@ -2802,6 +2843,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     BorderRadius radius = BorderRadius.circular(16);
+    final showBubble =
+        isUser ||
+        context.select<SettingsProvider, bool>(
+          (s) => s.assistantBodyBubbleVisible,
+        );
     return buildSharedChatSurface(
       context,
       borderRadius: radius,
@@ -2811,7 +2857,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 ? cs.primary.withValues(alpha: 0.15)
                 : cs.primary.withValues(alpha: 0.08))
           : null,
-      bareOnDefault: !isUser,
+      bare: !showBubble,
       isUser: isUser,
       child: child,
     );
@@ -2821,7 +2867,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     required BuildContext context,
     required Widget child,
   }) {
-    // Reuse same styles, but flag as non-user for default fallthrough
     return _buildBubbleContainer(context: context, isUser: false, child: child);
   }
 
@@ -2831,6 +2876,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     bool enableAssistantMarkdown,
     String? Function(String) citationIndexResolver, {
     String contentKey = '',
+    required int findBlock,
+    SourceTextMap? findParagraph,
     Object? detailsStateKey,
     UiTextSlice? uiSource,
     SourceTextMap? sourceMap,
@@ -2840,12 +2887,21 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.linux;
     final double baseAssistant = isDesktop ? 14.0 : 15.7;
-    final highlights = quoteSourceHighlights(
+    final quoteRanges = quoteSourceHighlights(
       context,
       widget.message,
       visualContent,
       sourceMap: sourceMap,
     );
+    final highlights = [
+      ...quoteRanges,
+      ...?ConversationFindHighlights.of(
+        context,
+      )?.ranges(FindPart.body, findBlock, paragraph: findParagraph),
+    ];
+    final highlightColor = quoteRanges.isEmpty && highlights.isNotEmpty
+        ? context.appColors.searchHighlight
+        : Theme.of(context).colorScheme.primary.withValues(alpha: .22);
 
     Widget assistantContent;
     if (enableAssistantMarkdown) {
@@ -2853,6 +2909,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         text: visualContent,
         detailsStateKey: detailsStateKey,
         highlightRanges: highlights,
+        highlightColor: highlightColor,
         uiHost: widget.message.role != 'assistant' || uiSource == null
             ? null
             : UiHostBinding(
@@ -2868,11 +2925,15 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         conversationId: widget.message.conversationId,
       );
     } else {
-      assistantContent = Text.rich(
-        highlightedQuoteSource(
-          UnicodeSanitizer.sanitize(visualContent),
+      final text = UnicodeSanitizer.sanitize(visualContent);
+      assistantContent = plainMessageText(
+        text: text,
+        buildSpan: (start, end) => highlightedQuoteSource(
+          text,
           highlights,
-          Theme.of(context).colorScheme.primary.withValues(alpha: .22),
+          highlightColor,
+          start: start,
+          end: end,
         ),
         style: TextStyle(
           fontSize: baseAssistant,
@@ -2895,19 +2956,27 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       child: assistantContent,
     );
 
-    return RepaintBoundary(
-      child: AppSelectionArea(
-        message: widget.message,
-        sourceText: visualContent,
-        sourceMap: sourceMap,
-        key: ValueKey(
-          contentKey.isEmpty
-              ? 'assistant_${widget.message.id}'
-              : 'assistant_${widget.message.id}_$contentKey',
-        ),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(fontSize: baseAssistant, height: 1.5),
-          child: assistantContent,
+    return QuoteSourceAnchor(
+      message: widget.message,
+      source: visualContent,
+      sourceMap: sourceMap,
+      findBlock: findBlock,
+      findParagraph: findParagraph,
+      markdown: enableAssistantMarkdown,
+      child: RepaintBoundary(
+        child: AppSelectionArea(
+          message: widget.message,
+          sourceText: visualContent,
+          sourceMap: sourceMap,
+          key: ValueKey(
+            contentKey.isEmpty
+                ? 'assistant_${widget.message.id}'
+                : 'assistant_${widget.message.id}_$contentKey',
+          ),
+          child: DefaultTextStyle.merge(
+            style: TextStyle(fontSize: baseAssistant, height: 1.5),
+            child: assistantContent,
+          ),
         ),
       ),
     );
@@ -2960,20 +3029,18 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     bool enableAssistantMarkdown,
     String? Function(String) citationIndexResolver, {
     required String blockKey,
+    int findBlock = 0,
     UiTextSlice? uiSource,
     SourceTextMap? sourceMap,
   }) {
     final split = context.select<SettingsProvider, bool>(
       (s) => s.assistantBubbleSplitParagraphs,
     );
-    final parts = split
-        ? splitAssistantParagraphsWithSource(visualContent)
-        : <AssistantParagraph>[
-            AssistantParagraph(
-              visualContent,
-              SourceSpan(0, visualContent.length),
-            ),
-          ];
+    final parts = assistantDisplayParagraphs(
+      visualContent,
+      split: split,
+      uiSource: uiSource,
+    );
     final detailsBlockKey = sourceMap == null
         ? blockKey
         : ('source', sourceMap.sourceRange(0, 0).start);
@@ -2981,17 +3048,17 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       for (var i = 0; i < parts.length; i++)
         _buildAssistantTextBlock(
           context,
-          uiSource == null ? parts[i].text : parts[i].span.slice(visualContent),
-          uiSource: uiSource?.slice(parts[i].span.start, parts[i].span.end),
+          parts[i].text,
+          uiSource: parts[i].uiSource,
           enableAssistantMarkdown,
           citationIndexResolver,
+          findBlock: findBlock,
+          findParagraph: parts[i].blockMap,
           contentKey: parts.length == 1 ? '' : '$blockKey.$i',
           detailsStateKey: (widget.message.id, detailsBlockKey, i),
           sourceMap: sourceMap == null
               ? null
-              : uiSource == null
-              ? parts[i].sourceMap.through(sourceMap)
-              : sourceMap.slice(parts[i].span.start, parts[i].span.end),
+              : parts[i].blockMap?.through(sourceMap) ?? sourceMap,
         ),
     ];
   }
@@ -3002,6 +3069,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     bool enableAssistantMarkdown,
     String? Function(String) citationIndexResolver, {
     String contentKey = '',
+    required int findBlock,
+    SourceTextMap? findParagraph,
     Object? detailsStateKey,
     UiTextSlice? uiSource,
     SourceTextMap? sourceMap,
@@ -3016,6 +3085,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           enableAssistantMarkdown,
           citationIndexResolver,
           contentKey: contentKey,
+          findBlock: findBlock,
+          findParagraph: findParagraph,
           detailsStateKey: detailsStateKey,
           uiSource: uiSource,
           sourceMap: sourceMap,
@@ -3374,8 +3445,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
               const SizedBox(height: 8),
             ],
             ...() {
+              final find = ConversationFindHighlights.of(context);
+              final target = find?.current;
               final showThinkingCards =
-                  widget.showThinkingCards ?? showThinkingCardsSetting;
+                  target?.part == FindPart.reasoning ||
+                  (widget.showThinkingCards ?? showThinkingCardsSetting);
               final showToolCards =
                   widget.showToolCards ?? showToolCardsSetting;
               ToolApprovalService? approval;
@@ -3456,6 +3530,14 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   if (block.isImage)
                     _resolveAttachmentImageUri(block.imageUri!),
               ];
+              final findBodyIndices = <int, int>{};
+              if (find?.hits.isNotEmpty == true) {
+                for (var i = 0; i < visibleBlocks.length; i++) {
+                  if (visibleBlocks[i].isText) {
+                    findBodyIndices[i] = findBodyIndices.length;
+                  }
+                }
+              }
               Object blockKey(int index) {
                 final block = visibleBlocks[index];
                 return (
@@ -3473,6 +3555,37 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 ViewportBlockList(
                   storageId: 'body',
                   itemCount: visibleBlocks.length,
+                  revealIndex: () {
+                    final quote = QuoteInteractionScope.maybeOf(
+                      context,
+                    )?.navigationFor(widget.message.id);
+                    if (quote == null) {
+                      if (target == null) return null;
+                      if (target.part == FindPart.reasoning) {
+                        return visibleBlocks.indexWhere(
+                          (b) => b.thinkingSteps.any(
+                            (s) =>
+                                s.isReasoning &&
+                                s.sourceOrdinal == target.block,
+                          ),
+                        );
+                      }
+                      return findBodyIndices.entries
+                          .where((e) => e.value == target.block)
+                          .firstOrNull
+                          ?.key;
+                    }
+                    return visibleBlocks.indexWhere(
+                      (block) =>
+                          block.isText &&
+                          (block.sourceMap
+                                  ?.displayRanges(
+                                    SourceSpan(quote.start, quote.end),
+                                  )
+                                  .isNotEmpty ??
+                              false),
+                    );
+                  }(),
                   spacing: 8,
                   structureToken: (
                     widget.message.id,
@@ -3526,6 +3639,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                             enableAssistantMarkdown,
                             citationIndexResolver,
                             blockKey: 'text$index',
+                            findBlock: findBodyIndices[index] ?? 0,
                             uiSource: block.uiSource,
                             sourceMap: block.sourceMap,
                           ),
@@ -3683,10 +3797,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                             Padding(
                               padding: const EdgeInsets.fromLTRB(8, 2, 8, 6),
                               child: RepaintBoundary(
-                                child: AppSelectionArea(
-                                  key: ValueKey(
-                                    'translation_${widget.message.id}',
-                                  ),
+                                child: QuoteSourceAnchor(
+                                  message: widget.message,
+                                  source: translationText,
+                                  markdown: enableAssistantMarkdown,
+                                  findPart: FindPart.translation,
                                   child: Builder(
                                     builder: (context) {
                                       final bool isDesktop =
@@ -3699,11 +3814,20 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                       final double baseTranslation = isDesktop
                                           ? 14.0
                                           : 15.5;
+                                      final ranges =
+                                          ConversationFindHighlights.of(
+                                            context,
+                                          )?.ranges(FindPart.translation, 0) ??
+                                          const <SourceSpan>[];
                                       Widget translationContent;
                                       if (enableAssistantMarkdown) {
                                         translationContent =
                                             MarkdownWithCodeHighlight(
                                               text: translationText,
+                                              highlightRanges: ranges,
+                                              highlightColor: context
+                                                  .appColors
+                                                  .searchHighlight,
                                               onCitationTap: _handleCitationTap,
                                               citationIndexResolver:
                                                   citationIndexResolver,
@@ -3715,10 +3839,24 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                                   widget.message.conversationId,
                                             );
                                       } else {
-                                        translationContent = Text(
-                                          UnicodeSanitizer.sanitize(
+                                        translationContent = plainMessageText(
+                                          text: UnicodeSanitizer.sanitize(
                                             translationText,
                                           ),
+                                          buildSpan: ranges.isEmpty
+                                              ? null
+                                              : (start, end) =>
+                                                    highlightedQuoteSource(
+                                                      UnicodeSanitizer.sanitize(
+                                                        translationText,
+                                                      ),
+                                                      ranges,
+                                                      context
+                                                          .appColors
+                                                          .searchHighlight,
+                                                      start: start,
+                                                      end: end,
+                                                    ),
                                           style: TextStyle(
                                             fontSize: baseTranslation,
                                             height: 1.4,
@@ -3733,7 +3871,12 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                           fontSize: baseTranslation,
                                           height: 1.4,
                                         ),
-                                        child: translationContent,
+                                        child: AppSelectionArea(
+                                          key: ValueKey(
+                                            'translation_${widget.message.id}',
+                                          ),
+                                          child: translationContent,
+                                        ),
                                       );
                                     },
                                   ),
@@ -3759,6 +3902,14 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             for (final error
                 in widget.message.parts.whereType<ProviderAuthErrorPart>())
               OAuthMessageRecovery(error: error),
+            for (final truncation
+                in widget.message.parts.whereType<ResponseTruncationPart>())
+              ResponseTruncationNotice(
+                truncation: truncation,
+                onRetryWithoutImages: widget.message.isStreaming
+                    ? null
+                    : widget.onRetryWithoutImages,
+              ),
             // Action buttons (hidden while generating)
             AnimatedSwitcher(
               // Completion previously remounted the row at its final height.
@@ -3992,6 +4143,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                   finishUsage?.cacheWriteTokens ??
                                   widget.message.cacheWriteTokens,
                               durationMs: widget.message.durationMs,
+                              firstResponseMs: widget.message.firstResponseMs,
                               firstTokenMs: widget.message.firstTokenMs,
                               totalCompletionTokens:
                                   widget.message.completionTokens,
@@ -4023,27 +4175,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   String? Function(String) _buildCitationIndexResolver(
     List<Map<String, dynamic>> items,
   ) {
-    final lookup = <String, String>{};
-    // An exact ID match wins over a legacy numeric index.
-    for (final item in items) {
-      final id = item['id']?.toString() ?? '';
-      final index = item['index']?.toString() ?? '';
-      if (id.isNotEmpty && index.isNotEmpty) lookup[id] ??= index;
-    }
-    for (final item in items) {
-      final index = item['index']?.toString() ?? '';
-      if (index.isNotEmpty) lookup[index] ??= index;
-    }
+    final lookup = citationIndexLookup(items);
     if (!mapEquals(lookup, _citationIndexLookup)) {
       _citationIndexLookup = lookup;
-      _citationIndexResolver = (id) {
-        final key = id.trim();
-        if (key.isEmpty) return null;
-        final direct = lookup[key];
-        if (direct != null) return direct;
-        final asIndex = int.tryParse(key);
-        return asIndex == null ? null : lookup[asIndex.toString()];
-      };
+      _citationIndexResolver = (id) => resolveCitationIndex(lookup, id);
     }
     return _citationIndexResolver;
   }
@@ -4125,41 +4260,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     if (identical(parts, _searchItemsParts) && _searchItemsCache != null) {
       return _searchItemsCache!;
     }
-    if (parts.isEmpty) {
-      _searchItemsParts = parts;
-      _searchItemsCache = const <Map<String, dynamic>>[];
-      return _searchItemsCache!;
-    }
-
-    final out = <Map<String, dynamic>>[];
-    final seen = <String>{};
-
-    for (int i = parts.length - 1; i >= 0; i--) {
-      final p = parts[i];
-      if ((p.toolName != 'search_web' && p.toolName != 'builtin_search') ||
-          (p.content?.isNotEmpty ?? false) == false) {
-        continue;
-      }
-      try {
-        final obj = jsonDecode(p.content!) as Map<String, dynamic>;
-        final arr = obj['items'] as List? ?? const <dynamic>[];
-        for (final it in arr) {
-          if (it is! Map) continue;
-          final m = it.cast<String, dynamic>();
-          final key = (m['id'] ?? m['url'] ?? '')
-              .toString(); // builtin_search no id
-          if (key.isNotEmpty) {
-            if (!seen.add(key)) continue;
-          }
-          out.add(m);
-        }
-      } catch (_) {
-        // ignore broken tool payload
-      }
-    }
     _searchItemsParts = parts;
-    _searchItemsCache = out;
-    return out;
+    return _searchItemsCache = citationSearchItems(
+      parts.reversed.map((p) => (name: p.toolName, content: p.content)),
+    );
   }
 
   void _showCitationsSheet(List<Map<String, dynamic>> items) {
@@ -5114,6 +5218,15 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
         filteredSteps.every((step) => step.isReasoning) &&
         !filteredSteps.any((step) => step.isReasoning && step.loading);
     final canCollapse = collapseThinkingSteps && filteredSteps.length > 2;
+    final target = ConversationFindHighlights.of(context)?.current;
+    final findStep = target?.part == FindPart.reasoning
+        ? filteredSteps.indexWhere(
+            (s) => s.isReasoning && s.sourceOrdinal == target!.block,
+          )
+        : -1;
+    if (findStep >= 0 && findStep < filteredSteps.length - 2) {
+      _showAllSteps = true;
+    }
     final hiddenCount = canCollapse && !_showAllSteps
         ? filteredSteps.length - 2
         : 0;
@@ -5193,6 +5306,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                   ),
                 ViewportBlockList(
                   storageId: ('steps', widget.key),
+                  revealIndex: findStep >= 0 ? findStep - hiddenCount : null,
                   itemCount: visibleSteps.length,
                   structureToken: (visibleSteps.length, hiddenCount),
                   itemKey: (i) {
@@ -5634,10 +5748,6 @@ class _ChainOfThoughtReasoningStepState
         : _ReasoningStepState.collapsed;
   }
 
-  String _sanitize(String s) {
-    return s.replaceAll('\r', '').trim();
-  }
-
   String _elapsed() {
     final start = widget.step.startAt;
     if (start == null) return '';
@@ -5723,8 +5833,17 @@ class _ChainOfThoughtReasoningStepState
     final enableReasoningMarkdown = context.select<SettingsProvider, bool>(
       (s) => s.enableReasoningMarkdown,
     );
-    final state = _stepState;
-    final display = _sanitize(widget.step.text);
+    final find = ConversationFindHighlights.of(context);
+    final target = find?.current;
+    final selected =
+        target?.part == FindPart.reasoning &&
+        target?.block == widget.sourceOrdinal;
+    if (selected) _localExpanded = true;
+    final state = selected ? _ReasoningStepState.expanded : _stepState;
+    final display = reasoningDisplayText(widget.step.text);
+    final ranges =
+        find?.ranges(FindPart.reasoning, widget.sourceOrdinal) ??
+        const <SourceSpan>[];
     final label = ThinkingSheen(
       enabled: widget.step.loading,
       color: fg.strong,
@@ -5762,18 +5881,41 @@ class _ChainOfThoughtReasoningStepState
     );
 
     Widget reasoningContent(String text) {
-      if (enableReasoningMarkdown) {
-        return RepaintBoundary(
-          child: MarkdownWithCodeHighlight(
-            text: text.isNotEmpty ? text : '…',
-            baseStyle: TextStyle(fontSize: 12.5, height: 1.32),
-            streaming: widget.step.loading,
-          ),
-        );
-      }
-      return Text(
-        text.isNotEmpty ? UnicodeSanitizer.sanitize(text) : '…',
-        style: TextStyle(fontSize: 12.5, height: 1.32),
+      final source = text.isNotEmpty ? UnicodeSanitizer.sanitize(text) : '…';
+      const style = TextStyle(fontSize: 12.5, height: 1.32);
+      return QuoteSourceAnchor(
+        message: widget.message,
+        source: source,
+        findPart: FindPart.reasoning,
+        findBlock: widget.sourceOrdinal,
+        markdown: enableReasoningMarkdown,
+        child: AppSelectionArea(
+          message: widget.message,
+          quoteTextOnly: true,
+          child: enableReasoningMarkdown
+              ? RepaintBoundary(
+                  child: MarkdownWithCodeHighlight(
+                    text: source,
+                    highlightRanges: ranges,
+                    highlightColor: context.appColors.searchHighlight,
+                    baseStyle: style,
+                    streaming: widget.step.loading,
+                  ),
+                )
+              : plainMessageText(
+                  text: source,
+                  style: style,
+                  buildSpan: ranges.isEmpty
+                      ? null
+                      : (start, end) => highlightedQuoteSource(
+                          source,
+                          ranges,
+                          context.appColors.searchHighlight,
+                          start: start,
+                          end: end,
+                        ),
+                ),
+        ),
       );
     }
 
@@ -5807,20 +5949,12 @@ class _ChainOfThoughtReasoningStepState
             // Bouncing physics already declines drags when content fits.
             // Keeping it stable also retains ScrollPosition on overflow.
             physics: const BouncingScrollPhysics(),
-            child: AppSelectionArea(
-              message: widget.message,
-              quoteTextOnly: true,
-              child: reasoningContent(display),
-            ),
+            child: reasoningContent(display),
           ),
         ),
       );
     } else if (state == _ReasoningStepState.expanded) {
-      content = AppSelectionArea(
-        message: widget.message,
-        quoteTextOnly: true,
-        child: reasoningContent(display),
-      );
+      content = reasoningContent(display);
     }
 
     return _TimelineStepShell(
@@ -7144,7 +7278,7 @@ class _ToolCallItemState extends State<_ToolCallItem> {
                   itemBuilder: (ctx, i) {
                     final path = _imagePaths[i];
                     return GestureDetector(
-                      onTap: () => _showFullImage(context, path),
+                      onTap: () => _showToolFullImage(context, path),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: _buildImageFromPath(
@@ -7175,36 +7309,6 @@ class _ToolCallItemState extends State<_ToolCallItem> {
       return;
     }
     _showToolDetail(context, widget.part);
-  }
-
-  /// Show full-size image using ImageViewerPage for save/share/copy support.
-  /// [path] can be a local file path or HTTP URL.
-  void _showFullImage(BuildContext context, String path) {
-    Navigator.of(context).push(
-      PageRouteBuilder<void>(
-        opaque: false,
-        pageBuilder: (_, __, ___) => ImageViewerPage(images: [path]),
-        transitionDuration: const Duration(milliseconds: 360),
-        reverseTransitionDuration: const Duration(milliseconds: 280),
-        transitionsBuilder: (context, anim, sec, child) {
-          final curved = CurvedAnimation(
-            parent: anim,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          );
-          return FadeTransition(
-            opacity: curved,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.02),
-                end: Offset.zero,
-              ).animate(curved),
-              child: child,
-            ),
-          );
-        },
-      ),
-    );
   }
 }
 
@@ -8370,8 +8474,8 @@ class _ReasoningSectionState extends State<_ReasoningSection> {
           ),
         );
       }
-      return Text(
-        text.isNotEmpty ? UnicodeSanitizer.sanitize(text) : '…',
+      return plainMessageText(
+        text: text.isNotEmpty ? UnicodeSanitizer.sanitize(text) : '…',
         style: baseStyle,
         strutStyle: baseStrut,
         textHeightBehavior: baseTHB,

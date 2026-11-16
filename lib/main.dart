@@ -46,6 +46,10 @@ import 'core/providers/memory_provider_v2.dart';
 import 'core/providers/backup_provider.dart';
 import 'core/providers/local_snapshot_provider.dart';
 import 'features/backup/local_snapshot_scheduler.dart';
+import 'features/backup/external_backup_auto_scheduler.dart';
+import 'core/providers/external_backup_auto_provider.dart';
+import 'core/services/backup/backup_secure_password_store.dart';
+import 'core/services/backup/backup_partials.dart';
 import 'core/services/memory/memory_pipeline.dart';
 import 'core/services/memory/memory_repository.dart';
 import 'core/providers/s3_backup_provider.dart';
@@ -437,6 +441,9 @@ Future<void> main(List<String> arguments) async {
                     repository: databaseLease.businessRepository,
                     legacyPreferences: legacyPreferences,
                   );
+              if (Platform.isWindows) {
+                await BackupPartials.installationId(loadedBusinessPreferences);
+              }
               processDatabaseLease = databaseLease;
               businessPreferences = loadedBusinessPreferences;
             } catch (_) {
@@ -851,6 +858,13 @@ class MyApp extends StatelessWidget {
             );
             final settings = SettingsProvider(
               businessPreferences,
+              backupPasswordStore: BackupSecurePasswordStore(
+                namespace: Platform.isWindows
+                    ? businessPreferences.getString(
+                        BackupPartials.installationKey,
+                      )
+                    : null,
+              ),
               onProviderModelsRetired:
                   assistants.clearModelSelectionsForProvider,
             );
@@ -1000,8 +1014,17 @@ class MyApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(
-          create: (_) =>
-              BackupReminderProvider(preferences: businessPreferences),
+          create: (ctx) {
+            final settings = ctx.read<SettingsProvider>();
+            return BackupReminderProvider(
+              preferences: businessPreferences,
+              onDisabled: () async {
+                if (settings.autoBackupEnabled) {
+                  await settings.setAutomaticBackup(false);
+                }
+              },
+            );
+          },
         ),
         // Desktop hotkeys provider
         ChangeNotifierProvider(create: (_) => HotkeyProvider()),
@@ -1022,6 +1045,15 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
+          create: (ctx) => ExternalBackupAutoProvider(
+            preferences: businessPreferences,
+            settings: ctx.read<SettingsProvider>(),
+            reminder: ctx.read<BackupReminderProvider>(),
+            webdav: ctx.read<BackupProvider>(),
+            s3: ctx.read<S3BackupProvider>(),
+          ),
+        ),
+        ChangeNotifierProvider(
           create: (ctx) => LocalSnapshotProvider(
             appDataDirectory: appDataDirectory,
             chatService: ctx.read<ChatService>(),
@@ -1030,10 +1062,7 @@ class MyApp extends StatelessWidget {
             isBusy: () {
               // Never compete with a reply the user is watching, nor with a
               // backup, restore or import that is already holding the
-              // database. Asked of the process-wide tracker rather than of the
-              // providers here: the mobile backup screen builds its own
-              // instances, so these root ones stay idle throughout a mobile
-              // backup, and a local-file restore never marks them busy at all.
+              // database. Local-file restores also use the process-wide tracker.
               if (ChatActions.hasAnyActiveGeneration) {
                 return LocalSnapshotSkipReason.generating;
               }
@@ -1334,8 +1363,10 @@ class MyApp extends StatelessWidget {
 
                   final appWithOverlays = FloatingIpadPadding(
                     child: LocalSnapshotScheduler(
-                      child: AppOverlays(
-                        child: child ?? const SizedBox.shrink(),
+                      child: ExternalBackupAutoScheduler(
+                        child: AppOverlays(
+                          child: child ?? const SizedBox.shrink(),
+                        ),
                       ),
                     ),
                   );

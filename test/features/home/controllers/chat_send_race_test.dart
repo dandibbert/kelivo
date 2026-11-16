@@ -1,5 +1,8 @@
+import 'package:Kelivo/features/home/controllers/stream_controller.dart'
+    show ReasoningSegmentData;
 import 'package:Kelivo/core/database/app_database.dart';
 import 'package:Kelivo/core/database/compression_repository.dart';
+import 'package:Kelivo/core/database/generation_run.dart';
 import 'package:Kelivo/shared/widgets/snackbar.dart';
 import 'package:Kelivo/core/models/compression_config.dart';
 import 'package:Kelivo/core/services/api/generation/text_generation_result.dart';
@@ -48,6 +51,7 @@ import 'package:Kelivo/features/home/controllers/home_page_controller.dart';
 import 'package:Kelivo/features/home/controllers/chat_actions.dart';
 import 'package:Kelivo/features/home/controllers/scroll_controller.dart';
 import 'package:Kelivo/features/home/services/ask_user_interaction_service.dart';
+import 'package:Kelivo/features/home/services/chat_suggestion_service.dart';
 import 'package:Kelivo/features/home/utils/model_display_helper.dart';
 import 'package:Kelivo/features/home/widgets/chat_input_bar.dart';
 import 'package:Kelivo/features/search/services/global_session_search_service.dart';
@@ -72,7 +76,21 @@ class _GatedCompressionRepository extends CompressionRepository {
 }
 
 class _GatedChatRepository extends ChatDatabaseRepository {
-  _GatedChatRepository(super.db, File file) : super(databaseFile: file);
+  _GatedChatRepository(this.database, File file)
+    : super(database, databaseFile: file);
+  final AppDatabase database;
+  bool failAssetGc = false;
+  int assetGcFailures = 0;
+
+  @override
+  Future<bool> hasDueAssetGc() async {
+    if (failAssetGc) {
+      assetGcFailures++;
+      throw StateError('asset cleanup unavailable');
+    }
+    return super.hasDueAssetGc();
+  }
+
   late final _gatedCompression = _GatedCompressionRepository(
     super.compression.store,
   );
@@ -92,6 +110,89 @@ class _GatedChatService extends ChatService {
   String? presetConversationId;
   Completer<void>? checkpointHold;
   final checkpointEntered = Completer<void>();
+  GenerationRunState? holdTransition;
+  final transitionCommitted = Completer<GenerationRun>();
+  final releaseTransition = Completer<void>();
+  GenerationRunState? holdTerminal;
+  final terminalCommitted = Completer<GenerationRun>();
+  final releaseTerminal = Completer<void>();
+  final terminalWrites = <GenerationRunState>[];
+  bool holdBeforeFailedWrite = false;
+  final beforeFailedWrite = Completer<String>();
+  bool failContextRead = false;
+
+  @override
+  Future<List<ChatMessage>> loadSelectedContextMessages(
+    String conversationId, {
+    required int limit,
+    String? throughRevisionId,
+    bool includeFollowingAssistant = false,
+  }) async {
+    if (failContextRead) throw StateError('preparation failed');
+    return super.loadSelectedContextMessages(
+      conversationId,
+      limit: limit,
+      throughRevisionId: throughRevisionId,
+      includeFollowingAssistant: includeFollowingAssistant,
+    );
+  }
+
+  @override
+  Future<GenerationRun> transitionGenerationRun({
+    required String id,
+    required GenerationRunState expectedState,
+    required int expectedStateRevision,
+    required GenerationRunState nextState,
+    String? errorCode,
+  }) async {
+    final run = await super.transitionGenerationRun(
+      id: id,
+      expectedState: expectedState,
+      expectedStateRevision: expectedStateRevision,
+      nextState: nextState,
+      errorCode: errorCode,
+    );
+    if (nextState == holdTransition && !transitionCommitted.isCompleted) {
+      transitionCommitted.complete(run);
+      await releaseTransition.future;
+    }
+    return run;
+  }
+
+  @override
+  Future<GenerationRun?> finalizeGenerationRunSilent({
+    required ChatMessage message,
+    required List<Map<String, dynamic>> toolEvents,
+    required String? generationRunId,
+    required GenerationRunState? expectedState,
+    required int? expectedStateRevision,
+    required GenerationRunState terminalState,
+    int? checkpointSeq,
+    String? errorCode,
+  }) async {
+    terminalWrites.add(terminalState);
+    if (holdBeforeFailedWrite && terminalState == GenerationRunState.failed) {
+      beforeFailedWrite.complete(generationRunId!);
+      await releaseTerminal.future;
+    }
+    final run = await super.finalizeGenerationRunSilent(
+      message: message,
+      toolEvents: toolEvents,
+      generationRunId: generationRunId,
+      expectedState: expectedState,
+      expectedStateRevision: expectedStateRevision,
+      terminalState: terminalState,
+      checkpointSeq: checkpointSeq,
+      errorCode: errorCode,
+    );
+    if (terminalState == holdTerminal &&
+        run != null &&
+        !terminalCommitted.isCompleted) {
+      terminalCommitted.complete(run);
+      await releaseTerminal.future;
+    }
+    return run;
+  }
 
   @override
   Future<void> updateStreamingCheckpointSilent(
@@ -1455,6 +1556,11 @@ void main() {
           () => !controller.chatController.isConversationLoading(convo.id),
           'recovered streaming to finish',
         );
+        final continued = (await service.loadMessages(
+          convo.id,
+        )).singleWhere((message) => message.id == reply.id);
+        expect(continued.firstResponseMs, isNull);
+        expect(continued.firstTokenMs, isNull);
         final requestMessages = (streamRequests.single['messages'] as List)
             .cast<Map>();
         final result = requestMessages.singleWhere((m) => m['role'] == 'tool');
@@ -2066,6 +2172,112 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final newConversation in [false, true]) {
+    testWidgets(
+      'reviewed compression resumes only the original conversation queue: fork=$newConversation',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          final conversation = await openConversation(controller);
+          await service.addMessage(
+            conversationId: conversation.id,
+            role: 'user',
+            content: 'history ' * 100,
+          );
+          final hold = Completer<String>();
+          service.contextCompression.estimateCandidate =
+              (_, _, {bool? fixedContextStart}) async =>
+                  (usedTokens: 100, contextWindow: 4000);
+          await service.contextCompression.start(
+            conversation.id,
+            CompressionRequest(
+              options: CompressContextOptions(
+                mode: CompressContextLimitMode.unlimited,
+                previewOnly: true,
+                newConversation: newConversation,
+              ),
+              model: 'test',
+              generate: (_, _, _, _) async =>
+                  TextGenerationResult(parts: [TextPart(await hold.future)]),
+              quoteMarker: AppLocalizationsEn().selectionQuoteMarker,
+            ),
+          );
+          expect(
+            await controller.sendMessage(
+              ChatInputData(text: 'send after approval'),
+            ),
+            ChatInputSubmissionResult.queued,
+          );
+          hold.complete('summary');
+          await waitFor(
+            () => controller.currentQueuedInputPaused,
+            'review pauses queued input',
+          );
+          final task = service.contextCompression.taskFor(conversation.id)!;
+          expect(task.phase, CompressionPhase.review);
+          if (!newConversation) {
+            service.contextCompression.estimateCandidate =
+                (_, _, {bool? fixedContextStart}) async =>
+                    (usedTokens: 5000, contextWindow: 4000);
+            await expectLater(
+              service.contextCompression.applyReviewed(
+                conversation.id,
+                task.summary,
+              ),
+              throwsStateError,
+            );
+            expect(task.phase, CompressionPhase.review);
+            expect(controller.currentQueuedInputPaused, isTrue);
+            expect(streamRequestCount, 0);
+            service.contextCompression.estimateCandidate =
+                (_, _, {bool? fixedContextStart}) async =>
+                    (usedTokens: 100, contextWindow: 4000);
+          }
+          await service.contextCompression.applyReviewed(
+            conversation.id,
+            'approved summary',
+          );
+          expect(task.phase, CompressionPhase.completed);
+          if (newConversation) {
+            expect(task.resultConversationId, isNotNull);
+            expect(controller.currentQueuedInputPaused, isTrue);
+            expect(
+              controller.currentQueuedInput!.input.text,
+              'send after approval',
+            );
+            expect(streamRequestCount, 0);
+          } else {
+            await waitFor(
+              () =>
+                  streamRequestCount == 1 &&
+                  !controller.chatController.isConversationLoading(
+                    conversation.id,
+                  ),
+              'reviewed queue sends once',
+            );
+            expect(controller.currentQueuedInput, isNull);
+            expect(controller.currentQueuedInputPaused, isFalse);
+            expect(
+              jsonEncode(streamRequests.single),
+              contains('approved summary'),
+            );
+            expect(
+              jsonEncode(streamRequests.single),
+              contains('send after approval'),
+            );
+            expect(
+              (await service.loadMessages(
+                conversation.id,
+              )).where((message) => message.content == 'send after approval'),
+              hasLength(1),
+            );
+          }
+        });
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets(
     'failed compression pauses queued input until existing cancellation restores it',
     (tester) async {
@@ -2414,6 +2626,323 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final nextState in [
+    GenerationRunState.requesting,
+    GenerationRunState.streaming,
+  ]) {
+    testWidgets(
+      'stop during committed ${nextState.name} transition persists cancellation',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          final convo = await openConversation(controller);
+          service.holdTransition = nextState;
+          // JSON output has no subscription barrier. Stop must synchronize with
+          // the committed transition even when no stream subscription can help.
+          await assistantProvider.updateAssistant(
+            assistantProvider.currentAssistant!.copyWith(streamOutput: false),
+          );
+          await controller.sendMessage(
+            ChatInputData(text: 'stop during transition'),
+          );
+          final run = await service.transitionCommitted.future.timeout(
+            const Duration(seconds: 5),
+          );
+          final stop = controller.cancelStreaming();
+          try {
+            await waitFor(
+              () => !controller.isCurrentConversationLoading,
+              'visible stop',
+            );
+            expect(service.terminalWrites, isEmpty);
+          } finally {
+            service.releaseTransition.complete();
+            await stop;
+          }
+          final saved = (await repository.getGenerationRun(run.id))!;
+          expect(saved.state, GenerationRunState.cancelled);
+          expect(saved.stateRevision, run.stateRevision + 1);
+          expect(saved.checkpointSeq, greaterThan(run.checkpointSeq));
+          final message = (await repository.getMessage(run.targetRevisionId))!;
+          expect(message.isStreaming, isFalse);
+          expect(
+            controller.chatController.isConversationLoading(convo.id),
+            isFalse,
+          );
+          expect(service.terminalWrites, [GenerationRunState.cancelled]);
+          await controller.sendMessage(ChatInputData(text: 'next turn'));
+          await waitFor(
+            () =>
+                service.terminalWrites.length == 2 &&
+                !controller.chatController.isConversationLoading(convo.id),
+            'next turn to finish',
+          );
+          expect(service.terminalWrites, [
+            GenerationRunState.cancelled,
+            GenerationRunState.completed,
+          ]);
+        });
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final terminal in [
+    GenerationRunState.completed,
+    GenerationRunState.failed,
+  ]) {
+    testWidgets('stop preserves an already committed ${terminal.name} result', (
+      tester,
+    ) async {
+      final controller = await pumpHarness(tester);
+      await tester.runAsync(() async {
+        final convo = await openConversation(controller);
+        await assistantProvider.updateAssistant(
+          assistantProvider.currentAssistant!.copyWith(streamOutput: false),
+        );
+        service.holdTerminal = terminal;
+        repository.failAssetGc = true;
+        final errors = <String>[];
+        controller.debugViewModel.onError = errors.add;
+        if (terminal == GenerationRunState.failed) {
+          apiOverride = (request, _) async {
+            request.response.statusCode = HttpStatus.badRequest;
+            request.response.write('{"error":{"message":"generation failed"}}');
+            await request.response.close();
+          };
+        }
+        await controller.sendMessage(ChatInputData(text: 'finish before stop'));
+        final run = await service.terminalCommitted.future.timeout(
+          const Duration(seconds: 5),
+        );
+        final stop = controller.cancelStreaming();
+        try {
+          await waitFor(
+            () => !controller.isCurrentConversationLoading,
+            'visible stop',
+          );
+        } finally {
+          service.releaseTerminal.complete();
+          await stop;
+        }
+        expect((await repository.getGenerationRun(run.id))!.state, terminal);
+        expect(
+          (await repository.getMessage(run.targetRevisionId))!.isStreaming,
+          isFalse,
+        );
+        expect(
+          controller.chatController.isConversationLoading(convo.id),
+          isFalse,
+        );
+        expect(service.terminalWrites, [terminal]);
+        expect(repository.assetGcFailures, greaterThan(0));
+        expect(
+          errors,
+          hasLength(terminal == GenerationRunState.failed ? 1 : 0),
+        );
+      });
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final preparation in [false, true]) {
+    testWidgets(
+      'stop takes over a rolled back terminal write, preparation=$preparation',
+      (tester) async {
+        final controller = await pumpHarness(tester);
+        await tester.runAsync(() async {
+          final convo = await openConversation(controller);
+          await assistantProvider.updateAssistant(
+            assistantProvider.currentAssistant!.copyWith(streamOutput: false),
+          );
+          service.failContextRead = preparation;
+          service.holdBeforeFailedWrite = true;
+          // Abort inside the real transaction after the final message snapshot
+          // has been written. The next cancelled transition remains writable.
+          await repository.database.customStatement('''
+CREATE TRIGGER reject_failed_terminal BEFORE UPDATE OF state ON generation_run_rows
+WHEN NEW.state = 'failed' BEGIN SELECT RAISE(ABORT, 'terminal write failed'); END
+''');
+          if (!preparation) {
+            apiOverride = (request, _) async {
+              request.response.statusCode = HttpStatus.badRequest;
+              request.response.write(
+                '{"error":{"message":"generation failed"}}',
+              );
+              await request.response.close();
+            };
+          }
+          final errors = <String>[];
+          controller.debugViewModel.onError = errors.add;
+          await controller.sendMessage(
+            ChatInputData(text: 'stop during failed save'),
+          );
+          final id = await service.beforeFailedWrite.future.timeout(
+            const Duration(seconds: 5),
+          );
+          final stop = controller.cancelStreaming();
+          try {
+            await waitFor(
+              () => !controller.isCurrentConversationLoading,
+              'visible stop',
+            );
+          } finally {
+            service.releaseTerminal.complete();
+            await stop;
+          }
+          final run = (await repository.getGenerationRun(id))!;
+          expect(run.state, GenerationRunState.cancelled);
+          expect(
+            (await repository.getMessage(run.targetRevisionId))!.isStreaming,
+            isFalse,
+          );
+          expect(service.terminalWrites, [
+            GenerationRunState.failed,
+            GenerationRunState.cancelled,
+          ]);
+          expect(
+            controller.chatController.isConversationLoading(convo.id),
+            isFalse,
+          );
+          expect(errors, isEmpty);
+        });
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final temporary in [false, true]) {
+    test(
+      'a late progress snapshot preserves terminal cache and tool results, temporary=$temporary',
+      () async {
+        final convo = temporary
+            ? await service.createDraftConversation(
+                title: 'stopped',
+                temporary: true,
+              )
+            : await service.createConversation(title: 'stopped');
+        final partial = await service.addMessage(
+          conversationId: convo.id,
+          role: 'assistant',
+          content: 'partial',
+          isStreaming: true,
+        );
+        final finished = partial.copyWith(
+          content: 'final answer',
+          isStreaming: false,
+        );
+        const tools = [
+          {'id': 'one', 'name': 'lookup', 'arguments': {}, 'content': 'done'},
+        ];
+        await service.finalizeGenerationRunSilent(
+          message: finished,
+          toolEvents: tools,
+          generationRunId: null,
+          expectedState: null,
+          expectedStateRevision: null,
+          terminalState: GenerationRunState.cancelled,
+        );
+        await service.updateStreamingCheckpointSilent(partial, []);
+        final cached = service.getMessages(convo.id).single;
+        expect(cached.content, 'final answer');
+        expect(cached.isStreaming, isFalse);
+        expect(service.getToolEvents(finished.id).single['content'], 'done');
+        if (!temporary) {
+          expect(
+            (await repository.getMessage(finished.id))!.content,
+            'final answer',
+          );
+        }
+      },
+    );
+
+    test(
+      'suggestion source crosses empty pages and honors a logical cutoff, temporary=$temporary',
+      () async {
+        final convo = temporary
+            ? await service.createDraftConversation(
+                title: 'source',
+                temporary: true,
+              )
+            : await service.createConversation(title: 'source');
+        await service.addMessage(
+          conversationId: convo.id,
+          role: 'user',
+          content: 'earlier question',
+        );
+        for (var i = 0; i < ChatService.defaultHistoryPageSize; i++) {
+          await service.addMessage(
+            conversationId: convo.id,
+            role: 'assistant',
+            content: '<think>hidden</think>',
+          );
+        }
+        final latest = await service.addMessage(
+          conversationId: convo.id,
+          role: 'assistant',
+          content: 'answer',
+        );
+        final tail = await service.addMessage(
+          conversationId: convo.id,
+          role: 'tool',
+          content: 'metadata',
+        );
+        final source = await ChatSuggestionService.loadSource(
+          service,
+          convo.id,
+          truncateIndex: -1,
+        );
+        expect(source?.messageId, tail.id);
+        expect(jsonDecode(source!.content), [
+          {'role': 'user', 'content': 'earlier question'},
+          {'role': 'assistant', 'content': latest.content},
+        ]);
+        final cut = await ChatSuggestionService.loadSource(
+          service,
+          convo.id,
+          truncateIndex: 1,
+        );
+        expect(jsonDecode(cut!.content), [
+          {'role': 'assistant', 'content': 'answer'},
+        ]);
+        expect(
+          await ChatSuggestionService.loadSource(
+            service,
+            convo.id,
+            truncateIndex: ChatService.defaultHistoryPageSize + 2,
+          ),
+          isNull,
+        );
+      },
+    );
+  }
+
+  test(
+    'a concurrent summary update preserves a valid suggestion source',
+    () async {
+      final convo = await service.createDraftConversation(
+        title: 'concurrent summary',
+        temporary: true,
+      );
+      final answer = await service.addMessage(
+        conversationId: convo.id,
+        role: 'assistant',
+        content: 'answer',
+      );
+      final pending = ChatSuggestionService.loadSource(
+        service,
+        convo.id,
+        truncateIndex: -1,
+      );
+      await service.updateConversationSummary(convo.id, 'updated metadata', 1);
+      final source = await pending;
+      expect(source?.messageId, answer.id);
+      expect(jsonDecode(source!.content), [
+        {'role': 'assistant', 'content': 'answer'},
+      ]);
+    },
+  );
+
   testWidgets('single-flight cancel hides loading before slow teardown', (
     tester,
   ) async {
@@ -2752,6 +3281,75 @@ void main() {
     );
   }
 
+  testWidgets(
+    'a stale delete-other-versions confirmation leaves regeneration running',
+    (tester) async {
+      final controller = await pumpHarness(tester);
+      await tester.runAsync(() async {
+        final chat = await openConversation(controller);
+        await controller.sendMessage(ChatInputData(text: 'hello'));
+        await waitFor(
+          () =>
+              streamRequestCount == 1 &&
+              !controller.chatController.isConversationLoading(chat.id),
+          'original reply',
+        );
+        final original = (await service.loadMessages(
+          chat.id,
+        )).singleWhere((m) => m.role == 'assistant');
+        final hold = Completer<void>();
+        streamHold = hold;
+        final generation = controller.regenerateAtMessage(original);
+        try {
+          await waitFor(() => streamRequestCount == 2, 'regeneration to start');
+          final versions = await service.loadMessageVersionHeaders(chat.id, {
+            original.groupId ?? original.id,
+          });
+          final streaming = versions.singleWhere((m) => m.id != original.id);
+          final vm = controller.debugViewModel;
+          expect(
+            await vm.deleteMessageVersions(
+              message: original,
+              versionsBefore: versions,
+              deletedMessageIds: {streaming.id},
+            ),
+            isEmpty,
+          );
+          expect(
+            vm.debugChatActions.activeStreamingMessageId(chat.id),
+            streaming.id,
+          );
+          // The same stream may be kept while its inactive sibling is removed.
+          expect(
+            await vm.deleteMessageVersions(
+              message: streaming,
+              versionsBefore: versions,
+              deletedMessageIds: {original.id},
+            ),
+            {original.id},
+          );
+          expect(
+            vm.debugChatActions.activeStreamingMessageId(chat.id),
+            streaming.id,
+          );
+        } finally {
+          hold.complete();
+          await generation;
+        }
+        await waitFor(
+          () => !controller.chatController.isConversationLoading(chat.id),
+          'regeneration to finish',
+        );
+        final kept = (await service.loadMessages(
+          chat.id,
+        )).singleWhere((m) => m.role == 'assistant');
+        expect(kept.isStreaming, isFalse);
+        expect(kept.content, isNotEmpty);
+      });
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('double regenerate tap creates a single new version', (
     tester,
   ) async {
@@ -2972,6 +3570,94 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'find reads presented text and reasoning before the streaming checkpoint',
+    (tester) async {
+      final controller = await pumpHarness(tester);
+      final message = ChatMessage(
+        id: 'live-find',
+        conversationId: 'c',
+        role: 'assistant',
+        content: 'stored',
+        isStreaming: true,
+      );
+      final notifier = controller.streamingContentNotifier;
+      notifier.getNotifier(message.id);
+      controller.reasoningSegments[message.id] = [
+        ReasoningSegmentData()..text = 'first step',
+        ReasoningSegmentData()..text = 'new step',
+      ];
+      notifier.updateContent(
+        message.id,
+        'published',
+        3,
+        reasoningText: 'new step',
+        contentSplitOffsets: [3],
+        reasoningCountAtSplit: [1],
+        toolCountAtSplit: [0],
+      );
+      final snapshot = controller.conversationFindStreamSnapshot(message);
+      expect(snapshot.content, 'published');
+      expect(snapshot.reasoningText, 'new step');
+      final payload = jsonDecode(snapshot.reasoningSegmentsJson!);
+      expect((payload['segments'] as List).map((s) => s['text']), [
+        'first step',
+        'new step',
+      ]);
+      expect(payload['contentSplits']['offsets'], [3]);
+    },
+  );
+
+  testWidgets(
+    'find navigation to a different message keeps the unsaved user edit',
+    (tester) async {
+      final controller = await pumpHarness(tester, withComposer: true);
+      final state = tester.state<_ControllerHarnessState>(
+        find.byType(_ControllerHarness),
+      );
+      late ChatMessage original, target;
+      await tester.runAsync(() async {
+        final conversation = await service.createConversation(
+          title: 'Find during edit',
+        );
+        original = await service.addMessage(
+          conversationId: conversation.id,
+          role: 'user',
+          content: 'original',
+        );
+        target = await service.addMessage(
+          conversationId: conversation.id,
+          role: 'assistant',
+          content: 'target',
+        );
+        await controller.debugViewModel.switchConversation(conversation.id);
+        await waitFor(
+          () => state._mediaController.draftOwnerId == conversation.id,
+          'composer',
+        );
+      });
+      await controller.startUserMessageEdit(original);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText), 'unsaved changes');
+      await finishWidget(
+        tester,
+        controller.scrollToMessageId(
+          target.id,
+          stillCurrent: () => true,
+          beforeScroll: () {},
+        ),
+      );
+      expect(controller.userMessageEditState?.messageId, original.id);
+      expect(state._inputController.text, 'unsaved changes');
+      expect(
+        (await tester.runAsync(
+          () => service.loadMessagesByIds([original.id]),
+        ))!.single.content,
+        'original',
+      );
+    },
+  );
 
   for (final saveOnly in [false, true]) {
     testWidgets(
@@ -4856,6 +5542,96 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'undo skips compression for one turn while consumed tools stay replaceable',
+    (tester) async {
+      final controller = await pumpHarness(tester);
+      await tester.runAsync(() async {
+        await settings.disableTitleGeneration();
+        await settings.disableSuggestionGeneration();
+        await settings.setCurrentModel('SiliconFlow', 'gpt-4.1');
+        await assistantProvider.updateAssistant(
+          assistantProvider.currentAssistant!.copyWith(
+            maxTokens: 512,
+            localToolIds: [AskUserToolNames.askUser],
+          ),
+        );
+        await settings.setCompressionDefaults(
+          const CompressionConfig(
+            mode: AutoCompressionMode.auto,
+            keepRecentUserTurns: 1,
+            summaryTokens: 512,
+            planningWindow: 5000,
+            includeReference: false,
+            replaceConsumedTools: true,
+          ),
+        );
+        final conversation = await openConversation(controller);
+        await service.addMessage(
+          conversationId: conversation.id,
+          role: 'user',
+          content: 'OLD_FACTS ${'history ' * 6000}',
+        );
+        await service.addMessage(
+          conversationId: conversation.id,
+          role: 'assistant',
+          parts: [
+            ToolCallPart(
+              jsonEncode({
+                'id': 'consumed-call',
+                'name': 'read_file',
+                'arguments': {'path': 'history.txt'},
+                'content': 'TOOL_PAYLOAD ' * 500,
+              }),
+            ),
+            const AssistantRoundEndPart(),
+            const TextPart('Already used the result'),
+            const AssistantRoundEndPart(),
+          ],
+        );
+        service.contextCompression.skipNextAutomaticTurn(conversation.id);
+        var summaryCalls = 0;
+        final sent = <Map<String, dynamic>>[];
+        apiOverride = (request, body) async {
+          if (jsonEncode(body).contains('Target length:')) {
+            summaryCalls++;
+            await compressionReply(request, summary: true);
+          } else {
+            sent.add(body);
+            await compressionReply(request);
+          }
+        };
+        await controller.sendMessage(ChatInputData(text: 'FIRST_QUESTION'));
+        await waitFor(
+          () =>
+              sent.isNotEmpty &&
+              !controller.chatController.isConversationLoading(conversation.id),
+          'skipped turn finishes',
+        );
+        expect(summaryCalls, 0);
+        expect(sent, hasLength(1));
+        final first = jsonEncode(sent.single);
+        expect(first, contains('OLD_FACTS'));
+        expect(first, contains('Previously consumed result:'));
+        expect(first, contains('read_chat_context'));
+        expect(first, isNot(contains('TOOL_PAYLOAD')));
+        await controller.sendMessage(ChatInputData(text: 'SECOND_QUESTION'));
+        await waitFor(
+          () =>
+              sent.length == 2 &&
+              !controller.chatController.isConversationLoading(conversation.id),
+          'next turn compresses',
+        );
+        expect(summaryCalls, 1);
+        expect(jsonEncode(sent.last), contains('COMPACT_HANDOFF'));
+        expect(jsonEncode(sent.last), isNot(contains('OLD_FACTS')));
+      });
+      AppSnackBarManager().dismissAll();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('stop during compression settings read never sends a request', (
     tester,
