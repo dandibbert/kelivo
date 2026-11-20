@@ -15,12 +15,32 @@ import 'package:path/path.dart' as p;
 import 'package:Kelivo/core/database/private_data_storage.dart';
 import '../../support/recovery_fault_durability.dart';
 import 'package:Kelivo/core/services/storage/device_storage_probe.dart';
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
+class _TestPathProvider extends PathProviderPlatform {
+  _TestPathProvider(this.root);
+
+  final String root;
+
+  @override
+  Future<String?> getTemporaryPath() async => '$root/tmp';
+
+  @override
+  Future<String?> getApplicationSupportPath() async => '$root/Support';
+
+  @override
+  Future<String?> getApplicationDocumentsPath() async => '$root/Documents';
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory root, source, target;
+  late PathProviderPlatform previousPathProvider;
   setUp(() async {
     root = await Directory.systemTemp.createTemp('kelivo-private-storage-');
+    previousPathProvider = PathProviderPlatform.instance;
+    PathProviderPlatform.instance = _TestPathProvider(root.path);
     source = await Directory(p.join(root.path, 'Documents')).create();
     target = Directory(p.join(root.path, 'Support', 'kelivo-data'));
     await File(
@@ -34,7 +54,10 @@ void main() {
       p.join(source.path, 'snapshots 2', 'kept.zip'),
     ).writeAsString('old snapshot');
   });
-  tearDown(() async => root.delete(recursive: true));
+  tearDown(() async {
+    PathProviderPlatform.instance = previousPathProvider;
+    await root.delete(recursive: true);
+  });
   test(
     'explicit deletion removes the retained family and preserves live data',
     () async {

@@ -140,6 +140,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storageSpaceCopyErrorDetails => '오류 세부 정보 복사';
 
   @override
+  String get storageAttachmentChecking => '첨부 파일 사용량 확인 중…';
+
+  @override
+  String get storageAttachmentCheckFailed =>
+      '첨부 파일 사용량을 확인할 수 없습니다. 새로 고쳐 다시 시도하세요.';
+
+  @override
   String get storageSpaceCopyErrorFailed => '오류 세부 정보를 복사할 수 없습니다. 다시 시도해 주세요.';
 
   @override
@@ -1681,6 +1688,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get backupPageFilesLabel => '파일 및 이미지';
 
   @override
+  String get backupPageSettingsSaveFailed => '백업 설정을 저장하지 못했습니다. 다시 시도해 주세요.';
+
+  @override
   String get backupPageScopeTitle => '백업 및 가져오기 내용';
 
   @override
@@ -2176,6 +2186,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get backupPageImportFromOtherApps => '다른 앱에서 가져오기';
 
   @override
+  String get backupPageImportFromOtherAppsSubtitle =>
+      '최신 Chatbox 및 Cherry Studio 2.x 백업과 ChatGPT, Claude, DeepSeek, Gemini, Grok, Open WebUI, NextChat, LobeChat을 지원합니다. 브라우저에서 로컬로 Kelivo 백업으로 변환하며 파일은 업로드되지 않습니다.';
+
+  @override
+  String get backupPageOpenImportToolbox => '도구 상자 열기';
+
+  @override
+  String backupPageImportToolboxOpenFailed(String url) {
+    return '브라우저를 열 수 없습니다. 다음 URL을 직접 여세요: $url';
+  }
+
+  @override
+  String get backupPageToolboxImportMergeOnlyHint =>
+      '공식 도구 상자에서 변환된 파일입니다. 기존 데이터에 병합되며 이 기기에 이미 있는 채팅과 어시스턴트를 대체하지 않습니다.';
+
+  @override
   String get backupPageNotSupportedYet => '아직 지원되지 않음';
 
   @override
@@ -2261,7 +2287,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String backupPageCherryStudioUnsupportedBackupVersion(String version) {
-    return '이 백업은 Cherry Studio 형식 버전 $version을(를) 사용하며, Kelivo에서는 아직 가져올 수 없습니다. Cherry Studio v1에서 내보내거나 Cherry Studio v2 백업을 지원하는 Kelivo 업데이트를 기다리세요.';
+    return 'Cherry Studio 2.x 백업(형식 버전 $version)으로, 앱에서 직접 가져올 수 없습니다. 공식 도구 상자에서 Kelivo 백업으로 변환한 뒤 \'백업 파일 가져오기\'에서 \'병합\'을 선택하세요. 변환은 브라우저에서 로컬로 이루어지며 파일은 업로드되지 않습니다.';
+  }
+
+  @override
+  String backupPageChatboxUnsupportedBackupVersion(String version) {
+    return '최신 Chatbox 백업(형식 버전 $version)으로, 앱에서 직접 가져올 수 없습니다. 공식 도구 상자에서 Kelivo 백업으로 변환한 뒤 \'백업 파일 가져오기\'에서 \'병합\'을 선택하세요. 변환은 브라우저에서 로컬로 이루어지며 파일은 업로드되지 않습니다.';
   }
 
   @override
@@ -3377,9 +3408,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contextUsageUnavailable => '지금은 사용량을 표시할 수 없습니다.';
 
   @override
+  String contextUsagePartialSummary(String tokens) {
+    return '$tokens 추정, 서버 측 사용량은 알 수 없음';
+  }
+
   @override
+  String get contextUsageBucketNativeCompaction => '서버 측 압축';
+
   @override
+  String get contextUsageUnknownTokens => '알 수 없음';
+
   @override
+  String contextUsageLastRequestInput(String tokens) {
+    return '마지막으로 실제 모델에 전송된 양: $tokens';
+  }
+
   @override
   String get contextUsageStateNone => '아직 데이터 없음';
 
@@ -4147,6 +4190,13 @@ class AppLocalizationsKo extends AppLocalizations {
       'http(s) 이미지 링크를 그대로 전송합니다. 끄면 원격 링크는 제외되고 로컬 이미지만 전송됩니다';
 
   @override
+  String get modelSpecFormResponseSpeedTiers => '응답 속도 등급';
+
+  @override
+  String get modelSpecFormResponseSpeedTiersSubtitle =>
+      '채팅에서 이 모델이 제공할 가속 등급을 사용자 지정합니다. 둘 다 선택하지 않으면 표준만 제공됩니다.';
+
+  @override
   String get modelSpecFormPromptCacheControl => '프롬프트 캐시 마커';
 
   @override
@@ -4354,6 +4404,60 @@ class AppLocalizationsKo extends AppLocalizations {
   String get providerDetailPageClaudePromptCachingTtl1h => '1시간';
 
   @override
+  String get providerBalanceAutoRefresh => '자동 잔액 새로고침';
+
+  @override
+  String get providerBalanceScopeProvider => '이 공급자';
+
+  @override
+  String get providerBalanceScopeGlobal => '전역 기본값';
+
+  @override
+  String get providerBalanceInterval => '정기 새로고침';
+
+  @override
+  String get providerBalanceRefreshOnReply => '응답 후 새로고침';
+
+  @override
+  String providerBalanceFollowDefault(String value) {
+    return '기본값 · $value';
+  }
+
+  @override
+  String get providerBalanceRefreshOff => '끔';
+
+  @override
+  String get providerBalanceRefreshOn => '켬';
+
+  @override
+  String providerBalanceRefreshMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count분',
+      one: '1분',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get providerBalanceRefreshHour => '1시간';
+
+  @override
+  String get providerBalanceCustomInterval => '사용자 지정 간격…';
+
+  @override
+  String get providerBalanceIntervalMinutes => '간격(분)';
+
+  @override
+  String get providerBalanceRefreshNow => '지금 잔액 새로 고침';
+
+  @override
+  String providerBalanceLastUpdated(String date, String time) {
+    return '마지막 업데이트: $date $time';
+  }
+
+  @override
   String get providerDetailPageBalanceTitle => '계정 잔액';
 
   @override
@@ -4387,10 +4491,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get providerDetailPageBalanceQuerying => '확인 중...';
 
   @override
-  String get providerDetailPageBalanceResetDefaultsButton => '초기화';
+  String get providerDetailPageBalanceResetDefaultsButton => '기본 잔액 설정 복원';
 
   @override
-  String get providerDetailPageBalanceResetDefaultsTooltip => '잔액 설정 초기화';
+  String get providerDetailPageBalanceResetConfirmMessage =>
+      '이 공급자의 사용자 지정 잔액 요청 설정을 대체하고, 잔액 조회 스위치를 기본 상태로 복원하며, 자동 새로 고침이 전역 설정을 따르도록 합니다.';
+
+  @override
+  String get providerDetailPageBalanceResetConfirmButton => '기본값 복원';
 
   @override
   String providerDetailPageBalanceResult(String value) {
@@ -4742,6 +4850,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get providerDetailPageModelsTitle => '모델';
 
   @override
+  String get providerDetailPageReorderModels => '모델 순서 변경';
+
+  @override
   String get providerModelsGetButton => '가져오기';
 
   @override
@@ -4871,6 +4982,25 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get miniMapScrollToBottomTooltip => '맨 아래로 스크롤';
+
+  @override
+  String get miniMapSearchHint => '미니맵 검색';
+
+  @override
+  String miniMapSearchMatchCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count개 일치',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get miniMapSearchNoResults => '일치하는 메시지가 없습니다';
+
+  @override
+  String get miniMapSearchFailed => '메시지를 검색하지 못했습니다';
 
   @override
   String get conversationFindHint => '찾기';
@@ -5003,10 +5133,30 @@ class AppLocalizationsKo extends AppLocalizations {
   String get searchServicesEditDialogRegionOptional => '지역(선택 사항, 기본값: us-en)';
 
   @override
+  String get searchServicesFourGetUrlInvalid => 'HTTP 또는 HTTPS 기본 URL을 입력하세요.';
+
+  @override
+  String get searchServicesFourGetScraperOptional => '업스트림 엔진 (선택 사항)';
+
+  @override
+  String get searchServicesFourGetPassOptional => 'pass 쿠키 (선택 사항)';
+
+  @override
+  String get searchServicesFourGetPassHelp =>
+      '인스턴스에서 CAPTCHA를 요구하는 경우, CAPTCHA를 완료한 후 pass 쿠키의 값을 붙여넣으세요.';
+
+  @override
   String get searchServiceEditorProviderTypeTitle => '검색 공급자';
 
   @override
   String get searchServiceEditorConfigurationTitle => '구성';
+
+  @override
+  String get searchServiceEditorChangeIcon => '아이콘 변경';
+
+  @override
+  String get searchServiceEditorIconFailed =>
+      '이 아이콘을 사용할 수 없습니다. 다른 이미지나 아이콘을 선택하세요.';
 
   @override
   String get searchServiceEditorNoConfiguration => '이 공급자는 추가 구성이 필요하지 않습니다.';
@@ -5529,6 +5679,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get displaySettingsPageAutoSwitchTopicsTitle => '주제로 자동 전환';
+
+  @override
+  String get desktopDisplaySettingsFullWidthChatTitle => '전체 너비 채팅';
+
+  @override
+  String get desktopDisplaySettingsFullWidthChatSubtitle =>
+      '메시지와 입력 상자를 채팅 영역에 맞게 확장합니다.';
 
   @override
   String get desktopDisplaySettingsTopicPositionTitle => '주제 위치';
@@ -6344,6 +6501,10 @@ class AppLocalizationsKo extends AppLocalizations {
       '개인정보를 존중하는 메타 검색 엔진입니다. 자체 호스팅 인스턴스가 필요하며 추적하지 않습니다.';
 
   @override
+  String get searchProviderFourGetDescription =>
+      'API가 활성화된 공개 또는 자체 호스팅 4get 인스턴스를 통해 웹을 검색합니다.';
+
+  @override
   String get searchProviderTavilyDescription =>
       'LLM에 최적화된 AI 검색 API입니다. 고품질의 관련성 높은 결과를 제공합니다.';
 
@@ -6383,6 +6544,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get searchServiceNameSearXNG => 'SearXNG';
+
+  @override
+  String get searchServiceNameFourGet => '4get';
 
   @override
   String get searchServiceNameLinkUp => 'LinkUp';
@@ -11284,7 +11448,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get workspaceToolHelpRead => '줄 번호와 페이지 넘김으로 파일을 읽습니다.';
 
   @override
-  String get workspaceToolHelpViewImage => '모델이 작업 공간의 이미지를 확인할 수 있게 합니다.';
+  String get workspaceToolHelpViewImage =>
+      '모델이 작업 공간 이미지나 공개 URL의 이미지를 확인할 수 있도록 합니다.';
 
   @override
   String get workspaceToolHelpWrite => '파일을 생성하거나 내용을 덮어씁니다.';
@@ -15769,11 +15934,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get compressionRequests => '최대 요청 수';
 
   @override
-  String get compressionReference => '세계관 책과 과거 기억 참조';
+  String get compressionReference => '배경 참조 사용';
 
   @override
   String get compressionReferenceHint =>
-      '이번에 압축할 기록만을 기준으로 세계관을 찾고, 당시 저장된 메모리를 사용합니다. 이 내용은 모델이 인물 이름과 규칙을 이해하도록 돕기 위한 것일 뿐, 해당 사건이 발생했다거나 캐릭터가 이미 알고 있다는 의미가 아닙니다.';
+      '요약은 어시스턴트의 시스템 프롬프트, 이 대화 구간과 일치하는 세계관 항목, 당시 저장된 메모리를 참고할 수 있습니다. 무슨 일이 있었고 각 캐릭터가 무엇을 아는지는 대화 기록을 기준으로 합니다.';
+
+  @override
+  String get compressionInstructionInjections => '지시 주입을 참고 자료로 사용';
+
+  @override
+  String get compressionInstructionInjectionsHint =>
+      '이 대화에서 활성화된 지시 카드를 배경 참조 자료로 요약 모델에 전송합니다.';
 
   @override
   String get compressionToolReferences => '이미 읽은 도구 결과는 참조만 유지';
@@ -16275,6 +16447,591 @@ class AppLocalizationsKo extends AppLocalizations {
   String get themePaletteCustom => '사용자 지정';
 
   @override
+  String get compressionNativeImported => '서버 측 압축 결과 불러옴';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      '이 대화는 서버 측 압축 결과와 최근 몇 턴으로 시작합니다. 압축 결과는 텍스트로 보거나 수정할 수 없습니다. 이전 원문은 원래 대화에 남아 있으며 여기서 실행 취소로 복원할 수 없습니다.';
+
+  @override
+  String get compressionNativeOpenSource => '원래 대화 열기';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      '이 대화에는 불러온 서버 측 압축 결과에 대응하는 원문이 없습니다. 서버 측 압축을 계속 사용하거나, 원래 대화로 돌아가 원문을 확인하거나 텍스트 요약을 생성할 수 있습니다.';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      '새 임시 대화에는 완전한 서버 측 압축 결과와 최근 턴만 유지됩니다. 원래 임시 대화를 떠나면 해당 대화와 이전되지 않은 원문은 삭제되며 여기서 복원할 수 없습니다.';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      '이 대화에는 완전한 서버 측 압축 결과와 유지한 최근 턴이 저장되어 있습니다. 원래 대화는 더 이상 사용할 수 없습니다. 여기로 복사되지 않은 원문은 복원할 수 없으며, 압축 결과는 텍스트로 보거나 수정할 수 없습니다.';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => '이미지 모델';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => '자동';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => '이미지 복잡도';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => '기본';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => '낮음';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => '중간';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => '높음';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      '채팅 추론과 별도로 이미지 계획을 제어합니다. 기본은 서버 동작을 사용하며 채팅 추론을 따를 수 있습니다.';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT 로그인은 다른 이미지 모델을 사용할 수 있습니다. 모델 및 복잡도 설정은 서버 지원 여부에 따라 달라집니다.';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      '채팅 추론을 자동으로, 이미지 복잡도를 기본으로 설정한 후 이미지 생성을 다시 시도하세요. ChatGPT 로그인은 다른 이미지 모델을 사용하거나 명시적 복잡도를 거부할 수 있습니다.';
+
+  @override
+  String get workspaceEnvNativeShellTitle => '기본 셸';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      '비워 두면 자동으로 감지합니다. 그렇지 않으면 PowerShell, cmd 또는 -lc를 지원하는 셸(bash, zsh, fish 등)의 절대 경로를 입력하세요. 이 설정은 이 기기에만 적용됩니다.';
+
+  @override
+  String get workspaceEnvNativeShellInvalid =>
+      '이 셸을 시작할 수 없습니다. 절대 경로와 지원되는 명령 구문을 확인하세요.';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => '셸을 사용할 수 없음';
+
+  @override
+  String get workspaceEnvNativeShellDetect => '다시 감지';
+
+  @override
+  String get workspaceEnvNativeShellSave => '저장';
+
+  @override
+  String get desktopAutostartTitle => '시작 시 실행';
+
+  @override
+  String get desktopAutostartDescription => '이 컴퓨터에 로그인하면 Kelivo를 시작합니다.';
+
+  @override
+  String get desktopAutostartHiddenTitle => '자동 시작 시 트레이로 숨기기';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      '시작 시 실행과 트레이 아이콘이 필요합니다. Kelivo를 직접 열면 창이 계속 표시됩니다.';
+
+  @override
+  String get desktopAutostartUnsupported => '시작 시 실행은 macOS 13 이상이 필요합니다.';
+
+  @override
+  String get desktopAutostartError =>
+      '시작 설정을 적용할 수 없습니다. 시스템 시작 항목 또는 로그인 항목 설정에서 이 앱을 확인한 후 다시 시도하세요.';
+
+  @override
+  String get compressionOutputBudget => '총 출력 한도 (토큰)';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      '사고 과정과 요약 본문을 포함합니다. 비워 두면 요약 목표 길이와 같습니다. 사고가 켜져 있으면 요약 목표 길이를 늘리지 않고 이 한도를 높일 수 있습니다. 모델 자체의 출력 한도는 여전히 적용됩니다.';
+
+  @override
+  String get responseOutputLimitReached =>
+      '응답이 잘렸습니다: 출력 한도에 추론이 포함됩니다. 출력 한도를 늘리거나 추론을 줄인 후 다시 시도하세요.';
+
+  @override
+  String responseContextLimitReached(int inputTokens, int contextWindow) {
+    return '응답이 잘렸습니다: 이번 요청은 입력 토큰 $inputTokens개를 사용해 $contextWindow 토큰 컨텍스트 한도에 근접했습니다. 컨텍스트를 줄인 후 다시 시도하세요.';
+  }
+
+  @override
+  String get responseRetryWithoutImages => '이미지 없이 재시도(원본 유지)';
+
+  @override
+  String get browserOperationTimeout => '작업 시간 초과';
+
+  @override
+  String get browserOperationTimeoutDescription =>
+      '브라우저 명령의 최대 대기 시간입니다. 시간 초과 후 어시스턴트가 페이지 상태를 확인할 수 있습니다.';
+
+  @override
+  String browserOperationTimeoutSeconds(int seconds) {
+    return '$seconds초';
+  }
+
+  @override
+  String get browserErrObservationRequired =>
+      '계속하기 전에 페이지를 확인하세요. 이전 작업이 확인되지 않았습니다.';
+
+  @override
+  String get storageAttachmentRetention => '첨부 파일 자동 정리';
+
+  @override
+  String get storageAttachmentRetentionDays => '정리 전 일수';
+
+  @override
+  String get storageAttachmentRetentionImmediately => '즉시 정리';
+
+  @override
+  String get storageAttachmentRetentionHint =>
+      '메시지나 대화를 삭제하면 더 이상 사용되지 않는 이미지와 파일을 자동으로 정리합니다.';
+
+  @override
+  String get storageAttachmentUnused => '사용 안 함';
+
+  @override
+  String storageAttachmentPending(String date) {
+    return '정리 대기 중 · $date';
+  }
+
+  @override
+  String storageAttachmentConversations(String names) {
+    return '대화: $names';
+  }
+
+  @override
+  String get storageAttachmentCleanUnused => '미사용 항목 정리';
+
+  @override
+  String get storageAttachmentProtectedHint => '사용 중인 파일은 유지됩니다.';
+
+  @override
+  String storageAttachmentDeleteConfirm(int count) {
+    return '사용하지 않는 파일 $count개를 지금 삭제하시겠습니까? 아직 사용 중인 파일은 유지됩니다.';
+  }
+
+  @override
+  String get storageAttachmentRetentionDelayed => '나중에 정리';
+
+  @override
+  String get storageAttachmentRetentionInvalidDays => '1–3650일 사이로 입력하세요.';
+
+  @override
+  String get storageAttachmentDetailsTitle => '파일 정보';
+
+  @override
+  String get compressionCarryTitle => '이전에 보낸 메시지도 원문 그대로 함께 보내기';
+
+  @override
+  String get compressionCarryHint =>
+      '요약되는 부분에 포함된 내 메시지는 요약으로 전달되는 내용뿐 아니라, 작성한 원문 그대로도 모델에 함께 전송됩니다.';
+
+  @override
+  String get compressionCarryCountLabel => '최근 메시지 보내기';
+
+  @override
+  String get compressionCarryUnit => '개';
+
+  @override
+  String get compressionCarryAll => '들어가는 만큼';
+
+  @override
+  String get compressionCarryAllHint =>
+      '개수 제한 없이 최신 메시지부터 거슬러 올라가 거의 가득 찰 때까지 보냅니다. 가장 오래된 메시지가 너무 길면 시작과 끝 부분만 보냅니다.';
+
+  @override
+  String get compressionCarryEarlier => '이전 요약에 포함된 메시지도 다시 가져오기';
+
+  @override
+  String get compressionCarryEarlierHint =>
+      '이전에 압축된 부분에 포함된 내 메시지도 함께 포함할 수 있습니다.';
+
+  @override
+  String compressionCarryPreview(int count, int replyCount, String tokens) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '사용자 메시지 $count개',
+      one: '사용자 메시지 1개',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      replyCount,
+      locale: localeName,
+      other: '답변 $replyCount개',
+      one: '답변 1개',
+    );
+    return '$_temp0 · $_temp1 · 약 $tokens 토큰';
+  }
+
+  @override
+  String get compressionCarryNone => '요약되는 부분에 내가 보낸 메시지가 없습니다.';
+
+  @override
+  String compressionCarryNotFit(int count) {
+    return '오래된 메시지 $count개는 공간이 부족해 이번에는 전송되지 않습니다.';
+  }
+
+  @override
+  String compressionCarryMoreRows(int count) {
+    return '$count개 더';
+  }
+
+  @override
+  String get compressionCarryOverBudget =>
+      '이 메시지들은 현재 모델의 용량을 초과할 가능성이 높습니다. 개수를 줄이거나 컨텍스트가 더 큰 모델로 전환하세요.';
+
+  @override
+  String compressionCarryFitAction(int count) {
+    return '$count개로 변경';
+  }
+
+  @override
+  String get compressionCarryTruncated => '너무 길어 시작과 끝 부분만 전송됩니다';
+
+  @override
+  String get compressionCarryAutoToo => '자동 압축도 동일하게 처리됩니다.';
+
+  @override
+  String get compressionCarryNewChatText =>
+      '이미지와 파일은 새 대화로 전달되지 않으며 텍스트만 전달됩니다.';
+
+  @override
+  String get compressionCarryServerKeeps => '이 서비스는 압축 시 이전 메시지를 자체적으로 유지합니다.';
+
+  @override
+  String get contextDetailCarried => '원문 그대로 전송된 메시지';
+
+  @override
+  String contextDetailCarriedCount(int count) {
+    return '이전에 보낸 메시지 $count개';
+  }
+
+  @override
+  String get contextDetailServerKept => '서비스에서 유지한 메시지';
+
+  @override
+  String get contextCarriedEditHint =>
+      '여기서는 모델에 전송되는 텍스트만 변경됩니다. 대화의 원본 메시지는 그대로 유지됩니다.';
+
+  @override
+  String get contextCarriedEmpty => '비워 둘 수 없습니다. 전송을 중단하려면 \"전송 중단\"을 선택하세요.';
+
+  @override
+  String get contextCarriedRemove => '전송 중단';
+
+  @override
+  String get contextCarriedRemoveConfirm =>
+      '이 메시지는 더 이상 모델에 전송되지 않습니다. 대화의 원본 메시지는 영향을 받지 않습니다.';
+
+  @override
+  String get contextCarriedSourceDeleted => '원본이 삭제되어 이 텍스트만 남아 있습니다';
+
+  @override
+  String get compressionCarryReply => '당시 답변도 함께 포함';
+
+  @override
+  String compressionCarryReplyTokens(String tokens) {
+    return '+약 $tokens';
+  }
+
+  @override
+  String get compressionCarryReplyInKept => '답변이 이미 유지된 턴에 포함되어 있습니다';
+
+  @override
+  String get contextCarriedReplyLabel => '당시 답변';
+
+  @override
+  String get contextCarriedRemoveReply => '답변 전송 안 함';
+
+  @override
+  String get imageEditorCancel => '취소';
+
+  @override
+  String get imageEditorDone => '완료';
+
+  @override
+  String get imageEditorUndo => '실행 취소';
+
+  @override
+  String get imageEditorRedo => '다시 실행';
+
+  @override
+  String get imageEditorToolCrop => '자르기';
+
+  @override
+  String get imageEditorToolDraw => '그리기';
+
+  @override
+  String get imageEditorToolText => '텍스트';
+
+  @override
+  String get imageEditorToolMosaic => '모자이크';
+
+  @override
+  String get imageEditorPen => '펜';
+
+  @override
+  String get imageEditorArrow => '화살표';
+
+  @override
+  String get imageEditorEraser => '지우개';
+
+  @override
+  String get imageEditorAspectFree => '자유';
+
+  @override
+  String get imageEditorAspectOriginal => '원본';
+
+  @override
+  String get imageEditorRotate => '왼쪽으로 회전';
+
+  @override
+  String get imageEditorFlip => '뒤집기';
+
+  @override
+  String get imageEditorTextPlain => '일반';
+
+  @override
+  String get imageEditorTextOutline => '외곽선';
+
+  @override
+  String get imageEditorTextFill => '채우기';
+
+  @override
+  String get imageEditorAlign => '정렬';
+
+  @override
+  String get imageEditorMosaicBrush => '브러시';
+
+  @override
+  String get imageEditorMosaicRect => '상자';
+
+  @override
+  String get imageEditorDiscardTitle => '변경 사항을 버릴까요?';
+
+  @override
+  String get imageEditorKeepEditing => '계속 편집';
+
+  @override
+  String get imageEditorDiscard => '버리기';
+
+  @override
+  String get imageEditorProcessFailed => '이미지를 처리할 수 없습니다';
+
+  @override
+  String get imageEditorRetry => '다시 시도';
+
+  @override
+  String get imageEditorRemove => '제거';
+
+  @override
+  String get imageEditorRestore => '되돌리기';
+
+  @override
+  String imageEditorColor(String color) {
+    return '색상 $color';
+  }
+
+  @override
+  String get imageViewerPageEditButton => '편집';
+
+  @override
+  String get imageViewerPageFileSize => '이미지 크기';
+
+  @override
+  String get compressionCarryModeCount => '최근 메시지';
+
+  @override
+  String get compressionCarryListTitle => '메시지 미리보기';
+
+  @override
+  String get compressionCarrySelectAllReplies => '모든 답변 선택';
+
+  @override
+  String get compressionCarryDeselectAllReplies => '모든 답변 선택 해제';
+
+  @override
+  String get compressionCarryPairNotFit =>
+      '이 메시지와 해당 답장이 남은 예산을 초과합니다. 둘 다 제외됩니다.';
+
+  @override
+  String compressionCarryImageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '이미지 $count개',
+      one: '이미지 1개',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String compressionCarryAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '첨부 파일 $count개',
+      one: '첨부 파일 1개',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get compressionCarryNoText => '메시지 본문 없음';
+
+  @override
+  String get compressionCarryInvalidCount => '1에서 10,000 사이의 숫자를 입력하세요.';
+
+  @override
+  String get backupRunningInBackground => '백그라운드에서 백업이 계속됩니다';
+
+  @override
+  String backupBackgroundFailed(String error) {
+    return '백그라운드 백업 실패: $error';
+  }
+
+  @override
+  String get backupAutoEnableTitle => '예정 시각에 자동으로 백업';
+
+  @override
+  String get backupAutoEnableHint =>
+      '예정된 시각이 되면 앱이 포그라운드에 있을 때 Kelivo가 백업합니다. 앱이 닫히거나 종료되면 백업이 계속 실행되지 않으며 이어서 진행되지도 않습니다. 앱을 다시 열었을 때 아직 예정 시각이 지났다면 전체 백업을 한 번만 실행합니다.';
+
+  @override
+  String get backupAutoDestinationTitle => '자동 백업 위치';
+
+  @override
+  String get backupAutoDestinationWebDav => 'WebDAV';
+
+  @override
+  String get backupAutoDestinationS3 => 'S3';
+
+  @override
+  String get backupAutoDestinationLocal => '로컬 폴더';
+
+  @override
+  String get backupAutoNeedRemoteHint => '먼저 WebDAV 또는 S3를 설정하세요.';
+
+  @override
+  String get backupAutoNeedDestinationHint =>
+      '먼저 WebDAV 또는 S3를 설정하거나 로컬 폴더를 선택하세요.';
+
+  @override
+  String get backupAutoNeedFolderHint => '먼저 백업 폴더를 선택하세요.';
+
+  @override
+  String get backupAutoLocalFolderChoose => '폴더 선택…';
+
+  @override
+  String get backupAutoLocalFolderChange => '폴더 변경';
+
+  @override
+  String get backupAutoLocalFolderInvalid => '앱 자체 데이터 디렉터리 밖의 폴더를 선택하세요.';
+
+  @override
+  String get backupAutoLocalRetentionTitle => '최대 보관';
+
+  @override
+  String backupAutoLocalRetentionCount(int count) {
+    return '백업 $count개';
+  }
+
+  @override
+  String get backupAutoLocalRetentionUnlimited => '제한 없음';
+
+  @override
+  String get backupAutoLocalNow => '지금 이 폴더에 백업';
+
+  @override
+  String get backupAutoLocalDirUnavailable =>
+      '선택한 폴더에 쓸 수 없습니다. 폴더가 여전히 사용 가능한지 확인하거나 다른 폴더를 선택하세요. Kelivo는 저장된 위치를 임의로 변경하지 않습니다.';
+
+  @override
+  String get backupAutoLocalDirPermission =>
+      '선택한 폴더에 쓸 권한이 없습니다. 폴더를 다시 선택하세요. Kelivo는 저장된 위치를 임의로 변경하지 않습니다.';
+
+  @override
+  String get backupAutoLocalDirFull =>
+      '디스크 공간이 부족하여 백업이 완료되지 않았습니다. 이전 백업은 그대로 남아 있습니다.';
+
+  @override
+  String get backupAutoLocalBookmarkLost =>
+      'Kelivo가 선택한 폴더에 접근할 수 없습니다. 폴더를 다시 선택하세요. 저장된 위치는 자동으로 변경되지 않습니다.';
+
+  @override
+  String get backupAutoNextTitle => '다음 자동 백업';
+
+  @override
+  String get backupAutoRememberPasswordTitle => '이 기기에 비밀번호를 기억할까요?';
+
+  @override
+  String get backupAutoRememberPasswordMessage =>
+      '자동 백업이 실행될 수 있도록 이 기기에 비밀번호를 기억합니다. 비밀번호는 이 기기에만 저장되며 업로드되지 않습니다.';
+
+  @override
+  String get backupAutoRememberPasswordConfirm => '기억';
+
+  @override
+  String get backupAutoRememberPasswordDecline => '나중에';
+
+  @override
+  String get backupAutoRememberDeclined =>
+      '자동 백업이 켜지지 않았습니다. 예정 시각이 되면 계속 알려드립니다.';
+
+  @override
+  String get backupAutoKeychainUnavailable =>
+      'Kelivo가 백업 비밀번호를 위해 시스템 키체인에 접근할 수 없습니다. 수동으로 백업할 수는 있습니다.';
+
+  @override
+  String get backupAutoSucceeded => '자동 백업 완료';
+
+  @override
+  String backupAutoFailed(String error) {
+    return '자동 백업 실패: $error';
+  }
+
+  @override
+  String get backupAutoFailedPassword => '자동 백업 실패: 비밀번호가 올바르지 않습니다.';
+
+  @override
+  String get backupReminderSidebarSubtitleAutoFailed =>
+      '자동 백업이 완료되지 않았습니다. 네트워크를 확인하거나 수동으로 백업하세요.';
+
+  @override
+  String get backupEncryptionOnHintRemembered =>
+      '백업이 암호화됩니다. 비밀번호는 이 기기에 저장되어 있습니다.';
+
+  @override
+  String get backupRememberPasswordOnDevice => '이 기기에 비밀번호 저장';
+
+  @override
+  String get backupForgetDisablesAutomaticHint => '이 기능을 끄면 자동 백업도 꺼집니다.';
+
+  @override
+  String get backupManualPasswordHint => '암호화된 백업에 설정한 비밀번호를 입력하세요.';
+
+  @override
+  String get backupManualPasswordNotSaved =>
+      '이 기기에 비밀번호를 저장하지 못했습니다. 이번 백업은 계속 진행됩니다.';
+
+  @override
+  String get backupEncryptionChangePassword => '백업 비밀번호 변경';
+
+  @override
+  String get backupMacKeychainNeedsUnlock =>
+      'macOS에서 로그인 키체인을 잠금 해제하지 못했습니다. 키체인 접근을 열어 \'로그인\'을 잠금 해제한 후 Kelivo에서 다시 시도하세요.';
+
+  @override
+  String get backupMacOpenKeychainAccess => '키체인 접근 열기';
+
+  @override
+  String get backupMacKeychainAccessDenied =>
+      'macOS에서 백업 비밀번호 접근이 거부되었습니다. 시스템 프롬프트가 나타나면 Kelivo의 접근을 허용해 주세요. 키체인 접근에서 기본 키체인과 비밀번호 항목의 권한을 확인할 수도 있습니다.';
+
+  @override
   String get settingsPageExternalAutoSend => '외부 자동 전송 허용';
 
   @override
@@ -16480,564 +17237,4 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get deepLinkGenNewOnlyHint => '어시스턴트와 임시 채팅은 새 대화에만 적용됩니다.';
-
-  @override
-  String get compressionNativeImportedDescription =>
-      '이 대화는 서버 측 압축 결과와 최근 몇 턴으로 시작합니다. 압축 결과는 텍스트로 보거나 수정할 수 없습니다. 이전 원문은 원래 대화에 남아 있으며 여기서 실행 취소로 복원할 수 없습니다.';
-
-  @override
-  String get compressionNativeOpenSource => '원래 대화 열기';
-
-  @override
-  String get compressionNativeOriginalsUnavailable =>
-      '이 대화에는 불러온 서버 측 압축 결과에 대응하는 원문이 없습니다. 서버 측 압축을 계속 사용하거나, 원래 대화로 돌아가 원문을 확인하거나 텍스트 요약을 생성할 수 있습니다.';
-
-  @override
-  String get compressionNativeTemporaryCopyHint =>
-      '새 임시 대화에는 완전한 서버 측 압축 결과와 최근 턴만 유지됩니다. 원래 임시 대화를 떠나면 해당 대화와 이전되지 않은 원문은 삭제되며 여기서 복원할 수 없습니다.';
-
-  @override
-  String get compressionNativeSourceUnavailable =>
-      '이 대화에는 완전한 서버 측 압축 결과와 유지한 최근 턴이 저장되어 있습니다. 원래 대화는 더 이상 사용할 수 없습니다. 여기로 복사되지 않은 원문은 복원할 수 없으며, 압축 결과는 텍스트로 보거나 수정할 수 없습니다.';
-
-  @override
-  String get modelDetailSheetImageGenerationModel => '이미지 모델';
-
-  @override
-  String get modelDetailSheetImageGenerationAuto => '자동';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexity => '이미지 복잡도';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityDefault => '기본';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityLow => '낮음';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityMedium => '중간';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityHigh => '높음';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityDescription =>
-      '채팅 추론과 별도로 이미지 계획을 제어합니다. 기본은 서버 동작을 사용하며 채팅 추론을 따를 수 있습니다.';
-
-  @override
-  String get modelDetailSheetImageGenerationOAuthHint =>
-      'ChatGPT 로그인은 다른 이미지 모델을 사용할 수 있습니다. 모델 및 복잡도 설정은 서버 지원 여부에 따라 달라집니다.';
-
-  @override
-  String get imageGenerationComplexityErrorHint =>
-      '채팅 추론을 자동으로, 이미지 복잡도를 기본으로 설정한 후 이미지 생성을 다시 시도하세요. ChatGPT 로그인은 다른 이미지 모델을 사용하거나 명시적 복잡도를 거부할 수 있습니다.';
-
-  @override
-  String get workspaceEnvNativeShellTitle => '기본 셸';
-
-  @override
-  String get workspaceEnvNativeShellHint =>
-      '비워 두면 자동으로 감지합니다. 그렇지 않으면 PowerShell, cmd 또는 -lc를 지원하는 셸(bash, zsh, fish 등)의 절대 경로를 입력하세요. 이 설정은 이 기기에만 적용됩니다.';
-
-  @override
-  String get workspaceEnvNativeShellInvalid =>
-      '이 셸을 시작할 수 없습니다. 절대 경로와 지원되는 명령 구문을 확인하세요.';
-
-  @override
-  String get workspaceEnvNativeShellUnavailable => '셸을 사용할 수 없음';
-
-  @override
-  String get workspaceEnvNativeShellDetect => '다시 감지';
-
-  @override
-  String get workspaceEnvNativeShellSave => '저장';
-
-  @override
-  String get desktopAutostartTitle => '시작 시 실행';
-
-  @override
-  String get desktopAutostartDescription => '이 컴퓨터에 로그인하면 Kelivo를 시작합니다.';
-
-  @override
-  String get desktopAutostartHiddenTitle => '자동 시작 시 트레이로 숨기기';
-
-  @override
-  String get desktopAutostartHiddenDescription =>
-      '시작 시 실행과 트레이 아이콘이 필요합니다. Kelivo를 직접 열면 창이 계속 표시됩니다.';
-
-  @override
-  String get desktopAutostartUnsupported => '시작 시 실행은 macOS 13 이상이 필요합니다.';
-
-  @override
-  String get desktopAutostartError =>
-      '시작 설정을 적용할 수 없습니다. 시스템 시작 항목 또는 로그인 항목 설정에서 이 앱을 확인한 후 다시 시도하세요.';
-
-  @override
-  String get compressionOutputBudget => '총 출력 한도 (토큰)';
-
-  @override
-  String get compressionOutputBudgetHint =>
-      '사고 과정과 요약 본문을 포함합니다. 비워 두면 요약 목표 길이와 같습니다. 사고가 켜져 있으면 요약 목표 길이를 늘리지 않고 이 한도를 높일 수 있습니다. 모델 자체의 출력 한도는 여전히 적용됩니다.';
-
-  @override
-  String get responseOutputLimitReached =>
-      '응답이 잘렸습니다: 출력 한도에 추론이 포함됩니다. 출력 한도를 늘리거나 추론을 줄인 후 다시 시도하세요.';
-
-  @override
-  String responseContextLimitReached(int inputTokens, int contextWindow) {
-    return '응답이 잘렸습니다: 이번 요청은 입력 토큰 $inputTokens개를 사용해 $contextWindow 토큰 컨텍스트 한도에 근접했습니다. 컨텍스트를 줄인 후 다시 시도하세요.';
-  }
-
-  @override
-  String get responseRetryWithoutImages => '이미지 없이 재시도(원본 유지)';
-
-  @override
-  String get browserOperationTimeout => '작업 시간 초과';
-
-  @override
-  String get browserOperationTimeoutDescription =>
-      '브라우저 명령의 최대 대기 시간입니다. 시간 초과 후 어시스턴트가 페이지 상태를 확인할 수 있습니다.';
-
-  @override
-  String browserOperationTimeoutSeconds(int seconds) {
-    return '$seconds초';
-  }
-
-  @override
-  String get browserErrObservationRequired =>
-      '계속하기 전에 페이지를 확인하세요. 이전 작업이 확인되지 않았습니다.';
-
-  @override
-  String get storageAttachmentRetention => '첨부 파일 자동 정리';
-
-  @override
-  String get storageAttachmentRetentionDays => '정리 전 일수';
-
-  @override
-  String get storageAttachmentRetentionImmediately => '즉시 정리';
-
-  @override
-  String get storageAttachmentRetentionHint =>
-      '메시지나 대화를 삭제하면 더 이상 사용되지 않는 이미지와 파일을 자동으로 정리합니다.';
-
-  @override
-  String get storageAttachmentUnused => '사용 안 함';
-
-  @override
-  String storageAttachmentPending(String date) {
-    return '정리 대기 중 · $date';
-  }
-
-  @override
-  String storageAttachmentConversations(String names) {
-    return '대화: $names';
-  }
-
-  @override
-  String get storageAttachmentCleanUnused => '미사용 항목 정리';
-
-  @override
-  String get storageAttachmentProtectedHint => '사용 중인 파일은 유지됩니다.';
-
-  @override
-  String storageAttachmentDeleteConfirm(int count) {
-    return '사용하지 않는 파일 $count개를 지금 삭제하시겠습니까? 아직 사용 중인 파일은 유지됩니다.';
-  }
-
-  @override
-  String get storageAttachmentRetentionDelayed => '나중에 정리';
-
-  @override
-  String get storageAttachmentRetentionInvalidDays => '1–3650일 사이로 입력하세요.';
-
-  @override
-  String get storageAttachmentDetailsTitle => '파일 정보';
-
-  @override
-  String get compressionCarryTitle => '이전에 보낸 메시지도 원문 그대로 함께 보내기';
-
-  @override
-  String get compressionCarryHint =>
-      '요약되는 부분에 포함된 내 메시지는 요약으로 전달되는 내용뿐 아니라, 작성한 원문 그대로도 모델에 함께 전송됩니다.';
-
-  @override
-  String get compressionCarryCountLabel => '최근 메시지 보내기';
-
-  @override
-  String get compressionCarryUnit => '개';
-
-  @override
-  String get compressionCarryAll => '들어가는 만큼';
-
-  @override
-  String get compressionCarryAllHint =>
-      '개수 제한 없이 최신 메시지부터 거슬러 올라가 거의 가득 찰 때까지 보냅니다. 가장 오래된 메시지가 너무 길면 시작과 끝 부분만 보냅니다.';
-
-  @override
-  String get compressionCarryEarlier => '이전 요약에 포함된 메시지도 다시 가져오기';
-
-  @override
-  String get compressionCarryEarlierHint =>
-      '이전에 압축된 부분에 포함된 내 메시지도 함께 포함할 수 있습니다.';
-
-  @override
-  String compressionCarryPreview(int count, String tokens) {
-    return '$count개 전송 · 약 $tokens 토큰';
-  }
-
-  @override
-  String get compressionCarryNone => '요약되는 부분에 내가 보낸 메시지가 없습니다.';
-
-  @override
-  String compressionCarryNotFit(int count) {
-    return '오래된 메시지 $count개는 공간이 부족해 이번에는 전송되지 않습니다.';
-  }
-
-  @override
-  String compressionCarryMoreRows(int count) {
-    return '$count개 더';
-  }
-
-  @override
-  String get compressionCarryOverBudget =>
-      '이 메시지들은 현재 모델의 용량을 초과할 가능성이 높습니다. 개수를 줄이거나 컨텍스트가 더 큰 모델로 전환하세요.';
-
-  @override
-  String compressionCarryFitAction(int count) {
-    return '$count개로 변경';
-  }
-
-  @override
-  String get compressionCarryTruncated => '너무 길어 시작과 끝 부분만 전송됩니다';
-
-  @override
-  String get compressionCarryAutoToo => '자동 압축도 동일하게 처리됩니다.';
-
-  @override
-  String get compressionCarryNewChatText =>
-      '이미지와 파일은 새 대화로 전달되지 않으며 텍스트만 전달됩니다.';
-
-  @override
-  String get compressionCarryServerKeeps => '이 서비스는 압축 시 이전 메시지를 자체적으로 유지합니다.';
-
-  @override
-  String get contextDetailCarried => '원문 그대로 전송된 메시지';
-
-  @override
-  String contextDetailCarriedCount(int count) {
-    return '이전에 보낸 메시지 $count개';
-  }
-
-  @override
-  String get contextDetailServerKept => '서비스에서 유지한 메시지';
-
-  @override
-  String get contextCarriedEditHint =>
-      '여기서는 모델에 전송되는 텍스트만 변경됩니다. 대화의 원본 메시지는 그대로 유지됩니다.';
-
-  @override
-  String get contextCarriedEmpty => '비워 둘 수 없습니다. 전송을 중단하려면 \"전송 중단\"을 선택하세요.';
-
-  @override
-  String get contextCarriedRemove => '전송 중단';
-
-  @override
-  String get contextCarriedRemoveConfirm =>
-      '이 메시지는 더 이상 모델에 전송되지 않습니다. 대화의 원본 메시지는 영향을 받지 않습니다.';
-
-  @override
-  String get contextCarriedSourceDeleted => '원본이 삭제되어 이 텍스트만 남아 있습니다';
-
-  @override
-  String get compressionCarryReply => '당시 답변도 함께 포함';
-
-  @override
-  String compressionCarryReplyTokens(String tokens) {
-    return '+약 $tokens';
-  }
-
-  @override
-  String get compressionCarryReplyInKept => '답변이 이미 유지된 턴에 포함되어 있습니다';
-
-  @override
-  String get contextCarriedReplyLabel => '당시 답변';
-
-  @override
-  String get contextCarriedRemoveReply => '답변 전송 안 함';
-
-  @override
-  String get imageEditorCancel => '취소';
-
-  @override
-  String get imageEditorDone => '완료';
-
-  @override
-  String get imageEditorUndo => '실행 취소';
-
-  @override
-  String get imageEditorRedo => '다시 실행';
-
-  @override
-  String get imageEditorToolCrop => '자르기';
-
-  @override
-  String get imageEditorToolDraw => '그리기';
-
-  @override
-  String get imageEditorToolText => '텍스트';
-
-  @override
-  String get imageEditorToolMosaic => '모자이크';
-
-  @override
-  String get imageEditorPen => '펜';
-
-  @override
-  String get imageEditorArrow => '화살표';
-
-  @override
-  String get imageEditorEraser => '지우개';
-
-  @override
-  String get imageEditorAspectFree => '자유';
-
-  @override
-  String get imageEditorAspectOriginal => '원본';
-
-  @override
-  String get imageEditorRotate => '왼쪽으로 회전';
-
-  @override
-  String get imageEditorFlip => '뒤집기';
-
-  @override
-  String get imageEditorTextPlain => '일반';
-
-  @override
-  String get imageEditorTextOutline => '외곽선';
-
-  @override
-  String get imageEditorTextFill => '채우기';
-
-  @override
-  String get imageEditorAlign => '정렬';
-
-  @override
-  String get imageEditorMosaicBrush => '브러시';
-
-  @override
-  String get imageEditorMosaicRect => '상자';
-
-  @override
-  String get imageEditorDiscardTitle => '변경 사항을 버릴까요?';
-
-  @override
-  String get imageEditorKeepEditing => '계속 편집';
-
-  @override
-  String get imageEditorDiscard => '버리기';
-
-  @override
-  String get imageEditorProcessFailed => '이미지를 처리할 수 없습니다';
-
-  @override
-  String get imageEditorRetry => '다시 시도';
-
-  @override
-  String get imageEditorRemove => '제거';
-
-  @override
-  String get imageEditorRestore => '되돌리기';
-
-  @override
-  String imageEditorColor(String color) {
-    return '색상 $color';
-  }
-
-  @override
-  String get imageViewerPageEditButton => '편집';
-
-  @override
-  String get imageViewerPageFileSize => '이미지 크기';
-
-  @override
-  String get compressionCarryModeCount => '최근 메시지';
-
-  @override
-  String get compressionCarryListTitle => '메시지 미리보기';
-
-  @override
-  String compressionCarryImageCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '이미지 $count개',
-      one: '이미지 1개',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String compressionCarryAttachmentCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '첨부 파일 $count개',
-      one: '첨부 파일 1개',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get compressionCarryNoText => '메시지 본문 없음';
-
-  @override
-  String get compressionCarryInvalidCount => '1에서 10,000 사이의 숫자를 입력하세요.';
-
-  @override
-  String get backupRunningInBackground => '백그라운드에서 백업이 계속됩니다';
-
-  @override
-  String backupBackgroundFailed(String error) {
-    return '백그라운드 백업 실패: $error';
-  }
-
-  @override
-  String get backupAutoEnableTitle => '예정 시각에 자동으로 백업';
-
-  @override
-  String get backupAutoEnableHint =>
-      '예정된 시각이 되면 앱이 포그라운드에 있을 때 Kelivo가 백업합니다. 앱이 닫히거나 종료되면 백업이 계속 실행되지 않으며 이어서 진행되지도 않습니다. 앱을 다시 열었을 때 아직 예정 시각이 지났다면 전체 백업을 한 번만 실행합니다.';
-
-  @override
-  String get backupAutoDestinationTitle => '자동 백업 위치';
-
-  @override
-  String get backupAutoDestinationWebDav => 'WebDAV';
-
-  @override
-  String get backupAutoDestinationS3 => 'S3';
-
-  @override
-  String get backupAutoDestinationLocal => '로컬 폴더';
-
-  @override
-  String get backupAutoNeedRemoteHint => '먼저 WebDAV 또는 S3를 설정하세요.';
-
-  @override
-  String get backupAutoNeedDestinationHint =>
-      '먼저 WebDAV 또는 S3를 설정하거나 로컬 폴더를 선택하세요.';
-
-  @override
-  String get backupAutoNeedFolderHint => '먼저 백업 폴더를 선택하세요.';
-
-  @override
-  String get backupAutoLocalFolderChoose => '폴더 선택…';
-
-  @override
-  String get backupAutoLocalFolderChange => '폴더 변경';
-
-  @override
-  String get backupAutoLocalFolderInvalid => '앱 자체 데이터 디렉터리 밖의 폴더를 선택하세요.';
-
-  @override
-  String get backupAutoLocalRetentionTitle => '최대 보관';
-
-  @override
-  String backupAutoLocalRetentionCount(int count) {
-    return '백업 $count개';
-  }
-
-  @override
-  String get backupAutoLocalRetentionUnlimited => '제한 없음';
-
-  @override
-  String get backupAutoLocalNow => '지금 이 폴더에 백업';
-
-  @override
-  String get backupAutoLocalDirUnavailable =>
-      '선택한 폴더에 쓸 수 없습니다. 폴더가 여전히 사용 가능한지 확인하거나 다른 폴더를 선택하세요. Kelivo는 저장된 위치를 임의로 변경하지 않습니다.';
-
-  @override
-  String get backupAutoLocalDirPermission =>
-      '선택한 폴더에 쓸 권한이 없습니다. 폴더를 다시 선택하세요. Kelivo는 저장된 위치를 임의로 변경하지 않습니다.';
-
-  @override
-  String get backupAutoLocalDirFull =>
-      '디스크 공간이 부족하여 백업이 완료되지 않았습니다. 이전 백업은 그대로 남아 있습니다.';
-
-  @override
-  String get backupAutoLocalBookmarkLost =>
-      'Kelivo가 선택한 폴더에 접근할 수 없습니다. 폴더를 다시 선택하세요. 저장된 위치는 자동으로 변경되지 않습니다.';
-
-  @override
-  String get backupAutoNextTitle => '다음 자동 백업';
-
-  @override
-  String get backupAutoRememberPasswordTitle => '이 기기에 비밀번호를 기억할까요?';
-
-  @override
-  String get backupAutoRememberPasswordMessage =>
-      '자동 백업이 실행될 수 있도록 이 기기에 비밀번호를 기억합니다. 비밀번호는 이 기기에만 저장되며 업로드되지 않습니다.';
-
-  @override
-  String get backupAutoRememberPasswordConfirm => '기억';
-
-  @override
-  String get backupAutoRememberPasswordDecline => '나중에';
-
-  @override
-  String get backupAutoRememberDeclined =>
-      '자동 백업이 켜지지 않았습니다. 예정 시각이 되면 계속 알려드립니다.';
-
-  @override
-  String get backupAutoKeychainUnavailable =>
-      'Kelivo가 백업 비밀번호를 위해 시스템 키체인에 접근할 수 없습니다. 수동으로 백업할 수는 있습니다.';
-
-  @override
-  String get backupAutoSucceeded => '자동 백업 완료';
-
-  @override
-  String backupAutoFailed(String error) {
-    return '자동 백업 실패: $error';
-  }
-
-  @override
-  String get backupAutoFailedPassword => '자동 백업 실패: 비밀번호가 올바르지 않습니다.';
-
-  @override
-  String get backupReminderSidebarSubtitleAutoFailed =>
-      '자동 백업이 완료되지 않았습니다. 네트워크를 확인하거나 수동으로 백업하세요.';
-
-  @override
-  String get backupEncryptionOnHintRemembered =>
-      '백업이 암호화됩니다. 비밀번호는 이 기기에 저장되어 있습니다.';
-
-  @override
-  String get backupRememberPasswordOnDevice => '이 기기에 비밀번호 저장';
-
-  @override
-  String get backupForgetDisablesAutomaticHint => '이 기능을 끄면 자동 백업도 꺼집니다.';
-
-  @override
-  String get backupManualPasswordHint => '암호화된 백업에 설정한 비밀번호를 입력하세요.';
-
-  @override
-  String get backupManualPasswordNotSaved =>
-      '이 기기에 비밀번호를 저장하지 못했습니다. 이번 백업은 계속 진행됩니다.';
-
-  @override
-  String get backupEncryptionChangePassword => '백업 비밀번호 변경';
-
-  @override
-  String get backupMacKeychainNeedsUnlock =>
-      'macOS에서 로그인 키체인을 잠금 해제하지 못했습니다. 키체인 접근을 열어 \'로그인\'을 잠금 해제한 후 Kelivo에서 다시 시도하세요.';
-
-  @override
-  String get backupMacOpenKeychainAccess => '키체인 접근 열기';
-
-  @override
-  String get backupMacKeychainAccessDenied =>
-      'macOS에서 백업 비밀번호 접근이 거부되었습니다. 시스템 프롬프트가 나타나면 Kelivo의 접근을 허용해 주세요. 키체인 접근에서 기본 키체인과 비밀번호 항목의 권한을 확인할 수도 있습니다.';
 }

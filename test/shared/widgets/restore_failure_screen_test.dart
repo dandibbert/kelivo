@@ -18,6 +18,23 @@ import 'package:Kelivo/theme/palettes.dart';
 import 'package:Kelivo/core/services/backup/local_snapshot_schedule.dart';
 import 'package:Kelivo/core/services/backup/restore_diagnostic_exception.dart';
 import 'package:Kelivo/shared/widgets/restore_failure_screen.dart';
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
+class _TestPathProvider extends PathProviderPlatform {
+  _TestPathProvider(this.root);
+
+  final String root;
+
+  @override
+  Future<String?> getTemporaryPath() async => '$root/tmp';
+
+  @override
+  Future<String?> getApplicationSupportPath() async => '$root/support';
+
+  @override
+  Future<String?> getApplicationDocumentsPath() async => '$root/docs';
+}
 
 /// Stands in for the platform channel, which never answers under `flutter
 /// test` and would otherwise leave a pending timeout timer behind.
@@ -302,14 +319,18 @@ void main() {
 
   group('with a data directory', () {
     late Directory directory;
+    late PathProviderPlatform previousPathProvider;
 
     setUp(() async {
       directory = await Directory.systemTemp.createTemp(
         'kelivo_restore_failure_screen_',
       );
+      previousPathProvider = PathProviderPlatform.instance;
+      PathProviderPlatform.instance = _TestPathProvider(directory.path);
     });
 
     tearDown(() async {
+      PathProviderPlatform.instance = previousPathProvider;
       if (await directory.exists()) await directory.delete(recursive: true);
     });
 

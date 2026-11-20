@@ -74,7 +74,10 @@ class TtsProvider extends ChangeNotifier {
   TtsPlaybackState _playbackState = const TtsPlaybackState();
 
   bool _initialized = false;
+  bool _disposed = false;
   bool _engineReady = false;
+  Timer? _bindRetryTimer;
+  Completer<void>? _bindRetryCompleter;
   bool _isSpeaking = false;
   bool _isPaused = false;
   bool _usingNetwork = false;
@@ -176,13 +179,18 @@ class TtsProvider extends ChangeNotifier {
       _bindAudioPlayerHandlers();
 
       await _kickEngine();
+      if (_disposed) return;
       await _ensureBound(timeout: const Duration(seconds: 5));
+      if (_disposed) return;
       await _selectEngine();
+      if (_disposed) return;
       await _applyConfig();
+      if (_disposed) return;
 
       _initialized = true;
       notifyListeners();
     } catch (e) {
+      if (_disposed) return;
       _error = e.toString();
       _initialized = false;
       _playbackState = _playbackState.copyWith(
@@ -358,18 +366,27 @@ class TtsProvider extends ChangeNotifier {
   Future<void> _ensureBound({
     Duration timeout = const Duration(seconds: 3),
   }) async {
-    if (_engineReady) return;
+    if (_engineReady || _disposed) return;
     final deadline = DateTime.now().add(timeout);
-    while (DateTime.now().isBefore(deadline)) {
+    while (!_disposed && DateTime.now().isBefore(deadline)) {
       try {
         final langs = await _tts.getLanguages;
+        if (_disposed) return;
         if (langs != null) {
           _engineReady = true;
           notifyListeners();
           return;
         }
       } catch (_) {}
-      await Future.delayed(const Duration(milliseconds: 120));
+      if (_disposed) return;
+      final completer = Completer<void>();
+      _bindRetryCompleter = completer;
+      _bindRetryTimer = Timer(const Duration(milliseconds: 120), () {
+        if (!completer.isCompleted) completer.complete();
+      });
+      await completer.future;
+      _bindRetryTimer = null;
+      _bindRetryCompleter = null;
     }
   }
 
@@ -1515,6 +1532,13 @@ class TtsProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _bindRetryTimer?.cancel();
+    _bindRetryTimer = null;
+    if (_bindRetryCompleter case final completer? when !completer.isCompleted) {
+      completer.complete();
+    }
+    _bindRetryCompleter = null;
     _sessionId++;
     _replayCache.retain({});
     _completeNetworkChunk();

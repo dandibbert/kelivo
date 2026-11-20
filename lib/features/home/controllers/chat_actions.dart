@@ -2254,20 +2254,25 @@ class ChatActions {
   // ============================================================================
 
   /// Cancel the active streaming for the current conversation.
-  Future<void> cancelStreaming(Conversation? conversation) async {
+  Future<void> cancelStreaming(
+    Conversation? conversation, {
+    bool userRequested = false,
+  }) async {
     final cid = conversation?.id;
     if (cid == null) return;
-    await cancelStreamingById(cid);
+    await cancelStreamingById(cid, userRequested: userRequested);
   }
 
   /// Cancel the active streaming for the conversation with id [cid].
-  Future<void> cancelStreamingById(String cid) {
+  Future<void> cancelStreamingById(String cid, {bool userRequested = false}) {
     final existing = _cancelStreamingFutures[cid];
     if (existing != null) return existing;
 
     late final Future<void> operation;
-    operation = Future<void>.microtask(() => _cancelStreamingByIdOnce(cid))
-        .whenComplete(() {
+    operation =
+        Future<void>.microtask(
+          () => _cancelStreamingByIdOnce(cid, userRequested: userRequested),
+        ).whenComplete(() {
           if (identical(_cancelStreamingFutures[cid], operation)) {
             _cancelStreamingFutures.remove(cid);
             _setConversationLoading(cid, false);
@@ -2277,7 +2282,10 @@ class ChatActions {
     return operation;
   }
 
-  Future<void> _cancelStreamingByIdOnce(String cid) async {
+  Future<void> _cancelStreamingByIdOnce(
+    String cid, {
+    required bool userRequested,
+  }) async {
     // Cancel pending tool approval requests for this conversation to prevent
     // deadlock. Scoped by conversation id: the static deletion entry points
     // (cancelActiveGenerationFor / cancelActiveGenerationsForAssistant) may
@@ -2383,16 +2391,18 @@ class ChatActions {
               .copyWith(parts: assistantParts, isStreaming: false);
       var cancellationPersisted = false;
       try {
+        final interrupted = _background.wasInterrupted(backgroundTaskId);
         await _finalizeStreamingCheckpoint(
           finalizedMessage,
-          terminalState: _background.wasInterrupted(backgroundTaskId)
+          terminalState: interrupted
               ? GenerationRunState.interrupted
               : GenerationRunState.cancelled,
-          errorCode: _background.wasInterrupted(backgroundTaskId)
-              ? 'background_interrupted'
-              : null,
+          errorCode: interrupted ? 'background_interrupted' : null,
         );
         cancellationPersisted = true;
+        if (userRequested && !interrupted && state?.requestDispatched == true) {
+          state!.ctx.settings.refreshBalanceAfterReply(state.ctx.providerKey);
+        }
       } finally {
         _clearGenerationRuntimeState(finalizedMessage);
         if (chatController.publishTerminalMessage(finalizedMessage)) {
@@ -2426,6 +2436,7 @@ class ChatActions {
     stream_ctrl.StreamingState state,
   ) async {
     final id = state.conversationId;
+    final String? assistantId = ctx.assistant?.id;
     final liveSettings = contextProvider.read<SettingsProvider>();
     final preferences = await chatService.compressionConfig(
       id,
@@ -2638,7 +2649,7 @@ class ChatActions {
             conversationId: id,
             providerKey: ctx.providerKey,
             modelId: ctx.modelId,
-            assistantId: chatService.getConversation(id)?.assistantId,
+            assistantId: assistantId,
             messagesOverride: messages,
           );
           return preview.apiMessages;
@@ -2646,7 +2657,7 @@ class ChatActions {
 
         List<Map<String, dynamic>>? replacement;
         try {
-          var runtimeConfig = preferences;
+          var summaryTokens = preferences.summaryTokens;
           int? carryBudgetTokens;
           if (budget != null) {
             final empty = ContextOperation(
@@ -2678,9 +2689,7 @@ class ChatActions {
                 ? space.clamp(0, 64000)
                 : (space - 128).clamp(0, space);
             if (!useNative) {
-              runtimeConfig = preferences.withOverrides({
-                'summaryTokens': space.clamp(128, preferences.summaryTokens),
-              });
+              summaryTokens = space.clamp(128, summaryTokens);
             }
           }
           final request = await viewModel.buildCompressionRequest(
@@ -2689,15 +2698,17 @@ class ChatActions {
             automatic: true,
             beforeMessageId: userId,
             effectiveMessageIds: Set.unmodifiable(allowedMessageIds),
-            configOverride: runtimeConfig,
+            // Reference choices apply at the start of each text compression.
+            configOverride: useNative
+                ? preferences
+                : preferences.withOverrides({
+                    'summaryTokens': summaryTokens,
+                    'includeReference': current.includeReference,
+                    'includeInstructionInjections':
+                        current.includeInstructionInjections,
+                  }),
             carryBudgetTokens: carryBudgetTokens,
-            nativeModel: useNative
-                ? (
-                    providerKey: ctx.providerKey,
-                    modelId: ctx.modelId,
-                    config: ctx.config,
-                  )
-                : null,
+            activeGeneration: ctx,
             isCancelled: () => cancelled() || !allowed,
             acceptCandidate: (candidate) async {
               final next = await rebuild(candidate);
@@ -2745,7 +2756,7 @@ class ChatActions {
               conversationId: id,
               providerKey: ctx.providerKey,
               modelId: ctx.modelId,
-              assistantId: chatService.getConversation(id)?.assistantId,
+              assistantId: assistantId,
               messagesOverride: candidateHistory(task.candidate!),
             );
           } catch (error) {
@@ -2961,6 +2972,7 @@ class ChatActions {
         allowImagesApiRouting: ctx.allowImagesApiRouting,
         ocrActive: ctx.ocrActive,
         parseMarkdownImageLinks: ctx.settings.sendMarkdownImageLinksAsImages,
+        onRequestDispatched: () => state.requestDispatched = true,
       );
 
       if (!ctx.streamOutput) {
@@ -3400,6 +3412,7 @@ class ChatActions {
         terminalState: GenerationRunState.completed,
       );
       state.terminalPersisted = true;
+      state.ctx.settings.refreshBalanceAfterReply(state.ctx.providerKey);
 
       await onAssistantMessageFinished?.call(finalizedMessage);
 

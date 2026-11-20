@@ -43,6 +43,7 @@ import '../../../theme/design_tokens.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../../core/providers/hotkey_provider.dart';
 import '../../../core/services/model_spec/model_spec_resolver.dart';
+import '../../../core/services/api/response_speed.dart';
 import '../../../core/providers/assistant_provider.dart';
 import '../../../core/providers/quick_phrase_provider.dart';
 import '../../../core/providers/instruction_injection_provider.dart';
@@ -96,6 +97,7 @@ import '../../quick_phrase/pages/quick_phrases_page.dart';
 import '../../quick_phrase/widgets/quick_phrase_menu.dart';
 import '../../workspace/widgets/skills/conversation_skills_sheet.dart';
 import '../widgets/chat_input_bar.dart';
+import '../widgets/mini_map_search.dart';
 import '../widgets/mini_map_sheet.dart';
 import '../widgets/instruction_injection_sheet.dart';
 import '../widgets/world_book_sheet.dart';
@@ -234,6 +236,7 @@ class _HomePageState extends State<HomePage>
   Map<String, int> _findVersions = const {};
   ValueListenable<int>? _findRevision;
   final _liveFindRows = <String, ConversationFindCandidate>{};
+  final _findCache = ConversationFindCache();
   ConversationFindService? _findPresentation;
 
   ConversationFindService _findService() {
@@ -277,6 +280,7 @@ class _HomePageState extends State<HomePage>
       context.read<ChatService>().conversationFindCandidates(id),
       query,
       options,
+      cache: _findCache,
       isCurrent: current,
       liveCandidate: (row) {
         if (row.streaming) _liveFindRows[row.id] = row;
@@ -309,12 +313,10 @@ class _HomePageState extends State<HomePage>
     ConversationFindHit hit,
     bool Function() valid,
   ) async {
+    final id = _findConversation;
     bool current() =>
-        mounted &&
-        valid() &&
-        _controller.currentConversation?.id == _findConversation;
-    final conversationId = _findConversation;
-    if (conversationId == null || !current()) return;
+        mounted && valid() && _controller.currentConversation?.id == id;
+    if (id == null || !current()) return;
     await _controller.scrollToMessageId(
       hit.messageId,
       stillCurrent: current,
@@ -332,7 +334,7 @@ class _HomePageState extends State<HomePage>
       revealMatch: (isCurrent, {required waitForMount}) {
         if (hit.surfaceKey case final key?) {
           return _controller.uiSearchNavigation.revealMatch(
-            conversationId,
+            id,
             hit.messageId,
             key,
             isCurrent,
@@ -349,7 +351,7 @@ class _HomePageState extends State<HomePage>
   }
 
   void _onFindChanged() {
-    if (!_find.opened || _find.searching || _find.current == null) {
+    if ((_find.searching && !_find.hasPreview) || _find.activeHit == null) {
       _controller.cancelFindJump();
     }
   }
@@ -363,6 +365,7 @@ class _HomePageState extends State<HomePage>
       _findRevision = null;
       _findConversation = id;
       _findPresentation = null;
+      _findCache.clear();
       _findVersions = const {};
       _liveFindRows.clear();
       _find.setConversation(id);
@@ -1606,6 +1609,13 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildTabletBody(BuildContext context, ColorScheme cs) {
+    final fullWidth =
+        !kIsWeb &&
+        _controller.isDesktopPlatform &&
+        context.watch<SettingsProvider>().desktopFullWidthChat;
+    final maxContentWidth = fullWidth
+        ? double.infinity
+        : ChatLayoutConstants.maxContentWidth;
     final bottomContentPadding = _controller.inputBarHeight + 16;
     final topContentPadding = _chatTopOverlayInset(context) + 8;
     final backgroundImageActive = _assistantBackgroundActive(context);
@@ -1629,6 +1639,7 @@ class _HomePageState extends State<HomePage>
             ),
             child: _buildMessageListView(
               context,
+              fullWidth: fullWidth,
               topContentPadding: topContentPadding,
               bottomContentPadding: bottomContentPadding,
               dividerPadding: const EdgeInsets.symmetric(
@@ -1642,7 +1653,7 @@ class _HomePageState extends State<HomePage>
       bottomOverlay: _controller.selecting
           ? ConstrainedBox(
               constraints: const BoxConstraints(
-                maxWidth: ChatLayoutConstants.maxInputWidth,
+                maxWidth: ChatLayoutConstants.maxContentWidth,
               ),
               child: _buildSelectionActionBar(context),
             )
@@ -1661,9 +1672,7 @@ class _HomePageState extends State<HomePage>
                       alignment: Alignment.bottomCenter,
                       heightFactor: 1,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: ChatLayoutConstants.maxInputWidth,
-                        ),
+                        constraints: BoxConstraints(maxWidth: maxContentWidth),
                         child: input,
                       ),
                     );
@@ -1697,6 +1706,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildMessageListView(
     BuildContext context, {
+    bool fullWidth = false,
     required double topContentPadding,
     required double bottomContentPadding,
     required EdgeInsetsGeometry dividerPadding,
@@ -1811,6 +1821,13 @@ class _HomePageState extends State<HomePage>
       selecting: _controller.selecting,
       selectedItems: _controller.selectedItems,
       suggestions: suggestions,
+      fullWidth: fullWidth,
+      rightOverlayWidth:
+          fullWidth &&
+              settings.desktopMessageNavButtonsMode !=
+                  DesktopMessageNavButtonsMode.never
+          ? ScrollNavButtonsPanel.defaultOverlayWidth
+          : 0,
       topContentPadding: topContentPadding,
       bottomContentPadding: bottomContentPadding,
       dividerPadding: dividerPadding,
@@ -2194,33 +2211,55 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _openMiniMap() async {
     final conversation = _controller.currentConversation?.id;
+    if (conversation == null) return;
+    bool inConversation() =>
+        mounted && _controller.currentConversation?.id == conversation;
     final collapsed = await _controller
         .loadAllCollapsedMessagesForCurrentConversation();
     if (!mounted || _controller.currentConversation?.id != conversation) return;
     void openFind() {
-      if (mounted && _controller.currentConversation?.id == conversation) {
-        _openConversationFind();
-      }
+      if (inConversation()) _openConversationFind();
     }
 
-    String? selectedId;
+    Stream<List<ConversationFindPreview>> search(
+      String query,
+      bool Function() isCurrent,
+    ) {
+      if (!inConversation()) return const Stream.empty();
+      return _findService().searchPreviews(
+        context.read<ChatService>().conversationFindCandidates(conversation),
+        query,
+        cache: _findCache,
+        isCurrent: () => isCurrent() && inConversation(),
+        liveCandidate: _findSnapshot,
+      );
+    }
+
+    MiniMapSelection? selected;
     if (PlatformUtils.isDesktop) {
-      selectedId = await showDesktopMiniMapPopover(
+      selected = await showDesktopMiniMapPopover(
         context,
         anchorKey: _inputBarKey,
         messages: collapsed,
         onOpenConversationFind: openFind,
+        onSearch: search,
       );
     } else {
-      selectedId = await showMiniMapSheet(
+      selected = await showMiniMapSheet(
         context,
         collapsed,
         onOpenConversationFind: openFind,
+        onSearch: search,
       );
     }
-    if (!mounted || _controller.currentConversation?.id != conversation) return;
-    if (selectedId != null && selectedId.isNotEmpty) {
-      await _controller.scrollToMessageId(selectedId, useRikkaTransition: true);
+    if (!inConversation() || selected == null) return;
+    if (selected.match case final match?) {
+      _find.revealPreview(match);
+    } else {
+      await _controller.scrollToMessageId(
+        selected.messageId,
+        useRikkaTransition: true,
+      );
     }
   }
 
@@ -2354,7 +2393,8 @@ class _HomePageState extends State<HomePage>
     if (providerKey == null || modelId == null) return;
     final settings = context.read<SettingsProvider>();
     final config = settings.getProviderConfig(providerKey);
-    if (!ModelSpecResolver.instance.spec(config, modelId).supportsReasoning) {
+    if (!ModelSpecResolver.instance.spec(config, modelId).supportsReasoning &&
+        ResponseSpeedCapabilities.resolve(config, modelId).tiers.isEmpty) {
       return;
     }
     final assistant = context.read<AssistantProvider>().currentAssistant;

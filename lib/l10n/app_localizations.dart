@@ -352,6 +352,18 @@ abstract class AppLocalizations {
   /// **'Copy error details'**
   String get storageSpaceCopyErrorDetails;
 
+  /// Inline status on the Images and Files storage pages while files are visible and the app checks which attachments are safe to delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking attachment usage…'**
+  String get storageAttachmentChecking;
+
+  /// Inline error on the Images and Files storage pages when files can still be opened but their reference check failed and cleanup is unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check attachment usage. Refresh to try again.'**
+  String get storageAttachmentCheckFailed;
+
   /// Error notification on the Images and Files storage detail pages when the clipboard cannot accept the diagnostic text. The user can tap the copy button again.
   ///
   /// In en, this message translates to:
@@ -3244,6 +3256,12 @@ abstract class AppLocalizations {
   /// **'Files and Images'**
   String get backupPageFilesLabel;
 
+  /// Error shown on the backup settings page when local storage cannot save WebDAV or S3 server settings or the shared backup and import content selection.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the backup settings. Please try again.'**
+  String get backupPageSettingsSaveFailed;
+
   /// Title of the backup scope selector tile listing which content categories to back up or import.
   ///
   /// In en, this message translates to:
@@ -4120,6 +4138,30 @@ abstract class AppLocalizations {
   /// **'Import from Other Apps'**
   String get backupPageImportFromOtherApps;
 
+  /// Subtitle of Import from Other Apps in Local Backup. List every supported app by its product name and explain that the official toolbox converts the file privately in the browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Newer Chatbox and Cherry Studio 2.x backups, plus ChatGPT, Claude, DeepSeek, Gemini, Grok, Open WebUI, NextChat, and LobeChat. Converts locally in your browser into a Kelivo backup; the file is not uploaded.'**
+  String get backupPageImportFromOtherAppsSubtitle;
+
+  /// Action in the backup import failure dialog and notification. Opens the official Kelivo conversion toolbox in the system browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Toolbox'**
+  String get backupPageOpenImportToolbox;
+
+  /// Notification when the system browser cannot open the import toolbox. Show its complete address {url} so the user can open it manually.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t open the browser. Open this URL yourself: {url}'**
+  String backupPageImportToolboxOpenFailed(String url);
+
+  /// Explanation above Merge in the local backup import mode dialog when the file is a toolbox chat import. The user can merge or cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'This file was converted by the official toolbox. It will be merged into your existing data and will not replace chats or assistants already on this device.'**
+  String get backupPageToolboxImportMergeOnlyHint;
+
   /// Status text indicating a feature or option is not yet supported.
   ///
   /// In en, this message translates to:
@@ -4282,11 +4324,17 @@ abstract class AppLocalizations {
   /// **'Import from Cherry Studio'**
   String get backupPageImportFromCherryStudio;
 
-  /// Error message shown when a Cherry Studio backup uses format version {version} that Kelivo cannot import; advises exporting from Cherry Studio v1 or waiting for v2 support.
+  /// Shown in the import progress dialog and notification for a Cherry Studio 2.x backup. {version} is the file format version. Refer to the official browser toolbox and the Import Backup File and Merge actions in the app.
   ///
   /// In en, this message translates to:
-  /// **'This backup uses Cherry Studio format version {version}, which Kelivo cannot import yet. Export from Cherry Studio v1 instead, or wait for a Kelivo update that supports Cherry Studio v2 backups.'**
+  /// **'This is a Cherry Studio 2.x backup (format version {version}) and can’t be imported in the app directly. Convert it with the official toolbox into a Kelivo backup, then use Import Backup File and choose Merge. Conversion happens in your browser; the file is not uploaded.'**
   String backupPageCherryStudioUnsupportedBackupVersion(String version);
+
+  /// Shown in the import progress dialog and notification for an unsupported Chatbox backup. {version} is the file format version. Refer to the official browser toolbox and the Import Backup File and Merge actions in the app.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a newer Chatbox backup (format version {version}) and can’t be imported in the app directly. Convert it with the official toolbox into a Kelivo backup, then use Import Backup File and choose Merge. Conversion happens in your browser; the file is not uploaded.'**
+  String backupPageChatboxUnsupportedBackupVersion(String version);
 
   /// Button label and task title for importing data from a Chatbox backup.
   ///
@@ -6341,6 +6389,11 @@ abstract class AppLocalizations {
   String get contextUsageUnavailable;
 
   /// Summary in the context usage panel and input-bar tooltip when OpenAI native compaction is present. Only readable content has been estimated; the encrypted compaction block's input token count is unknown. tokens is the already-formatted subtotal, such as 42k, not the full context total.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated {tokens}, plus unknown server-side usage'**
+  String contextUsagePartialSummary(String tokens);
+
   /// Context-usage breakdown label for the opaque server-side compaction data.
   ///
   /// In en, this message translates to:
@@ -6354,6 +6407,11 @@ abstract class AppLocalizations {
   String get contextUsageUnknownTokens;
 
   /// Separate line below the native-compaction context usage breakdown showing input tokens reported by the last matching model request, not the current estimated window or the compaction operation's output usage. tokens is an already-formatted token count such as 42k.
+  ///
+  /// In en, this message translates to:
+  /// **'Last amount actually sent to the model: {tokens}'**
+  String contextUsageLastRequestInput(String tokens);
+
   /// Status text indicating no context usage data exists yet.
   ///
   /// In en, this message translates to:
@@ -7755,6 +7813,18 @@ abstract class AppLocalizations {
   /// **'Send http(s) image links as-is; when off, remote links are dropped and only local images are sent'**
   String get modelSpecFormRemoteImageUrlsSubtitle;
 
+  /// Label for a switch in the model editor's request compatibility section that overrides the model's default list of available response speed tiers.
+  ///
+  /// In en, this message translates to:
+  /// **'Response speed tiers'**
+  String get modelSpecFormResponseSpeedTiers;
+
+  /// Help under the model editor's response speed tier switch. Fast and UltraFast can be enabled independently, and neither checked leaves Standard as the only available chat option. Users select the actual speed in each chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize which acceleration tiers this model offers in chats. Clear both to offer only Standard.'**
+  String get modelSpecFormResponseSpeedTiersSubtitle;
+
   /// Toggle label in request quirks controlling whether a cache_control marker is added to OpenRouter requests.
   ///
   /// In en, this message translates to:
@@ -8151,6 +8221,90 @@ abstract class AppLocalizations {
   /// **'1 hour'**
   String get providerDetailPageClaudePromptCachingTtl1h;
 
+  /// Label for selecting whether to edit this provider's automatic balance refresh settings or the global defaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic balance refresh'**
+  String get providerBalanceAutoRefresh;
+
+  /// Scope choice in the automatic balance refresh settings for editing overrides that apply only to the current provider.
+  ///
+  /// In en, this message translates to:
+  /// **'This provider'**
+  String get providerBalanceScopeProvider;
+
+  /// Scope choice in the automatic balance refresh settings for editing defaults shared across providers.
+  ///
+  /// In en, this message translates to:
+  /// **'Global defaults'**
+  String get providerBalanceScopeGlobal;
+
+  /// Short row label in automatic balance refresh settings for choosing how often to update the balance on a timer. Shown for both the global default and the provider override.
+  ///
+  /// In en, this message translates to:
+  /// **'Timed refresh'**
+  String get providerBalanceInterval;
+
+  /// Short row label in automatic balance refresh settings. Updates the balance after each completed model reply. Shown for both the global default and the provider override.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh after replies'**
+  String get providerBalanceRefreshOnReply;
+
+  /// Compact current value and picker option that uses the global automatic balance refresh setting. Keep the wording short so it fits beside the row label. The value is the currently effective interval or localized on/off state.
+  ///
+  /// In en, this message translates to:
+  /// **'Default · {value}'**
+  String providerBalanceFollowDefault(String value);
+
+  /// Option disabling the selected balance refresh trigger, either the periodic interval or refresh after replies.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get providerBalanceRefreshOff;
+
+  /// Provider override option that enables refreshing the account balance after replies.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get providerBalanceRefreshOn;
+
+  /// Account balance refresh interval displayed as a number of whole minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute} other{{count} minutes}}'**
+  String providerBalanceRefreshMinutes(int count);
+
+  /// Preset selection for querying the account balance every one hour.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour'**
+  String get providerBalanceRefreshHour;
+
+  /// Option that opens the dialog for entering a custom balance refresh interval.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom interval…'**
+  String get providerBalanceCustomInterval;
+
+  /// Numeric field label in the custom account balance refresh interval dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval in minutes'**
+  String get providerBalanceIntervalMinutes;
+
+  /// Action in the account balance badge context menu to query the provider immediately.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh balance now'**
+  String get providerBalanceRefreshNow;
+
+  /// Balance badge tooltip showing the date and time of the most recent successful query. Both placeholders are already localized.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated {date} at {time}'**
+  String providerBalanceLastUpdated(String date, String time);
+
   /// Title of the account balance page and a row label opening balance settings.
   ///
   /// In en, this message translates to:
@@ -8211,17 +8365,23 @@ abstract class AppLocalizations {
   /// **'Checking...'**
   String get providerDetailPageBalanceQuerying;
 
-  /// Button label that resets balance settings to their defaults.
+  /// Visible action below the provider's balance settings that opens a confirmation dialog, also used as the dialog title.
   ///
   /// In en, this message translates to:
-  /// **'Reset'**
+  /// **'Restore default balance settings'**
   String get providerDetailPageBalanceResetDefaultsButton;
 
-  /// Tooltip on the reset icon button that restores default balance settings.
+  /// Warning in the provider balance reset dialog. It replaces custom request fields with the provider preset, resets whether balance queries are enabled, and makes automatic refresh inherit the global settings.
   ///
   /// In en, this message translates to:
-  /// **'Reset balance settings'**
-  String get providerDetailPageBalanceResetDefaultsTooltip;
+  /// **'This will replace this provider’s custom balance request settings, restore the default state of its balance switch, and make automatic refresh follow the global settings.'**
+  String get providerDetailPageBalanceResetConfirmMessage;
+
+  /// Confirmation button in the provider balance reset dialog. Activating it restores default balance settings for the current provider.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore defaults'**
+  String get providerDetailPageBalanceResetConfirmButton;
 
   /// Success message and displayed value showing the queried balance, with {value} substituted by the balance amount.
   ///
@@ -8877,6 +9037,12 @@ abstract class AppLocalizations {
   /// **'Models'**
   String get providerDetailPageModelsTitle;
 
+  /// Tooltip in the desktop provider's model toolbar and title of the dialog where users drag models into their preferred order for the chat model picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder models'**
+  String get providerDetailPageReorderModels;
+
   /// Button label that fetches/refreshes the provider's available models.
   ///
   /// In en, this message translates to:
@@ -9122,6 +9288,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scroll to bottom'**
   String get miniMapScrollToBottomTooltip;
+
+  /// Tooltip for the magnifying glass in the minimap and placeholder in its search field. Searches the current conversation and shows matching message previews inside the minimap.
+  ///
+  /// In en, this message translates to:
+  /// **'Search minimap'**
+  String get miniMapSearchHint;
+
+  /// Compact label beside a minimap search preview. The count is the total number of keyword occurrences in that single message, including occurrences outside the preview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 match} other{{count} matches}}'**
+  String miniMapSearchMatchCount(int count);
+
+  /// Empty state in the minimap after a completed query matches no user messages or assistant replies.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching messages'**
+  String get miniMapSearchNoResults;
+
+  /// Status inside the minimap if searching the current conversation for matching messages fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t search messages'**
+  String get miniMapSearchFailed;
 
   /// Placeholder in the search field of the current conversation’s find bar.
   ///
@@ -9375,6 +9565,30 @@ abstract class AppLocalizations {
   /// **'Region (optional, default: us-en)'**
   String get searchServicesEditDialogRegionOptional;
 
+  /// Validation error under the 4get instance address or in a desktop notification. The address must be an absolute HTTP or HTTPS base URL without a query or fragment. HTTP and HTTPS are technical terms.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an HTTP or HTTPS base URL.'**
+  String get searchServicesFourGetUrlInvalid;
+
+  /// Label for the optional upstream search engine identifier in the 4get settings form, such as ddg for DuckDuckGo. When empty, the instance chooses its default.
+  ///
+  /// In en, this message translates to:
+  /// **'Upstream engine (optional)'**
+  String get searchServicesFourGetScraperOptional;
+
+  /// Label for the optional masked 4get credential field in search service settings. Pass is the literal cookie name 'pass'. Preserve it as a name.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass cookie (optional)'**
+  String get searchServicesFourGetPassOptional;
+
+  /// Help below the 4get credential field. Tell users to solve the instance's CAPTCHA when required and paste the value of the cookie whose literal name is 'pass'. Keep 'pass' lowercase and untranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'If the instance requires a CAPTCHA, complete it and paste the value of the pass cookie.'**
+  String get searchServicesFourGetPassHelp;
+
   /// Section header for choosing the search provider type in the service editor.
   ///
   /// In en, this message translates to:
@@ -9386,6 +9600,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Configuration'**
   String get searchServiceEditorConfigurationTitle;
+
+  /// Tooltip and accessibility label for the button inside the search service editor that opens the icon source menu for this configured service.
+  ///
+  /// In en, this message translates to:
+  /// **'Change icon'**
+  String get searchServiceEditorChangeIcon;
+
+  /// Error shown in the search service editor when selecting or importing a custom service icon fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not use this icon. Choose another image or icon.'**
+  String get searchServiceEditorIconFailed;
 
   /// Placeholder text shown when the selected provider requires no extra configuration fields.
   ///
@@ -10310,6 +10536,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Auto switch to Topics'**
   String get displaySettingsPageAutoSwitchTopicsTitle;
+
+  /// Label for the switch in desktop Display settings that removes the fixed maximum width for the message list and input box.
+  ///
+  /// In en, this message translates to:
+  /// **'Full-width chat'**
+  String get desktopDisplaySettingsFullWidthChatTitle;
+
+  /// Tooltip beside the full-width chat switch in desktop Display settings. The chat area is the space available between the sidebars.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand messages and the input box to fill the chat area.'**
+  String get desktopDisplaySettingsFullWidthChatSubtitle;
 
   /// Label for choosing whether the topic list sits on the left or right.
   ///
@@ -11829,6 +12067,12 @@ abstract class AppLocalizations {
   /// **'Privacy-respecting metasearch engine. Self-hosted instance required; no tracking.'**
   String get searchProviderSearXNGDescription;
 
+  /// Description for the 4get search provider option. The user supplies a public or self-hosted 4get instance where its search API is enabled. Preserve the brand name '4get'.
+  ///
+  /// In en, this message translates to:
+  /// **'Web search through a public or self-hosted 4get instance with the API enabled.'**
+  String get searchProviderFourGetDescription;
+
   /// Description under the Tavily search provider option noting it is an AI search API optimized for LLMs.
   ///
   /// In en, this message translates to:
@@ -11900,6 +12144,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SearXNG'**
   String get searchServiceNameSearXNG;
+
+  /// Display name of the 4get web search provider in the search service pickers. Keep the brand spelling '4get'.
+  ///
+  /// In en, this message translates to:
+  /// **'4get'**
+  String get searchServiceNameFourGet;
 
   /// Display name for the 'linkup' search service type in the search service list and editor.
   ///
@@ -20747,10 +20997,10 @@ abstract class AppLocalizations {
   /// **'Read files with line numbers and paging.'**
   String get workspaceToolHelpRead;
 
-  /// Description for the 'view_image' tool: lets the model inspect an image stored in the workspace.
+  /// Text in the workspace Tools pane explaining that the view_image tool lets the model inspect workspace images and download images from public HTTP or HTTPS URLs.
   ///
   /// In en, this message translates to:
-  /// **'Let the model inspect an image from the workspace.'**
+  /// **'Let the model inspect workspace images or images at public URLs.'**
   String get workspaceToolHelpViewImage;
 
   /// Description for the 'write_file' tool: creates files or overwrites their contents.
@@ -28646,17 +28896,29 @@ abstract class AppLocalizations {
   /// **'Maximum requests'**
   String get compressionRequests;
 
-  /// Compression option to include world books evaluated on the selected history and memory snapshots frozen in that history, rather than current live memory or retained messages.
+  /// Main switch in the text compression details for including background information in the summary request. It also controls the availability of the instruction injection option. No placeholders.
   ///
   /// In en, this message translates to:
-  /// **'Reference world books and historical memory'**
+  /// **'Use background references'**
   String get compressionReference;
 
-  /// Compression reference help: restrict dynamic reference sources to the selected historical range, and distinguish explanatory background from events or character knowledge. No placeholders.
+  /// Help below the background references switch in text compression settings. The assistant’s system prompt, world book entries matched to the selected history, and memory snapshots saved in that range help explain context. The chat history establishes events and character knowledge. No placeholders.
   ///
   /// In en, this message translates to:
-  /// **'World books are matched only against the history being compressed, using memory snapshots from that time. This is only to explain names and rules — it doesn’t mean those events happened, or that a character already knows them.'**
+  /// **'The summary can draw on the assistant’s system prompt, world book entries matched to this part of the chat, and memories saved at the time. The chat history establishes what happened and what each character knows.'**
   String get compressionReferenceHint;
+
+  /// Switch under background references in text compression settings. Enables sending the instruction cards selected for the chat as reference material to the model generating a summary. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Use instruction injections as references'**
+  String get compressionInstructionInjections;
+
+  /// Help below the instruction injection switch in text compression settings. Describes the selected chat instruction cards being sent as background material for the summary. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the instruction cards enabled for this chat to the summary model as background references.'**
+  String get compressionInstructionInjectionsHint;
 
   /// Switch label for replacing already-consumed tool results with references.
   ///
@@ -29510,6 +29772,984 @@ abstract class AppLocalizations {
   /// **'Custom'**
   String get themePaletteCustom;
 
+  /// Title for an imported native compaction at the start of a new chat, shown in the timeline, context operation list and details. It is opaque context carried over from another chat, not a locally undoable compression. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Server-side compression loaded'**
+  String get compressionNativeImported;
+
+  /// Description in imported native context details. Explains which data this chat owns, that the provider result is opaque, and that earlier originals must be viewed or restored in the source chat rather than through local undo. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat starts with the server-side compressed result and the most recent turns. The result can’t be viewed or edited as text. Earlier originals remain in the original chat and can’t be restored by undoing here.'**
+  String get compressionNativeImportedDescription;
+
+  /// Action in imported native context details to open the source conversation containing the earlier originals. Source means the originating chat, not source code. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Open original chat'**
+  String get compressionNativeOpenSource;
+
+  /// Message when undo or text-summary regeneration would require originals absent from an imported native context. Also shown in compression options when the selected range includes such context. Directs users to native compaction or the source chat. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat has no originals for the loaded server-side result. You can keep using server-side compression, or go back to the original chat to view the originals or create a text summary.'**
+  String get compressionNativeOriginalsUnavailable;
+
+  /// Warning in the compression dialog when native compaction creates a new temporary chat. The app discards the source temporary chat when switching away, so originals outside the retained tail are deleted and cannot be restored from the new chat. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'The new temporary chat only keeps the complete server-side result and recent turns. When you leave the original temporary chat, it and any originals not carried over are deleted and can’t be restored here.'**
+  String get compressionNativeTemporaryCopyHint;
+
+  /// Description in imported native context details when the source conversation has been deleted or discarded. Explains that this chat still owns the complete opaque result and retained tail, but cannot restore absent originals. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat has the complete server-side result and the recent turns you kept. The original chat is no longer available. Originals not copied here can’t be restored, and the result can’t be viewed or edited as text.'**
+  String get compressionNativeSourceUnavailable;
+
+  /// Label of the hosted image generation model picker in a chat model’s built-in tools settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Image model'**
+  String get modelDetailSheetImageGenerationModel;
+
+  /// Default image model option in built-in tools settings. Omits the tool model parameter so the server chooses the image model.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get modelDetailSheetImageGenerationAuto;
+
+  /// Label of the image planning effort picker in built-in tools settings, separate from chat reasoning effort and rendering quality.
+  ///
+  /// In en, this message translates to:
+  /// **'Image complexity'**
+  String get modelDetailSheetImageGenerationComplexity;
+
+  /// Default image complexity option. Omits complexity and uses server behavior, which may inherit the chat reasoning effort.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get modelDetailSheetImageGenerationComplexityDefault;
+
+  /// Low image planning complexity option in the built-in image generation tool settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get modelDetailSheetImageGenerationComplexityLow;
+
+  /// Medium image planning complexity option in the built-in image generation tool settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get modelDetailSheetImageGenerationComplexityMedium;
+
+  /// High image planning complexity option in the built-in image generation tool settings.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get modelDetailSheetImageGenerationComplexityHigh;
+
+  /// Help text below image complexity in built-in tools settings. Explain that an explicit level is independent, while omitting the field may inherit outer chat reasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Controls image planning separately from chat reasoning. Default uses server behavior and may inherit chat reasoning.'**
+  String get modelDetailSheetImageGenerationComplexityDescription;
+
+  /// Hint in image generation settings for ChatGPT/Codex OAuth providers. The server may replace the requested image model or reject explicit complexity.
+  ///
+  /// In en, this message translates to:
+  /// **'ChatGPT sign-in may use a different image model. Model and complexity settings depend on server support.'**
+  String get modelDetailSheetImageGenerationOAuthHint;
+
+  /// Actionable hint appended after the original provider error when ChatGPT/Codex OAuth image generation rejects a complexity level. Preserve the original error; do not automatically retry or alter chat settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Set chat reasoning to Auto and image complexity to Default, then retry image generation. ChatGPT sign-in may use a different image model or reject explicit complexity.'**
+  String get imageGenerationComplexityErrorHint;
+
+  /// Title of the desktop Environment row and dialog for choosing the shell used by the AI shell tool.
+  ///
+  /// In en, this message translates to:
+  /// **'Default shell'**
+  String get workspaceEnvNativeShellTitle;
+
+  /// Help below the shell executable path field in the desktop Environment dialog; explains automatic mode, supported shell command interfaces and device-local scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for automatic detection. Otherwise, enter the absolute path to PowerShell, cmd, or a shell that supports -lc (such as bash, zsh, or fish). This setting applies only to this device.'**
+  String get workspaceEnvNativeShellHint;
+
+  /// Validation error in the desktop shell settings dialog when the path is invalid or the shell cannot execute a probe command.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start this shell. Check its absolute path and supported command syntax.'**
+  String get workspaceEnvNativeShellInvalid;
+
+  /// Value of the actual shell path in desktop Environment when no shell can be started.
+  ///
+  /// In en, this message translates to:
+  /// **'Shell unavailable'**
+  String get workspaceEnvNativeShellUnavailable;
+
+  /// Desktop Environment action that clears shell detection caches and checks the current shell setting again.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect again'**
+  String get workspaceEnvNativeShellDetect;
+
+  /// Button in the desktop default shell dialog; validates and saves the executable path or automatic detection setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get workspaceEnvNativeShellSave;
+
+  /// Desktop display settings, tray section: switch to register Kelivo to start when the user logs in to this device. Disabled by default.
+  ///
+  /// In en, this message translates to:
+  /// **'Launch at startup'**
+  String get desktopAutostartTitle;
+
+  /// Tooltip for the desktop launch-at-startup switch. This is a device-local operating system setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Kelivo when you sign in to this computer.'**
+  String get desktopAutostartDescription;
+
+  /// Desktop display settings, tray section: switch to keep the main window hidden only when the system starts Kelivo at login.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide to tray on automatic startup'**
+  String get desktopAutostartHiddenTitle;
+
+  /// Tooltip for hiding the desktop window on automatic startup. Explains prerequisites and that manual launches remain visible.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires launch at startup and the tray icon. Opening Kelivo manually still shows the window.'**
+  String get desktopAutostartHiddenDescription;
+
+  /// Desktop startup switch tooltip when the current macOS version does not support the system login-item API.
+  ///
+  /// In en, this message translates to:
+  /// **'Launch at startup requires macOS 13 or later.'**
+  String get desktopAutostartUnsupported;
+
+  /// Desktop startup setting failure tooltip and error notification, including when system approval is required. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not apply the startup setting. Check this app in your system startup or login-item settings and try again.'**
+  String get desktopAutostartError;
+
+  /// Total output token limit for summary generation, including reasoning and summary text. Also labels the recovery action that opens this field.
+  ///
+  /// In en, this message translates to:
+  /// **'Total output limit (tokens)'**
+  String get compressionOutputBudget;
+
+  /// Help below the compression total output limit field: reasoning consumes the same budget, an independent higher limit does not increase the desired summary length, blank follows the summary target, and model output limits still apply. No placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes thinking and the summary itself. Leave blank to use the summary length. If thinking is on, you can raise this limit without making the summary longer. The model’s own output limit still applies.'**
+  String get compressionOutputBudgetHint;
+
+  /// Persistent notice below an assistant reply stopped by max_output_tokens when the latest request is not known to be near the context window limit. Explains that reasoning also consumes the output allowance.
+  ///
+  /// In en, this message translates to:
+  /// **'Response truncated: the output limit includes reasoning. Increase the output limit or reduce reasoning before retrying.'**
+  String get responseOutputLimitReached;
+
+  /// Persistent notice below a truncated assistant reply when the final HTTP response input usage is at least 95 percent of the configured context window. Does not attribute the limit to images. inputTokens is that single request input usage; contextWindow is the model context capacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Response truncated: this request used {inputTokens} input tokens, close to the {contextWindow}-token context limit. Shorten the context before retrying.'**
+  String responseContextLimitReached(int inputTokens, int contextWindow);
+
+  /// Action below a truncated assistant reply whose final request contained images. Regenerates once with all image inputs omitted for that generation, including tool follow-ups, without deleting attachments or changing saved settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry without images (keep originals)'**
+  String get responseRetryWithoutImages;
+
+  /// Browser settings row and picker title for the maximum wait for an individual native browser command.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation timeout'**
+  String get browserOperationTimeout;
+
+  /// Explanatory text in the browser operation-timeout picker. Describes the command deadline and that the assistant can inspect the page after a timeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum wait for a browser command. The assistant can check the page after a timeout.'**
+  String get browserOperationTimeoutDescription;
+
+  /// Selected value and picker option in browser operation-timeout settings. The integer seconds placeholder is the maximum command wait in seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} seconds'**
+  String browserOperationTimeoutSeconds(int seconds);
+
+  /// Browser tool error summary when a page-changing command was not sent because an earlier command timed out. The assistant must successfully read a snapshot or extract before further changes; no manual resume permission is needed.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the page before continuing; the previous operation is unconfirmed.'**
+  String get browserErrObservationRequired;
+
+  /// Settings button in the upper-right corner of the Storage Space overview, and its dialog title. Configures automatic deletion of unused chat images and files.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-clean attachments'**
+  String get storageAttachmentRetention;
+
+  /// Number field shown only when delayed automatic cleanup is selected. Enter a positive number of days to keep unused attachments before deleting them.
+  ///
+  /// In en, this message translates to:
+  /// **'Days before cleanup'**
+  String get storageAttachmentRetentionDays;
+
+  /// First option in the automatic attachment cleanup dialog. Selects zero-day retention without requiring the user to type zero.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean immediately'**
+  String get storageAttachmentRetentionImmediately;
+
+  /// Short introduction in the automatic attachment cleanup dialog. Explains the purpose in everyday language before the immediate/later choice.
+  ///
+  /// In en, this message translates to:
+  /// **'After you delete messages or chats, automatically remove images and files that are no longer used.'**
+  String get storageAttachmentRetentionHint;
+
+  /// Attachment badge when no conversation, draft or appearance reference remains and no automatic recycling deadline is recorded. Manual deletion is available.
+  ///
+  /// In en, this message translates to:
+  /// **'Unused'**
+  String get storageAttachmentUnused;
+
+  /// Attachment status showing the earliest scheduled cleanup date. date is a localized calendar date; cleanup may wait for the next maintenance run.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for cleanup · {date}'**
+  String storageAttachmentPending(String date);
+
+  /// Compact label below an attachment preview and in its information dialog. names lists every chat or branch using this file.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats: {names}'**
+  String storageAttachmentConversations(String names);
+
+  /// Action in the Images/Files list. Opens a confirmation to delete files that are no longer used; active files remain protected.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean unused'**
+  String get storageAttachmentCleanUnused;
+
+  /// Brief explanation in the Images/Files list and automatic cleanup dialog, also used as the in-use badge tooltip. Avoid technical reference-count terminology.
+  ///
+  /// In en, this message translates to:
+  /// **'Files still in use will be kept.'**
+  String get storageAttachmentProtectedHint;
+
+  /// Confirmation for manual storage attachment cleanup. count is the selected number; references are checked again before deletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} unused files now? Files that are still in use will be kept.'**
+  String storageAttachmentDeleteConfirm(int count);
+
+  /// Second option in the automatic attachment cleanup dialog. Reveals a field for the number of days to wait before deleting unused attachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean later'**
+  String get storageAttachmentRetentionDelayed;
+
+  /// Inline error below the delayed attachment cleanup number field. Only shown when the value is empty, zero, or above the maximum. Immediate cleanup has its own option.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 1–3650 days.'**
+  String get storageAttachmentRetentionInvalidDays;
+
+  /// Title of the information dialog opened by tapping an attachment status label. Shows its chats or cleanup status; this is not the automatic-cleanup settings dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'File info'**
+  String get storageAttachmentDetailsTitle;
+
+  /// Compression options panel: Also send your earlier messages as written Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Also send your earlier messages as written'**
+  String get compressionCarryTitle;
+
+  /// Compression options panel: From the part that becomes a summary, your own messages are sent to the model as you wrote them, not just as the summary retells them. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'From the part that becomes a summary, your own messages are sent to the model as you wrote them, not just as the summary retells them.'**
+  String get compressionCarryHint;
+
+  /// Compression options panel: Send the latest Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the latest'**
+  String get compressionCarryCountLabel;
+
+  /// Compression options panel: messages Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'messages'**
+  String get compressionCarryUnit;
+
+  /// Compression options panel: As many as fit Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'As many as fit'**
+  String get compressionCarryAll;
+
+  /// Compression options panel: No set number. Starts from the newest and goes back until it’s nearly full; if the oldest one is too long, only its start and end are sent. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'No set number. Starts from the newest and goes back until it’s nearly full; if the oldest one is too long, only its start and end are sent.'**
+  String get compressionCarryAllHint;
+
+  /// Compression options panel: Also bring back messages from earlier summaries Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Also bring back messages from earlier summaries'**
+  String get compressionCarryEarlier;
+
+  /// Compression options panel: Your messages from parts compressed earlier can be included too. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Your messages from parts compressed earlier can be included too.'**
+  String get compressionCarryEarlierHint;
+
+  /// Summary below Message preview and More settings in manual context compression. Shows how many original user messages and associated assistant replies the current selection would carry, and their combined estimated input tokens. A reply already in retained history is not counted again.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 user message} other{{count} user messages}} · {replyCount, plural, =1{1 reply} other{{replyCount} replies}} · about {tokens} tokens'**
+  String compressionCarryPreview(int count, int replyCount, String tokens);
+
+  /// Compression options panel: The part being summarized has no messages from you. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'The part being summarized has no messages from you.'**
+  String get compressionCarryNone;
+
+  /// Compression options panel: {count} older messages don’t fit and won’t be sent this time. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} older messages don’t fit and won’t be sent this time.'**
+  String compressionCarryNotFit(int count);
+
+  /// Compression options panel: {count} more Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more'**
+  String compressionCarryMoreRows(int count);
+
+  /// Compression options panel: These messages would likely be more than the current model can take. Send fewer, or switch to a model with a larger context. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'These messages would likely be more than the current model can take. Send fewer, or switch to a model with a larger context.'**
+  String get compressionCarryOverBudget;
+
+  /// Compression options panel: Change to {count} Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Change to {count}'**
+  String compressionCarryFitAction(int count);
+
+  /// Compression options panel: Too long; only the start and end are sent Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Too long; only the start and end are sent'**
+  String get compressionCarryTruncated;
+
+  /// Compression options panel: Automatic compression will do the same. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic compression will do the same.'**
+  String get compressionCarryAutoToo;
+
+  /// Compression options panel: Images and files aren’t carried to the new chat; only the text is. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Images and files aren’t carried to the new chat; only the text is.'**
+  String get compressionCarryNewChatText;
+
+  /// Compression options panel: This service keeps your earlier messages on its own when compressing. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'This service keeps your earlier messages on its own when compressing.'**
+  String get compressionCarryServerKeeps;
+
+  /// Context operation details and carried message editor: Sent as written Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent as written'**
+  String get contextDetailCarried;
+
+  /// Context operation details and carried message editor: {count} of your earlier messages Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of your earlier messages'**
+  String contextDetailCarriedCount(int count);
+
+  /// Context operation details and carried message editor: Kept by the service Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept by the service'**
+  String get contextDetailServerKept;
+
+  /// Context operation details and carried message editor: This only changes the text sent to the model. The original message in the chat stays the same. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'This only changes the text sent to the model. The original message in the chat stays the same.'**
+  String get contextCarriedEditHint;
+
+  /// Context operation details and carried message editor: This can’t be empty. To stop sending it, choose “Stop sending”. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'This can’t be empty. To stop sending it, choose “Stop sending”.'**
+  String get contextCarriedEmpty;
+
+  /// Context operation details and carried message editor: Stop sending Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sending'**
+  String get contextCarriedRemove;
+
+  /// Context operation details and carried message editor: This won’t be sent to the model anymore. The original message in the chat isn’t affected. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'This won’t be sent to the model anymore. The original message in the chat isn’t affected.'**
+  String get contextCarriedRemoveConfirm;
+
+  /// Context operation details and carried message editor: The original was deleted; only this text remains Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'The original was deleted; only this text remains'**
+  String get contextCarriedSourceDeleted;
+
+  /// Compression options panel: Include the reply too Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Include the reply too'**
+  String get compressionCarryReply;
+
+  /// Compression options panel: +about {tokens} Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'+about {tokens}'**
+  String compressionCarryReplyTokens(String tokens);
+
+  /// Compression options panel: The reply is already in the kept turns Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'The reply is already in the kept turns'**
+  String get compressionCarryReplyInKept;
+
+  /// Context operation details and carried message editor: The reply Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'The reply'**
+  String get contextCarriedReplyLabel;
+
+  /// Context operation details and carried message editor: Don’t send the reply Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t send the reply'**
+  String get contextCarriedRemoveReply;
+
+  /// In the full-screen draft image editor: Cancel control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get imageEditorCancel;
+
+  /// In the full-screen draft image editor: finish editing and return to the composer without sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get imageEditorDone;
+
+  /// In the full-screen draft image editor: Undo control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get imageEditorUndo;
+
+  /// In the full-screen draft image editor: Redo control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get imageEditorRedo;
+
+  /// In the full-screen draft image editor: Crop control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop'**
+  String get imageEditorToolCrop;
+
+  /// In the full-screen draft image editor: Draw control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get imageEditorToolDraw;
+
+  /// In the full-screen draft image editor: Text control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get imageEditorToolText;
+
+  /// In the full-screen draft image editor: Mosaic control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Mosaic'**
+  String get imageEditorToolMosaic;
+
+  /// In the full-screen draft image editor: Pen control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Pen'**
+  String get imageEditorPen;
+
+  /// In the full-screen draft image editor: Arrow control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrow'**
+  String get imageEditorArrow;
+
+  /// In the full-screen draft image editor: Eraser control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Eraser'**
+  String get imageEditorEraser;
+
+  /// In the full-screen draft image editor: Free control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get imageEditorAspectFree;
+
+  /// In the full-screen draft image editor: Original control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get imageEditorAspectOriginal;
+
+  /// In the full-screen draft image editor: Rotate left control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate left'**
+  String get imageEditorRotate;
+
+  /// In the full-screen draft image editor: Flip control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Flip'**
+  String get imageEditorFlip;
+
+  /// In the full-screen draft image editor: Plain control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain'**
+  String get imageEditorTextPlain;
+
+  /// In the full-screen draft image editor: Outline control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Outline'**
+  String get imageEditorTextOutline;
+
+  /// In the full-screen draft image editor: Fill control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill'**
+  String get imageEditorTextFill;
+
+  /// In the full-screen draft image editor: Align control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Align'**
+  String get imageEditorAlign;
+
+  /// In the full-screen draft image editor: Brush control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Brush'**
+  String get imageEditorMosaicBrush;
+
+  /// In the full-screen draft image editor: Box control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Box'**
+  String get imageEditorMosaicRect;
+
+  /// In the full-screen draft image editor: Discard changes? control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get imageEditorDiscardTitle;
+
+  /// In the full-screen draft image editor: Keep editing control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get imageEditorKeepEditing;
+
+  /// In the full-screen draft image editor: Discard control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get imageEditorDiscard;
+
+  /// In the full-screen draft image editor: Couldn't process image control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t process image'**
+  String get imageEditorProcessFailed;
+
+  /// In the full-screen draft image editor: Retry control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get imageEditorRetry;
+
+  /// In the full-screen draft image editor: Remove control or status for editing draft image pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get imageEditorRemove;
+
+  /// In the full-screen draft image editor: revert the current image to its original imported pixels; this operation is undoable.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert'**
+  String get imageEditorRestore;
+
+  /// In the full-screen draft image editor: accessible label of a color swatch; color is its six-digit hexadecimal RGB value.
+  ///
+  /// In en, this message translates to:
+  /// **'Color {color}'**
+  String imageEditorColor(String color);
+
+  /// Button in draft image preview that opens the image editor; absent for sent images.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get imageViewerPageEditButton;
+
+  /// Accessible label and tooltip of the draft image size chip that opens per-image compression quality controls.
+  ///
+  /// In en, this message translates to:
+  /// **'Image size'**
+  String get imageViewerPageFileSize;
+
+  /// Segment in the earlier-message settings that selects a fixed number of recent messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest messages'**
+  String get compressionCarryModeCount;
+
+  /// Heading above the list of messages the user can select in the compression settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Message preview'**
+  String get compressionCarryListTitle;
+
+  /// Action beside the Message preview heading in manual context compression. Includes the available assistant replies for all currently selected user messages, including collapsed rows. Individual replies can still be switched off.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all replies'**
+  String get compressionCarrySelectAllReplies;
+
+  /// Action beside the Message preview heading in manual context compression. Clears every assistant reply selection for this compression, including collapsed replies and those outside the token budget. The selected user messages stay checked.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all replies'**
+  String get compressionCarryDeselectAllReplies;
+
+  /// Warning on the first user message whose selected assistant reply puts the pair over the remaining token budget in the fit-as-many-as-possible compression preview. This pair is omitted from the totals. The reply can still be switched off.
+  ///
+  /// In en, this message translates to:
+  /// **'This message and its reply exceed the remaining budget. Both will be left out.'**
+  String get compressionCarryPairNotFit;
+
+  /// Preview title for a message containing only images. Count is the number of images.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 image} other{{count} images}}'**
+  String compressionCarryImageCount(int count);
+
+  /// Preview label for a message with multiple attachments or without known file names. Count is the number of attachments.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 attachment} other{{count} attachments}}'**
+  String compressionCarryAttachmentCount(int count);
+
+  /// Shown in the compression preview when the selected message has neither readable text nor identifiable attachments.
+  ///
+  /// In en, this message translates to:
+  /// **'No message text'**
+  String get compressionCarryNoText;
+
+  /// Validation message beside the number of earlier messages to send in compression settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a number from 1 to 10,000.'**
+  String get compressionCarryInvalidCount;
+
+  /// Shown in external backup settings or completion notifications. Backup will continue in the background
+  ///
+  /// In en, this message translates to:
+  /// **'Backup will continue in the background'**
+  String get backupRunningInBackground;
+
+  /// Shown in external backup settings or completion notifications. Background backup failed: {error} The error is the localized reason for the failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Background backup failed: {error}'**
+  String backupBackgroundFailed(String error);
+
+  /// Shown in external backup settings or completion notifications. Back up automatically when due
+  ///
+  /// In en, this message translates to:
+  /// **'Back up automatically when due'**
+  String get backupAutoEnableTitle;
+
+  /// Shown in external backup settings or completion notifications. When the scheduled time arrives, Kelivo backs up while the app is in the foreground. If the app is closed or killed, the backup does not keep running and is not resumed; the next time you open the app, a single full backup runs if it is still due.
+  ///
+  /// In en, this message translates to:
+  /// **'When the scheduled time arrives, Kelivo backs up while the app is in the foreground. If the app is closed or killed, the backup does not keep running and is not resumed; the next time you open the app, a single full backup runs if it is still due.'**
+  String get backupAutoEnableHint;
+
+  /// Shown in external backup settings or completion notifications. Automatic backup destination
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backup destination'**
+  String get backupAutoDestinationTitle;
+
+  /// Shown in external backup settings or completion notifications. WebDAV
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV'**
+  String get backupAutoDestinationWebDav;
+
+  /// Shown in external backup settings or completion notifications. S3
+  ///
+  /// In en, this message translates to:
+  /// **'S3'**
+  String get backupAutoDestinationS3;
+
+  /// Desktop automatic backup folder settings or write result. Local folder
+  ///
+  /// In en, this message translates to:
+  /// **'Local folder'**
+  String get backupAutoDestinationLocal;
+
+  /// Shown in external backup settings or completion notifications. Set up WebDAV or S3 first.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up WebDAV or S3 first.'**
+  String get backupAutoNeedRemoteHint;
+
+  /// Shown in external backup settings or completion notifications. Set up WebDAV or S3, or choose a local folder first.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up WebDAV or S3, or choose a local folder first.'**
+  String get backupAutoNeedDestinationHint;
+
+  /// Desktop automatic backup folder settings or write result. Choose a backup folder first.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a backup folder first.'**
+  String get backupAutoNeedFolderHint;
+
+  /// Desktop automatic backup folder settings or write result. Choose folder…
+  ///
+  /// In en, this message translates to:
+  /// **'Choose folder…'**
+  String get backupAutoLocalFolderChoose;
+
+  /// Desktop automatic backup folder settings or write result. Change folder
+  ///
+  /// In en, this message translates to:
+  /// **'Change folder'**
+  String get backupAutoLocalFolderChange;
+
+  /// Desktop automatic backup folder settings or write result. Choose a folder outside the app's own data directory.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a folder outside the app\'s own data directory.'**
+  String get backupAutoLocalFolderInvalid;
+
+  /// Desktop automatic backup folder settings or write result. Keep at most
+  ///
+  /// In en, this message translates to:
+  /// **'Keep at most'**
+  String get backupAutoLocalRetentionTitle;
+
+  /// Desktop automatic backup folder settings or write result. {count} backups The count is the positive number of backups to keep.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} backups'**
+  String backupAutoLocalRetentionCount(int count);
+
+  /// Desktop automatic backup folder settings or write result. No limit
+  ///
+  /// In en, this message translates to:
+  /// **'No limit'**
+  String get backupAutoLocalRetentionUnlimited;
+
+  /// Desktop automatic backup folder settings or write result. Back up to this folder now
+  ///
+  /// In en, this message translates to:
+  /// **'Back up to this folder now'**
+  String get backupAutoLocalNow;
+
+  /// Desktop automatic backup folder settings or write result. Can't write to the chosen folder. Check that it is still available, or choose another one. Kelivo won't change the saved location on its own.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t write to the chosen folder. Check that it is still available, or choose another one. Kelivo won\'t change the saved location on its own.'**
+  String get backupAutoLocalDirUnavailable;
+
+  /// Desktop automatic backup folder settings or write result. You don't have permission to write to the chosen folder. Please choose the folder again. Kelivo won't change the saved location on its own.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have permission to write to the chosen folder. Please choose the folder again. Kelivo won\'t change the saved location on its own.'**
+  String get backupAutoLocalDirPermission;
+
+  /// Desktop automatic backup folder settings or write result. There isn't enough disk space, so the backup didn't finish. Your earlier backups are still there.
+  ///
+  /// In en, this message translates to:
+  /// **'There isn\'t enough disk space, so the backup didn\'t finish. Your earlier backups are still there.'**
+  String get backupAutoLocalDirFull;
+
+  /// Desktop automatic backup folder settings or write result. Kelivo can't access the chosen folder. Please choose it again. The saved location won't be changed automatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo can\'t access the chosen folder. Please choose it again. The saved location won\'t be changed automatically.'**
+  String get backupAutoLocalBookmarkLost;
+
+  /// Shown in external backup settings or completion notifications. Next automatic backup
+  ///
+  /// In en, this message translates to:
+  /// **'Next automatic backup'**
+  String get backupAutoNextTitle;
+
+  /// Device-only password consent dialog when enabling encrypted automatic backups. Remember the password on this device?
+  ///
+  /// In en, this message translates to:
+  /// **'Remember the password on this device?'**
+  String get backupAutoRememberPasswordTitle;
+
+  /// Device-only password consent dialog when enabling encrypted automatic backups. Remember the password on this device so automatic backups can run. It stays on this device and is never uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember the password on this device so automatic backups can run. It stays on this device and is never uploaded.'**
+  String get backupAutoRememberPasswordMessage;
+
+  /// Device-only password consent dialog when enabling encrypted automatic backups. Remember
+  ///
+  /// In en, this message translates to:
+  /// **'Remember'**
+  String get backupAutoRememberPasswordConfirm;
+
+  /// Device-only password consent dialog when enabling encrypted automatic backups. Not now
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get backupAutoRememberPasswordDecline;
+
+  /// Device-only password consent dialog when enabling encrypted automatic backups. Automatic backup was not turned on. You'll still get a reminder when it's due.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backup was not turned on. You\'ll still get a reminder when it\'s due.'**
+  String get backupAutoRememberDeclined;
+
+  /// Backup settings or automatic backup failure when access to the device credential store is unavailable. Manual backups can still prompt for the password.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelivo can’t access the system keychain for the backup password. You can still back up manually.'**
+  String get backupAutoKeychainUnavailable;
+
+  /// Shown in external backup settings or completion notifications. Automatic backup finished
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backup finished'**
+  String get backupAutoSucceeded;
+
+  /// Shown in external backup settings or completion notifications. Automatic backup failed: {error} The error is the localized reason for the failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backup failed: {error}'**
+  String backupAutoFailed(String error);
+
+  /// Shown in external backup settings or completion notifications. Automatic backup failed: the password is incorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backup failed: the password is incorrect.'**
+  String get backupAutoFailedPassword;
+
+  /// Sidebar reminder after a due automatic external backup fails.
+  ///
+  /// In en, this message translates to:
+  /// **'The automatic backup didn\'t finish. Check the network or back up manually.'**
+  String get backupReminderSidebarSubtitleAutoFailed;
+
+  /// Subtitle for backup encryption when the device remembers the password for manual or automatic backups.
+  ///
+  /// In en, this message translates to:
+  /// **'Backups are encrypted. The password is saved on this device.'**
+  String get backupEncryptionOnHintRemembered;
+
+  /// Backup encryption settings switch and optional password dialog checkbox. Saves the backup encryption password on this device for future backups, including manual backups.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember password on this device'**
+  String get backupRememberPasswordOnDevice;
+
+  /// Subtitle of the remember-password switch when encrypted automatic backups are on, explaining what forgetting the password will do.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning this off also turns off automatic backups.'**
+  String get backupForgetDisablesAutomaticHint;
+
+  /// Hint when entering the current encryption password to make a backup or save it on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the password you set for encrypted backups.'**
+  String get backupManualPasswordHint;
+
+  /// Notice when the user chose to remember the password during a manual backup but secure storage failed. The current backup still uses the password they entered.
+  ///
+  /// In en, this message translates to:
+  /// **'The password couldn’t be saved on this device. This backup will continue.'**
+  String get backupManualPasswordNotSaved;
+
+  /// Action in backup encryption settings to choose a new password for future external backups while keeping encryption enabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Change backup password'**
+  String get backupEncryptionChangePassword;
+
+  /// Shown after macOS denies authorization for the local backup password. Keychain Access is the name of the macOS utility. The user should unlock their login keychain there and retry.
+  ///
+  /// In en, this message translates to:
+  /// **'macOS couldn’t unlock the login keychain. Open Keychain Access, unlock “login”, then try again in Kelivo.'**
+  String get backupMacKeychainNeedsUnlock;
+
+  /// Button on a backup-password authorization error that opens Apple’s Keychain Access app on macOS so the user can unlock their default keychain.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Keychain Access'**
+  String get backupMacOpenKeychainAccess;
+
+  /// Backup password error when macOS denied access even though the default keychain was reported unlocked. Covers access denied by item permissions or an unusable login keychain without assuming that the user cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'macOS denied access to the backup password. If a system prompt appears, allow Kelivo to access it. You can also check the default keychain and the password item’s permissions in Keychain Access.'**
+  String get backupMacKeychainAccessDenied;
+
   /// Settings toggle that lets kelivo://v1 links from other apps send messages or fill the input. Off by default.
   ///
   /// In en, this message translates to:
@@ -29905,978 +31145,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assistant and temporary chat only apply to a new conversation.'**
   String get deepLinkGenNewOnlyHint;
-
-  /// Category row in the context usage breakdown for opaque OpenAI native compaction state. Its token value is shown as unknown, separately from estimated readable messages and other categories.
-  ///
-  /// In en, this message translates to:
-  /// **'Native compaction'**
-  String get contextUsageBucketNativeCompaction;
-
-  /// Token value in the context usage panel for encrypted native compaction content that cannot be counted locally; unknown must not be interpreted as zero.
-  ///
-  /// In en, this message translates to:
-  /// **'Unknown'**
-  String get contextUsageUnknownTokens;
-
-  /// Title for an imported native compaction at the start of a new chat, shown in the timeline, context operation list and details. It is opaque context carried over from another chat, not a locally undoable compression. No placeholders.
-  ///
-  /// In en, this message translates to:
-  /// **'Server-side compression loaded'**
-  String get compressionNativeImported;
-
-  /// Description in imported native context details. Explains which data this chat owns, that the provider result is opaque, and that earlier originals must be viewed or restored in the source chat rather than through local undo. No placeholders.
-  ///
-  /// In en, this message translates to:
-  /// **'This chat starts with the server-side compressed result and the most recent turns. The result can’t be viewed or edited as text. Earlier originals remain in the original chat and can’t be restored by undoing here.'**
-  String get compressionNativeImportedDescription;
-
-  /// Action in imported native context details to open the source conversation containing the earlier originals. Source means the originating chat, not source code. No placeholders.
-  ///
-  /// In en, this message translates to:
-  /// **'Open original chat'**
-  String get compressionNativeOpenSource;
-
-  /// Message when undo or text-summary regeneration would require originals absent from an imported native context. Also shown in compression options when the selected range includes such context. Directs users to native compaction or the source chat. No placeholders.
-  ///
-  /// In en, this message translates to:
-  /// **'This chat has no originals for the loaded server-side result. You can keep using server-side compression, or go back to the original chat to view the originals or create a text summary.'**
-  String get compressionNativeOriginalsUnavailable;
-
-  /// Warning in the compression dialog when native compaction creates a new temporary chat. The app discards the source temporary chat when switching away, so originals outside the retained tail are deleted and cannot be restored from the new chat. No placeholders.
-  ///
-  /// In en, this message translates to:
-  /// **'The new temporary chat only keeps the complete server-side result and recent turns. When you leave the original temporary chat, it and any originals not carried over are deleted and can’t be restored here.'**
-  String get compressionNativeTemporaryCopyHint;
-
-  /// Description in imported native context details when the source conversation has been deleted or discarded. Explains that this chat still owns the complete opaque result and retained tail, but cannot restore absent originals. No placeholders.
-  ///
-  /// In en, this message translates to:
-  /// **'This chat has the complete server-side result and the recent turns you kept. The original chat is no longer available. Originals not copied here can’t be restored, and the result can’t be viewed or edited as text.'**
-  String get compressionNativeSourceUnavailable;
-
-  /// Label of the hosted image generation model picker in a chat model’s built-in tools settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Image model'**
-  String get modelDetailSheetImageGenerationModel;
-
-  /// Default image model option in built-in tools settings. Omits the tool model parameter so the server chooses the image model.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto'**
-  String get modelDetailSheetImageGenerationAuto;
-
-  /// Label of the image planning effort picker in built-in tools settings, separate from chat reasoning effort and rendering quality.
-  ///
-  /// In en, this message translates to:
-  /// **'Image complexity'**
-  String get modelDetailSheetImageGenerationComplexity;
-
-  /// Default image complexity option. Omits complexity and uses server behavior, which may inherit the chat reasoning effort.
-  ///
-  /// In en, this message translates to:
-  /// **'Default'**
-  String get modelDetailSheetImageGenerationComplexityDefault;
-
-  /// Low image planning complexity option in the built-in image generation tool settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Low'**
-  String get modelDetailSheetImageGenerationComplexityLow;
-
-  /// Medium image planning complexity option in the built-in image generation tool settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Medium'**
-  String get modelDetailSheetImageGenerationComplexityMedium;
-
-  /// High image planning complexity option in the built-in image generation tool settings.
-  ///
-  /// In en, this message translates to:
-  /// **'High'**
-  String get modelDetailSheetImageGenerationComplexityHigh;
-
-  /// Help text below image complexity in built-in tools settings. Explain that an explicit level is independent, while omitting the field may inherit outer chat reasoning.
-  ///
-  /// In en, this message translates to:
-  /// **'Controls image planning separately from chat reasoning. Default uses server behavior and may inherit chat reasoning.'**
-  String get modelDetailSheetImageGenerationComplexityDescription;
-
-  /// Hint in image generation settings for ChatGPT/Codex OAuth providers. The server may replace the requested image model or reject explicit complexity.
-  ///
-  /// In en, this message translates to:
-  /// **'ChatGPT sign-in may use a different image model. Model and complexity settings depend on server support.'**
-  String get modelDetailSheetImageGenerationOAuthHint;
-
-  /// Actionable hint appended after the original provider error when ChatGPT/Codex OAuth image generation rejects a complexity level. Preserve the original error; do not automatically retry or alter chat settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Set chat reasoning to Auto and image complexity to Default, then retry image generation. ChatGPT sign-in may use a different image model or reject explicit complexity.'**
-  String get imageGenerationComplexityErrorHint;
-
-  /// Title of the desktop Environment row and dialog for choosing the shell used by the AI shell tool.
-  ///
-  /// In en, this message translates to:
-  /// **'Default shell'**
-  String get workspaceEnvNativeShellTitle;
-
-  /// Help below the shell executable path field in the desktop Environment dialog; explains automatic mode, supported shell command interfaces and device-local scope.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave empty for automatic detection. Otherwise, enter the absolute path to PowerShell, cmd, or a shell that supports -lc (such as bash, zsh, or fish). This setting applies only to this device.'**
-  String get workspaceEnvNativeShellHint;
-
-  /// Validation error in the desktop shell settings dialog when the path is invalid or the shell cannot execute a probe command.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not start this shell. Check its absolute path and supported command syntax.'**
-  String get workspaceEnvNativeShellInvalid;
-
-  /// Value of the actual shell path in desktop Environment when no shell can be started.
-  ///
-  /// In en, this message translates to:
-  /// **'Shell unavailable'**
-  String get workspaceEnvNativeShellUnavailable;
-
-  /// Desktop Environment action that clears shell detection caches and checks the current shell setting again.
-  ///
-  /// In en, this message translates to:
-  /// **'Detect again'**
-  String get workspaceEnvNativeShellDetect;
-
-  /// Button in the desktop default shell dialog; validates and saves the executable path or automatic detection setting.
-  ///
-  /// In en, this message translates to:
-  /// **'Save'**
-  String get workspaceEnvNativeShellSave;
-
-  /// Desktop display settings, tray section: switch to register Kelivo to start when the user logs in to this device. Disabled by default.
-  ///
-  /// In en, this message translates to:
-  /// **'Launch at startup'**
-  String get desktopAutostartTitle;
-
-  /// Tooltip for the desktop launch-at-startup switch. This is a device-local operating system setting.
-  ///
-  /// In en, this message translates to:
-  /// **'Start Kelivo when you sign in to this computer.'**
-  String get desktopAutostartDescription;
-
-  /// Desktop display settings, tray section: switch to keep the main window hidden only when the system starts Kelivo at login.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide to tray on automatic startup'**
-  String get desktopAutostartHiddenTitle;
-
-  /// Tooltip for hiding the desktop window on automatic startup. Explains prerequisites and that manual launches remain visible.
-  ///
-  /// In en, this message translates to:
-  /// **'Requires launch at startup and the tray icon. Opening Kelivo manually still shows the window.'**
-  String get desktopAutostartHiddenDescription;
-
-  /// Desktop startup switch tooltip when the current macOS version does not support the system login-item API.
-  ///
-  /// In en, this message translates to:
-  /// **'Launch at startup requires macOS 13 or later.'**
-  String get desktopAutostartUnsupported;
-
-  /// Desktop startup setting failure tooltip and error notification, including when system approval is required. No placeholders.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not apply the startup setting. Check this app in your system startup or login-item settings and try again.'**
-  String get desktopAutostartError;
-
-  /// Total output token limit for summary generation, including reasoning and summary text. Also labels the recovery action that opens this field.
-  ///
-  /// In en, this message translates to:
-  /// **'Total output limit (tokens)'**
-  String get compressionOutputBudget;
-
-  /// Help below the compression total output limit field: reasoning consumes the same budget, an independent higher limit does not increase the desired summary length, blank follows the summary target, and model output limits still apply. No placeholders.
-  ///
-  /// In en, this message translates to:
-  /// **'Includes thinking and the summary itself. Leave blank to use the summary length. If thinking is on, you can raise this limit without making the summary longer. The model’s own output limit still applies.'**
-  String get compressionOutputBudgetHint;
-
-  /// Persistent notice below an assistant reply stopped by max_output_tokens when the latest request is not known to be near the context window limit. Explains that reasoning also consumes the output allowance.
-  ///
-  /// In en, this message translates to:
-  /// **'Response truncated: the output limit includes reasoning. Increase the output limit or reduce reasoning before retrying.'**
-  String get responseOutputLimitReached;
-
-  /// Persistent notice below a truncated assistant reply when the final HTTP response input usage is at least 95 percent of the configured context window. Does not attribute the limit to images. inputTokens is that single request input usage; contextWindow is the model context capacity.
-  ///
-  /// In en, this message translates to:
-  /// **'Response truncated: this request used {inputTokens} input tokens, close to the {contextWindow}-token context limit. Shorten the context before retrying.'**
-  String responseContextLimitReached(int inputTokens, int contextWindow);
-
-  /// Action below a truncated assistant reply whose final request contained images. Regenerates once with all image inputs omitted for that generation, including tool follow-ups, without deleting attachments or changing saved settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry without images (keep originals)'**
-  String get responseRetryWithoutImages;
-
-  /// Browser settings row and picker title for the maximum wait for an individual native browser command.
-  ///
-  /// In en, this message translates to:
-  /// **'Operation timeout'**
-  String get browserOperationTimeout;
-
-  /// Explanatory text in the browser operation-timeout picker. Describes the command deadline and that the assistant can inspect the page after a timeout.
-  ///
-  /// In en, this message translates to:
-  /// **'Maximum wait for a browser command. The assistant can check the page after a timeout.'**
-  String get browserOperationTimeoutDescription;
-
-  /// Selected value and picker option in browser operation-timeout settings. The integer seconds placeholder is the maximum command wait in seconds.
-  ///
-  /// In en, this message translates to:
-  /// **'{seconds} seconds'**
-  String browserOperationTimeoutSeconds(int seconds);
-
-  /// Browser tool error summary when a page-changing command was not sent because an earlier command timed out. The assistant must successfully read a snapshot or extract before further changes; no manual resume permission is needed.
-  ///
-  /// In en, this message translates to:
-  /// **'Inspect the page before continuing; the previous operation is unconfirmed.'**
-  String get browserErrObservationRequired;
-
-  /// Settings button in the upper-right corner of the Storage Space overview, and its dialog title. Configures automatic deletion of unused chat images and files.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto-clean attachments'**
-  String get storageAttachmentRetention;
-
-  /// Number field shown only when delayed automatic cleanup is selected. Enter a positive number of days to keep unused attachments before deleting them.
-  ///
-  /// In en, this message translates to:
-  /// **'Days before cleanup'**
-  String get storageAttachmentRetentionDays;
-
-  /// First option in the automatic attachment cleanup dialog. Selects zero-day retention without requiring the user to type zero.
-  ///
-  /// In en, this message translates to:
-  /// **'Clean immediately'**
-  String get storageAttachmentRetentionImmediately;
-
-  /// Short introduction in the automatic attachment cleanup dialog. Explains the purpose in everyday language before the immediate/later choice.
-  ///
-  /// In en, this message translates to:
-  /// **'After you delete messages or chats, automatically remove images and files that are no longer used.'**
-  String get storageAttachmentRetentionHint;
-
-  /// Attachment badge when no conversation, draft or appearance reference remains and no automatic recycling deadline is recorded. Manual deletion is available.
-  ///
-  /// In en, this message translates to:
-  /// **'Unused'**
-  String get storageAttachmentUnused;
-
-  /// Attachment status showing the earliest scheduled cleanup date. date is a localized calendar date; cleanup may wait for the next maintenance run.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for cleanup · {date}'**
-  String storageAttachmentPending(String date);
-
-  /// Compact label below an attachment preview and in its information dialog. names lists every chat or branch using this file.
-  ///
-  /// In en, this message translates to:
-  /// **'Chats: {names}'**
-  String storageAttachmentConversations(String names);
-
-  /// Action in the Images/Files list. Opens a confirmation to delete files that are no longer used; active files remain protected.
-  ///
-  /// In en, this message translates to:
-  /// **'Clean unused'**
-  String get storageAttachmentCleanUnused;
-
-  /// Brief explanation in the Images/Files list and automatic cleanup dialog, also used as the in-use badge tooltip. Avoid technical reference-count terminology.
-  ///
-  /// In en, this message translates to:
-  /// **'Files still in use will be kept.'**
-  String get storageAttachmentProtectedHint;
-
-  /// Confirmation for manual storage attachment cleanup. count is the selected number; references are checked again before deletion.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete {count} unused files now? Files that are still in use will be kept.'**
-  String storageAttachmentDeleteConfirm(int count);
-
-  /// Second option in the automatic attachment cleanup dialog. Reveals a field for the number of days to wait before deleting unused attachments.
-  ///
-  /// In en, this message translates to:
-  /// **'Clean later'**
-  String get storageAttachmentRetentionDelayed;
-
-  /// Inline error below the delayed attachment cleanup number field. Only shown when the value is empty, zero, or above the maximum. Immediate cleanup has its own option.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter 1–3650 days.'**
-  String get storageAttachmentRetentionInvalidDays;
-
-  /// Title of the information dialog opened by tapping an attachment status label. Shows its chats or cleanup status; this is not the automatic-cleanup settings dialog.
-  ///
-  /// In en, this message translates to:
-  /// **'File info'**
-  String get storageAttachmentDetailsTitle;
-
-  /// Compression options panel: Also send your earlier messages as written Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Also send your earlier messages as written'**
-  String get compressionCarryTitle;
-
-  /// Compression options panel: From the part that becomes a summary, your own messages are sent to the model as you wrote them, not just as the summary retells them. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'From the part that becomes a summary, your own messages are sent to the model as you wrote them, not just as the summary retells them.'**
-  String get compressionCarryHint;
-
-  /// Compression options panel: Send the latest Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Send the latest'**
-  String get compressionCarryCountLabel;
-
-  /// Compression options panel: messages Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'messages'**
-  String get compressionCarryUnit;
-
-  /// Compression options panel: As many as fit Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'As many as fit'**
-  String get compressionCarryAll;
-
-  /// Compression options panel: No set number. Starts from the newest and goes back until it’s nearly full; if the oldest one is too long, only its start and end are sent. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'No set number. Starts from the newest and goes back until it’s nearly full; if the oldest one is too long, only its start and end are sent.'**
-  String get compressionCarryAllHint;
-
-  /// Compression options panel: Also bring back messages from earlier summaries Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Also bring back messages from earlier summaries'**
-  String get compressionCarryEarlier;
-
-  /// Compression options panel: Your messages from parts compressed earlier can be included too. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Your messages from parts compressed earlier can be included too.'**
-  String get compressionCarryEarlierHint;
-
-  /// Compression options panel: Will send {count} · about {tokens} tokens Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Will send {count} · about {tokens} tokens'**
-  String compressionCarryPreview(int count, String tokens);
-
-  /// Compression options panel: The part being summarized has no messages from you. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'The part being summarized has no messages from you.'**
-  String get compressionCarryNone;
-
-  /// Compression options panel: {count} older messages don’t fit and won’t be sent this time. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} older messages don’t fit and won’t be sent this time.'**
-  String compressionCarryNotFit(int count);
-
-  /// Compression options panel: {count} more Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} more'**
-  String compressionCarryMoreRows(int count);
-
-  /// Compression options panel: These messages would likely be more than the current model can take. Send fewer, or switch to a model with a larger context. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'These messages would likely be more than the current model can take. Send fewer, or switch to a model with a larger context.'**
-  String get compressionCarryOverBudget;
-
-  /// Compression options panel: Change to {count} Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Change to {count}'**
-  String compressionCarryFitAction(int count);
-
-  /// Compression options panel: Too long; only the start and end are sent Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Too long; only the start and end are sent'**
-  String get compressionCarryTruncated;
-
-  /// Compression options panel: Automatic compression will do the same. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic compression will do the same.'**
-  String get compressionCarryAutoToo;
-
-  /// Compression options panel: Images and files aren’t carried to the new chat; only the text is. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Images and files aren’t carried to the new chat; only the text is.'**
-  String get compressionCarryNewChatText;
-
-  /// Compression options panel: This service keeps your earlier messages on its own when compressing. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'This service keeps your earlier messages on its own when compressing.'**
-  String get compressionCarryServerKeeps;
-
-  /// Context operation details and carried message editor: Sent as written Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Sent as written'**
-  String get contextDetailCarried;
-
-  /// Context operation details and carried message editor: {count} of your earlier messages Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} of your earlier messages'**
-  String contextDetailCarriedCount(int count);
-
-  /// Context operation details and carried message editor: Kept by the service Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Kept by the service'**
-  String get contextDetailServerKept;
-
-  /// Context operation details and carried message editor: This only changes the text sent to the model. The original message in the chat stays the same. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'This only changes the text sent to the model. The original message in the chat stays the same.'**
-  String get contextCarriedEditHint;
-
-  /// Context operation details and carried message editor: This can’t be empty. To stop sending it, choose “Stop sending”. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'This can’t be empty. To stop sending it, choose “Stop sending”.'**
-  String get contextCarriedEmpty;
-
-  /// Context operation details and carried message editor: Stop sending Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop sending'**
-  String get contextCarriedRemove;
-
-  /// Context operation details and carried message editor: This won’t be sent to the model anymore. The original message in the chat isn’t affected. Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'This won’t be sent to the model anymore. The original message in the chat isn’t affected.'**
-  String get contextCarriedRemoveConfirm;
-
-  /// Context operation details and carried message editor: The original was deleted; only this text remains Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'The original was deleted; only this text remains'**
-  String get contextCarriedSourceDeleted;
-
-  /// Compression options panel: Include the reply too Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Include the reply too'**
-  String get compressionCarryReply;
-
-  /// Compression options panel: +about {tokens} Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'+about {tokens}'**
-  String compressionCarryReplyTokens(String tokens);
-
-  /// Compression options panel: The reply is already in the kept turns Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'The reply is already in the kept turns'**
-  String get compressionCarryReplyInKept;
-
-  /// Context operation details and carried message editor: The reply Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'The reply'**
-  String get contextCarriedReplyLabel;
-
-  /// Context operation details and carried message editor: Don’t send the reply Refers to original user messages additionally sent with a summary; replies are optional text-only copies.
-  ///
-  /// In en, this message translates to:
-  /// **'Don’t send the reply'**
-  String get contextCarriedRemoveReply;
-
-  /// In the full-screen draft image editor: Cancel control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get imageEditorCancel;
-
-  /// In the full-screen draft image editor: finish editing and return to the composer without sending.
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get imageEditorDone;
-
-  /// In the full-screen draft image editor: Undo control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Undo'**
-  String get imageEditorUndo;
-
-  /// In the full-screen draft image editor: Redo control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Redo'**
-  String get imageEditorRedo;
-
-  /// In the full-screen draft image editor: Crop control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Crop'**
-  String get imageEditorToolCrop;
-
-  /// In the full-screen draft image editor: Draw control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Draw'**
-  String get imageEditorToolDraw;
-
-  /// In the full-screen draft image editor: Text control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Text'**
-  String get imageEditorToolText;
-
-  /// In the full-screen draft image editor: Mosaic control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Mosaic'**
-  String get imageEditorToolMosaic;
-
-  /// In the full-screen draft image editor: Pen control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Pen'**
-  String get imageEditorPen;
-
-  /// In the full-screen draft image editor: Arrow control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Arrow'**
-  String get imageEditorArrow;
-
-  /// In the full-screen draft image editor: Eraser control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Eraser'**
-  String get imageEditorEraser;
-
-  /// In the full-screen draft image editor: Free control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Free'**
-  String get imageEditorAspectFree;
-
-  /// In the full-screen draft image editor: Original control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Original'**
-  String get imageEditorAspectOriginal;
-
-  /// In the full-screen draft image editor: Rotate left control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Rotate left'**
-  String get imageEditorRotate;
-
-  /// In the full-screen draft image editor: Flip control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Flip'**
-  String get imageEditorFlip;
-
-  /// In the full-screen draft image editor: Plain control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Plain'**
-  String get imageEditorTextPlain;
-
-  /// In the full-screen draft image editor: Outline control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Outline'**
-  String get imageEditorTextOutline;
-
-  /// In the full-screen draft image editor: Fill control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Fill'**
-  String get imageEditorTextFill;
-
-  /// In the full-screen draft image editor: Align control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Align'**
-  String get imageEditorAlign;
-
-  /// In the full-screen draft image editor: Brush control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Brush'**
-  String get imageEditorMosaicBrush;
-
-  /// In the full-screen draft image editor: Box control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Box'**
-  String get imageEditorMosaicRect;
-
-  /// In the full-screen draft image editor: Discard changes? control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Discard changes?'**
-  String get imageEditorDiscardTitle;
-
-  /// In the full-screen draft image editor: Keep editing control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep editing'**
-  String get imageEditorKeepEditing;
-
-  /// In the full-screen draft image editor: Discard control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Discard'**
-  String get imageEditorDiscard;
-
-  /// In the full-screen draft image editor: Couldn't process image control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t process image'**
-  String get imageEditorProcessFailed;
-
-  /// In the full-screen draft image editor: Retry control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get imageEditorRetry;
-
-  /// In the full-screen draft image editor: Remove control or status for editing draft image pixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove'**
-  String get imageEditorRemove;
-
-  /// In the full-screen draft image editor: revert the current image to its original imported pixels; this operation is undoable.
-  ///
-  /// In en, this message translates to:
-  /// **'Revert'**
-  String get imageEditorRestore;
-
-  /// In the full-screen draft image editor: accessible label of a color swatch; color is its six-digit hexadecimal RGB value.
-  ///
-  /// In en, this message translates to:
-  /// **'Color {color}'**
-  String imageEditorColor(String color);
-
-  /// Button in draft image preview that opens the image editor; absent for sent images.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit'**
-  String get imageViewerPageEditButton;
-
-  /// Accessible label and tooltip of the draft image size chip that opens per-image compression quality controls.
-  ///
-  /// In en, this message translates to:
-  /// **'Image size'**
-  String get imageViewerPageFileSize;
-
-  /// Segment in the earlier-message settings that selects a fixed number of recent messages.
-  ///
-  /// In en, this message translates to:
-  /// **'Latest messages'**
-  String get compressionCarryModeCount;
-
-  /// Heading above the list of messages the user can select in the compression settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Message preview'**
-  String get compressionCarryListTitle;
-
-  /// Preview title for a message containing only images. Count is the number of images.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 image} other{{count} images}}'**
-  String compressionCarryImageCount(int count);
-
-  /// Preview label for a message with multiple attachments or without known file names. Count is the number of attachments.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 attachment} other{{count} attachments}}'**
-  String compressionCarryAttachmentCount(int count);
-
-  /// Shown in the compression preview when the selected message has neither readable text nor identifiable attachments.
-  ///
-  /// In en, this message translates to:
-  /// **'No message text'**
-  String get compressionCarryNoText;
-
-  /// Validation message beside the number of earlier messages to send in compression settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a number from 1 to 10,000.'**
-  String get compressionCarryInvalidCount;
-
-  /// Shown in external backup settings or completion notifications. Backup will continue in the background
-  ///
-  /// In en, this message translates to:
-  /// **'Backup will continue in the background'**
-  String get backupRunningInBackground;
-
-  /// Shown in external backup settings or completion notifications. Background backup failed: {error} The error is the localized reason for the failure.
-  ///
-  /// In en, this message translates to:
-  /// **'Background backup failed: {error}'**
-  String backupBackgroundFailed(String error);
-
-  /// Shown in external backup settings or completion notifications. Back up automatically when due
-  ///
-  /// In en, this message translates to:
-  /// **'Back up automatically when due'**
-  String get backupAutoEnableTitle;
-
-  /// Shown in external backup settings or completion notifications. When the scheduled time arrives, Kelivo backs up while the app is in the foreground. If the app is closed or killed, the backup does not keep running and is not resumed; the next time you open the app, a single full backup runs if it is still due.
-  ///
-  /// In en, this message translates to:
-  /// **'When the scheduled time arrives, Kelivo backs up while the app is in the foreground. If the app is closed or killed, the backup does not keep running and is not resumed; the next time you open the app, a single full backup runs if it is still due.'**
-  String get backupAutoEnableHint;
-
-  /// Shown in external backup settings or completion notifications. Automatic backup destination
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic backup destination'**
-  String get backupAutoDestinationTitle;
-
-  /// Shown in external backup settings or completion notifications. WebDAV
-  ///
-  /// In en, this message translates to:
-  /// **'WebDAV'**
-  String get backupAutoDestinationWebDav;
-
-  /// Shown in external backup settings or completion notifications. S3
-  ///
-  /// In en, this message translates to:
-  /// **'S3'**
-  String get backupAutoDestinationS3;
-
-  /// Desktop automatic backup folder settings or write result. Local folder
-  ///
-  /// In en, this message translates to:
-  /// **'Local folder'**
-  String get backupAutoDestinationLocal;
-
-  /// Shown in external backup settings or completion notifications. Set up WebDAV or S3 first.
-  ///
-  /// In en, this message translates to:
-  /// **'Set up WebDAV or S3 first.'**
-  String get backupAutoNeedRemoteHint;
-
-  /// Shown in external backup settings or completion notifications. Set up WebDAV or S3, or choose a local folder first.
-  ///
-  /// In en, this message translates to:
-  /// **'Set up WebDAV or S3, or choose a local folder first.'**
-  String get backupAutoNeedDestinationHint;
-
-  /// Desktop automatic backup folder settings or write result. Choose a backup folder first.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a backup folder first.'**
-  String get backupAutoNeedFolderHint;
-
-  /// Desktop automatic backup folder settings or write result. Choose folder…
-  ///
-  /// In en, this message translates to:
-  /// **'Choose folder…'**
-  String get backupAutoLocalFolderChoose;
-
-  /// Desktop automatic backup folder settings or write result. Change folder
-  ///
-  /// In en, this message translates to:
-  /// **'Change folder'**
-  String get backupAutoLocalFolderChange;
-
-  /// Desktop automatic backup folder settings or write result. Choose a folder outside the app's own data directory.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a folder outside the app\'s own data directory.'**
-  String get backupAutoLocalFolderInvalid;
-
-  /// Desktop automatic backup folder settings or write result. Keep at most
-  ///
-  /// In en, this message translates to:
-  /// **'Keep at most'**
-  String get backupAutoLocalRetentionTitle;
-
-  /// Desktop automatic backup folder settings or write result. {count} backups The count is the positive number of backups to keep.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} backups'**
-  String backupAutoLocalRetentionCount(int count);
-
-  /// Desktop automatic backup folder settings or write result. No limit
-  ///
-  /// In en, this message translates to:
-  /// **'No limit'**
-  String get backupAutoLocalRetentionUnlimited;
-
-  /// Desktop automatic backup folder settings or write result. Back up to this folder now
-  ///
-  /// In en, this message translates to:
-  /// **'Back up to this folder now'**
-  String get backupAutoLocalNow;
-
-  /// Desktop automatic backup folder settings or write result. Can't write to the chosen folder. Check that it is still available, or choose another one. Kelivo won't change the saved location on its own.
-  ///
-  /// In en, this message translates to:
-  /// **'Can\'t write to the chosen folder. Check that it is still available, or choose another one. Kelivo won\'t change the saved location on its own.'**
-  String get backupAutoLocalDirUnavailable;
-
-  /// Desktop automatic backup folder settings or write result. You don't have permission to write to the chosen folder. Please choose the folder again. Kelivo won't change the saved location on its own.
-  ///
-  /// In en, this message translates to:
-  /// **'You don\'t have permission to write to the chosen folder. Please choose the folder again. Kelivo won\'t change the saved location on its own.'**
-  String get backupAutoLocalDirPermission;
-
-  /// Desktop automatic backup folder settings or write result. There isn't enough disk space, so the backup didn't finish. Your earlier backups are still there.
-  ///
-  /// In en, this message translates to:
-  /// **'There isn\'t enough disk space, so the backup didn\'t finish. Your earlier backups are still there.'**
-  String get backupAutoLocalDirFull;
-
-  /// Desktop automatic backup folder settings or write result. Kelivo can't access the chosen folder. Please choose it again. The saved location won't be changed automatically.
-  ///
-  /// In en, this message translates to:
-  /// **'Kelivo can\'t access the chosen folder. Please choose it again. The saved location won\'t be changed automatically.'**
-  String get backupAutoLocalBookmarkLost;
-
-  /// Shown in external backup settings or completion notifications. Next automatic backup
-  ///
-  /// In en, this message translates to:
-  /// **'Next automatic backup'**
-  String get backupAutoNextTitle;
-
-  /// Device-only password consent dialog when enabling encrypted automatic backups. Remember the password on this device?
-  ///
-  /// In en, this message translates to:
-  /// **'Remember the password on this device?'**
-  String get backupAutoRememberPasswordTitle;
-
-  /// Device-only password consent dialog when enabling encrypted automatic backups. Remember the password on this device so automatic backups can run. It stays on this device and is never uploaded.
-  ///
-  /// In en, this message translates to:
-  /// **'Remember the password on this device so automatic backups can run. It stays on this device and is never uploaded.'**
-  String get backupAutoRememberPasswordMessage;
-
-  /// Device-only password consent dialog when enabling encrypted automatic backups. Remember
-  ///
-  /// In en, this message translates to:
-  /// **'Remember'**
-  String get backupAutoRememberPasswordConfirm;
-
-  /// Device-only password consent dialog when enabling encrypted automatic backups. Not now
-  ///
-  /// In en, this message translates to:
-  /// **'Not now'**
-  String get backupAutoRememberPasswordDecline;
-
-  /// Device-only password consent dialog when enabling encrypted automatic backups. Automatic backup was not turned on. You'll still get a reminder when it's due.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic backup was not turned on. You\'ll still get a reminder when it\'s due.'**
-  String get backupAutoRememberDeclined;
-
-  /// Backup settings or automatic backup failure when access to the device credential store is unavailable. Manual backups can still prompt for the password.
-  ///
-  /// In en, this message translates to:
-  /// **'Kelivo can’t access the system keychain for the backup password. You can still back up manually.'**
-  String get backupAutoKeychainUnavailable;
-
-  /// Shown in external backup settings or completion notifications. Automatic backup finished
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic backup finished'**
-  String get backupAutoSucceeded;
-
-  /// Shown in external backup settings or completion notifications. Automatic backup failed: {error} The error is the localized reason for the failure.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic backup failed: {error}'**
-  String backupAutoFailed(String error);
-
-  /// Shown in external backup settings or completion notifications. Automatic backup failed: the password is incorrect.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic backup failed: the password is incorrect.'**
-  String get backupAutoFailedPassword;
-
-  /// Sidebar reminder after a due automatic external backup fails.
-  ///
-  /// In en, this message translates to:
-  /// **'The automatic backup didn\'t finish. Check the network or back up manually.'**
-  String get backupReminderSidebarSubtitleAutoFailed;
-
-  /// Subtitle for backup encryption when the device remembers the password for manual or automatic backups.
-  ///
-  /// In en, this message translates to:
-  /// **'Backups are encrypted. The password is saved on this device.'**
-  String get backupEncryptionOnHintRemembered;
-
-  /// Backup encryption settings switch and optional password dialog checkbox. Saves the backup encryption password on this device for future backups, including manual backups.
-  ///
-  /// In en, this message translates to:
-  /// **'Remember password on this device'**
-  String get backupRememberPasswordOnDevice;
-
-  /// Subtitle of the remember-password switch when encrypted automatic backups are on, explaining what forgetting the password will do.
-  ///
-  /// In en, this message translates to:
-  /// **'Turning this off also turns off automatic backups.'**
-  String get backupForgetDisablesAutomaticHint;
-
-  /// Hint when entering the current encryption password to make a backup or save it on this device.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter the password you set for encrypted backups.'**
-  String get backupManualPasswordHint;
-
-  /// Notice when the user chose to remember the password during a manual backup but secure storage failed. The current backup still uses the password they entered.
-  ///
-  /// In en, this message translates to:
-  /// **'The password couldn’t be saved on this device. This backup will continue.'**
-  String get backupManualPasswordNotSaved;
-
-  /// Action in backup encryption settings to choose a new password for future external backups while keeping encryption enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Change backup password'**
-  String get backupEncryptionChangePassword;
-
-  /// Shown after macOS denies authorization for the local backup password. Keychain Access is the name of the macOS utility. The user should unlock their login keychain there and retry.
-  ///
-  /// In en, this message translates to:
-  /// **'macOS couldn’t unlock the login keychain. Open Keychain Access, unlock “login”, then try again in Kelivo.'**
-  String get backupMacKeychainNeedsUnlock;
-
-  /// Button on a backup-password authorization error that opens Apple’s Keychain Access app on macOS so the user can unlock their default keychain.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Keychain Access'**
-  String get backupMacOpenKeychainAccess;
-
-  /// Backup password error when macOS denied access even though the default keychain was reported unlocked. Covers access denied by item permissions or an unusable login keychain without assuming that the user cancelled.
-  ///
-  /// In en, this message translates to:
-  /// **'macOS denied access to the backup password. If a system prompt appears, allow Kelivo to access it. You can also check the default keychain and the password item’s permissions in Keychain Access.'**
-  String get backupMacKeychainAccessDenied;
 }
 
 class _AppLocalizationsDelegate
