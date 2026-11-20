@@ -108,9 +108,9 @@ abstract final class BackupStaging {
     // for legacy files. Reclaim old names only in private app cache roots.
     final privateLegacyRoot =
         temporary != null ||
-        Platform.isAndroid ||
-        Platform.isIOS ||
-        Platform.isMacOS;
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
     if (privateLegacyRoot && _legacySwept.add(parent.path)) {
       try {
         await clean(parent, legacy: true);

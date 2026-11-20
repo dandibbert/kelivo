@@ -4344,12 +4344,14 @@ ORDER BY m.message_order DESC LIMIT 20
           .getSingleOrNull() !=
       null;
 
-  Future<bool> hasDueAssetGc() async =>
+  Future<bool> hasDueAssetGc({DateTime? now}) async =>
       await _db
           .customSelect(
             'SELECT 1 FROM asset_gc_rows WHERE not_before <= ? LIMIT 1;',
             variables: [
-              Variable<int>(DateTime.now().toUtc().microsecondsSinceEpoch),
+              Variable<int>(
+                (now ?? DateTime.now()).toUtc().microsecondsSinceEpoch,
+              ),
             ],
           )
           .getSingleOrNull() !=

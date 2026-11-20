@@ -136,6 +136,7 @@ class ChatService extends ChangeNotifier {
   ChatDatabaseLease? _databaseLease;
   Future<void>? _assetReferenceMaintenanceFuture;
   Future<void>? _postStartupAssetMaintenanceFuture;
+  Future<void>? _assetMaintenanceFuture;
   Future<void>? _deferredAssetMaintenance;
   bool _assetCleanupClosing = false;
   String? _currentConversationId;
@@ -2766,17 +2767,54 @@ class ChatService extends ChangeNotifier {
     return references;
   };
 
-  Future<void> runAssetMaintenance({DateTime? now}) =>
-      AttachmentFileLock.synchronized(() => _runAssetMaintenance(now: now));
+  Future<void> runAssetMaintenance({DateTime? now}) {
+    if (now == null && _assetMaintenanceFuture != null) {
+      return _assetMaintenanceFuture!;
+    }
+    final previous = _assetMaintenanceFuture;
+    late final Future<void> current;
+    current = (previous ?? Future<void>.value())
+        .catchError((Object _) {})
+        .then((_) => _performAssetMaintenance(now: now))
+        .whenComplete(() {
+          if (identical(_assetMaintenanceFuture, current)) {
+            _assetMaintenanceFuture = null;
+          }
+        });
+    _assetMaintenanceFuture = current;
+    return current;
+  }
 
-  Future<void> _runAssetMaintenance({DateTime? now}) async {
+  Future<void> _performAssetMaintenance({DateTime? now}) async {
     final effectiveNow = (now ?? DateTime.now()).toUtc();
+    late final bool hasDue;
     try {
       final retentionDays = await _repo.getAttachmentRetentionDays();
       await _repo.applyAttachmentRetention(retentionDays);
       await _repo.scheduleUnreferencedAssetGc(
         notBefore: effectiveNow.add(Duration(days: retentionDays)),
       );
+      hasDue = await _repo.hasDueAssetGc(now: effectiveNow);
+    } catch (error) {
+      debugPrint('Asset maintenance failed: $error');
+      return;
+    }
+    await AttachmentFileLock.synchronized(() async {
+      if (hasDue) {
+        await _runAssetMaintenance(now: effectiveNow);
+      } else {
+        try {
+          await StorageAttachmentUsage.cleanSessions();
+        } catch (error) {
+          debugPrint('Asset maintenance failed: $error');
+        }
+      }
+    });
+  }
+
+  Future<void> _runAssetMaintenance({DateTime? now}) async {
+    final effectiveNow = (now ?? DateTime.now()).toUtc();
+    try {
       final deletedPaths = <String>{};
       while (true) {
         final candidates = await _repo.claimAssetGc(

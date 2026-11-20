@@ -85,12 +85,12 @@ class _GatedChatRepository extends ChatDatabaseRepository {
   int assetGcFailures = 0;
 
   @override
-  Future<bool> hasDueAssetGc() async {
+  Future<bool> hasDueAssetGc({DateTime? now}) async {
     if (failAssetGc) {
       assetGcFailures++;
       throw StateError('asset cleanup unavailable');
     }
-    return super.hasDueAssetGc();
+    return super.hasDueAssetGc(now: now);
   }
 
   late final _gatedCompression = _GatedCompressionRepository(

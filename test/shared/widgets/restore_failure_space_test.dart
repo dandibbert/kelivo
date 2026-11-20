@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:archive/archive_io.dart';
@@ -24,18 +25,20 @@ class _UnavailableTemporaryDirectory implements Directory {
   final bool diskFull;
   @override
   final String path;
+  Never _fail() => throw FileSystemException(
+    diskFull ? 'No space left on device' : 'Permission denied',
+    path,
+    OSError(
+      'temporary I/O failure',
+      diskFull
+          ? (Platform.isWindows ? 112 : 28)
+          : (Platform.isWindows ? 5 : 13),
+    ),
+  );
   @override
-  Future<Directory> createTemp([String? prefix]) async =>
-      throw FileSystemException(
-        diskFull ? 'No space left on device' : 'Permission denied',
-        path,
-        OSError(
-          'temporary I/O failure',
-          diskFull
-              ? (Platform.isWindows ? 112 : 28)
-              : (Platform.isWindows ? 5 : 13),
-        ),
-      );
+  Future<Directory> create({bool recursive = false}) async => _fail();
+  @override
+  Future<Directory> createTemp([String? prefix]) async => _fail();
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -145,6 +148,9 @@ void main() {
         final root = (await tester.runAsync(
           () => Directory.systemTemp.createTemp('release132-ui-'),
         ))!;
+        final previousPaths = PathProviderPlatform.instance;
+        PathProviderPlatform.instance = _TemporaryPaths(root);
+        addTearDown(() => PathProviderPlatform.instance = previousPaths);
         addTearDown(() => root.delete(recursive: true));
         final snapshot = File(
           '${root.path}/snapshots 2/kelivo-snapshot-1792421104232879.zip',
@@ -169,6 +175,8 @@ void main() {
           ),
         );
         final temporaryPath = Directory.systemTemp.path;
+        final stagingPrefix = '${root.path}/tmp/kelivo_backup_staging';
+        final outerOverrides = IOOverrides.current;
         await IOOverrides.runZoned(
           () async {
             await tester.pumpWidget(screen(const ValueKey('full')));
@@ -209,6 +217,13 @@ void main() {
           },
           getSystemTempDirectory: () =>
               _UnavailableTemporaryDirectory(temporaryPath, diskFull),
+          createDirectory: (path) {
+            if (path.startsWith(stagingPrefix)) {
+              return _UnavailableTemporaryDirectory(path, diskFull);
+            }
+            return outerOverrides?.createDirectory(path) ??
+                Zone.root.run(() => Directory(path));
+          },
         );
         await tester.runAsync(() async {
           expect(
