@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -25,7 +27,9 @@ abstract final class BackupStaging {
 
   // Linux and Windows return a shared system temp directory. A working ZIP
   // may still be plaintext, so keep desktop staging in the owning data root.
-  static Future<Directory> _parent() => Platform.isLinux || Platform.isWindows
+  static Future<Directory> _parent() =>
+      defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.windows
       ? AppDirectories.getAppDataDirectory()
       : getTemporaryDirectory();
 

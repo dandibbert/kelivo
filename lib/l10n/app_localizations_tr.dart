@@ -146,6 +146,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get storageSpaceCopyErrorDetails => 'Hata ayrıntılarını kopyala';
 
   @override
+  String get storageAttachmentChecking => 'Ek kullanımı kontrol ediliyor…';
+
+  @override
+  String get storageAttachmentCheckFailed =>
+      'Ek kullanımı kontrol edilemedi. Yeniden denemek için yenileyin.';
+
+  @override
   String get storageSpaceCopyErrorFailed =>
       'Hata ayrıntıları kopyalanamadı. Lütfen tekrar deneyin.';
 
@@ -1724,6 +1731,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get backupPageFilesLabel => 'Dosyalar ve Görseller';
 
   @override
+  String get backupPageSettingsSaveFailed =>
+      'Yedekleme ayarları kaydedilemedi. Lütfen tekrar deneyin.';
+
+  @override
   String get backupPageScopeTitle => 'Yedekleme ve içe aktarma içeriği';
 
   @override
@@ -2235,6 +2246,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get backupPageImportFromOtherApps => 'Diğer Uygulamalardan İçe Aktar';
 
   @override
+  String get backupPageImportFromOtherAppsSubtitle =>
+      'Yeni Chatbox ve Cherry Studio 2.x yedekleri ile ChatGPT, Claude, DeepSeek, Gemini, Grok, Open WebUI, NextChat ve LobeChat. Tarayıcınızda yerel olarak Kelivo yedeğine dönüştürülür; dosya yüklenmez.';
+
+  @override
+  String get backupPageOpenImportToolbox => 'Araç Kutusunu Aç';
+
+  @override
+  String backupPageImportToolboxOpenFailed(String url) {
+    return 'Tarayıcı açılamadı. Bu URL\'yi kendiniz açın: $url';
+  }
+
+  @override
+  String get backupPageToolboxImportMergeOnlyHint =>
+      'Bu dosya resmi araç kutusu tarafından dönüştürüldü. Mevcut verilerinizle birleştirilecek ve bu cihazdaki sohbetlerin veya asistanların yerini almayacak.';
+
+  @override
   String get backupPageNotSupportedYet => 'Henüz desteklenmiyor';
 
   @override
@@ -2320,7 +2347,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String backupPageCherryStudioUnsupportedBackupVersion(String version) {
-    return 'Bu yedek, Kelivo\'nun henüz içe aktaramadığı Cherry Studio biçim sürümü $version kullanıyor. Bunun yerine Cherry Studio v1\'den dışa aktarın veya Cherry Studio v2 yedeklerini destekleyen bir Kelivo güncellemesini bekleyin.';
+    return 'Bu bir Cherry Studio 2.x yedeği (biçim sürümü $version) ve uygulamada doğrudan içe aktarılamaz. Resmi araç kutusuyla Kelivo yedeğine dönüştürün, ardından Yedek Dosyasını İçe Aktar\'ı kullanıp Birleştir\'i seçin. Dönüştürme tarayıcınızda gerçekleşir; dosya yüklenmez.';
+  }
+
+  @override
+  String backupPageChatboxUnsupportedBackupVersion(String version) {
+    return 'Bu daha yeni bir Chatbox yedeği (biçim sürümü $version) ve uygulamada doğrudan içe aktarılamaz. Resmi araç kutusuyla Kelivo yedeğine dönüştürün, ardından Yedek Dosyasını İçe Aktar\'ı kullanıp Birleştir\'i seçin. Dönüştürme tarayıcınızda gerçekleşir; dosya yüklenmez.';
   }
 
   @override
@@ -3481,9 +3513,21 @@ class AppLocalizationsTr extends AppLocalizations {
   String get contextUsageUnavailable => 'Kullanım şu anda görüntülenemiyor.';
 
   @override
+  String contextUsagePartialSummary(String tokens) {
+    return '$tokens tahmin edildi, ayrıca bilinmeyen sunucu tarafı kullanımı var';
+  }
+
   @override
+  String get contextUsageBucketNativeCompaction => 'Sunucu tarafı sıkıştırma';
+
   @override
+  String get contextUsageUnknownTokens => 'Bilinmiyor';
+
   @override
+  String contextUsageLastRequestInput(String tokens) {
+    return 'Modele son gönderilen gerçek miktar: $tokens';
+  }
+
   @override
   String get contextUsageStateNone => 'Henüz veri yok';
 
@@ -4271,6 +4315,13 @@ class AppLocalizationsTr extends AppLocalizations {
       'http(s) görsel bağlantılarını olduğu gibi gönder; kapalıyken uzak bağlantılar atlanır ve yalnızca yerel görseller gönderilir';
 
   @override
+  String get modelSpecFormResponseSpeedTiers => 'Yanıt hızı kademeleri';
+
+  @override
+  String get modelSpecFormResponseSpeedTiersSubtitle =>
+      'Bu modelin sohbetlerde sunduğu hızlandırma kademelerini özelleştirin. Yalnızca Standart sunmak için ikisini de temizleyin.';
+
+  @override
   String get modelSpecFormPromptCacheControl => 'İstem önbellek işaretçisi';
 
   @override
@@ -4486,6 +4537,60 @@ class AppLocalizationsTr extends AppLocalizations {
   String get providerDetailPageClaudePromptCachingTtl1h => '1 saat';
 
   @override
+  String get providerBalanceAutoRefresh => 'Otomatik bakiye yenileme';
+
+  @override
+  String get providerBalanceScopeProvider => 'Bu sağlayıcı';
+
+  @override
+  String get providerBalanceScopeGlobal => 'Genel varsayılanlar';
+
+  @override
+  String get providerBalanceInterval => 'Zamanlı yenileme';
+
+  @override
+  String get providerBalanceRefreshOnReply => 'Yanıtlardan sonra yenile';
+
+  @override
+  String providerBalanceFollowDefault(String value) {
+    return 'Varsayılan · $value';
+  }
+
+  @override
+  String get providerBalanceRefreshOff => 'Kapalı';
+
+  @override
+  String get providerBalanceRefreshOn => 'Açık';
+
+  @override
+  String providerBalanceRefreshMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dakika',
+      one: '1 dakika',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get providerBalanceRefreshHour => '1 saat';
+
+  @override
+  String get providerBalanceCustomInterval => 'Özel aralık…';
+
+  @override
+  String get providerBalanceIntervalMinutes => 'Dakika cinsinden aralık';
+
+  @override
+  String get providerBalanceRefreshNow => 'Bakiyeyi şimdi yenile';
+
+  @override
+  String providerBalanceLastUpdated(String date, String time) {
+    return 'Son güncelleme: $date $time';
+  }
+
+  @override
   String get providerDetailPageBalanceTitle => 'Hesap Bakiyesi';
 
   @override
@@ -4521,11 +4626,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get providerDetailPageBalanceQuerying => 'Kontrol ediliyor...';
 
   @override
-  String get providerDetailPageBalanceResetDefaultsButton => 'Sıfırla';
+  String get providerDetailPageBalanceResetDefaultsButton =>
+      'Varsayılan bakiye ayarlarını geri yükle';
 
   @override
-  String get providerDetailPageBalanceResetDefaultsTooltip =>
-      'Bakiye ayarlarını sıfırla';
+  String get providerDetailPageBalanceResetConfirmMessage =>
+      'Bu işlem, bu sağlayıcının özel bakiye isteği ayarlarını değiştirecek, bakiye anahtarını varsayılan durumuna döndürecek ve otomatik yenilemenin genel ayarları izlemesini sağlayacaktır.';
+
+  @override
+  String get providerDetailPageBalanceResetConfirmButton =>
+      'Varsayılanları geri yükle';
 
   @override
   String providerDetailPageBalanceResult(String value) {
@@ -4881,6 +4991,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get providerDetailPageModelsTitle => 'Modeller';
 
   @override
+  String get providerDetailPageReorderModels => 'Modelleri yeniden sırala';
+
+  @override
   String get providerModelsGetButton => 'Getir';
 
   @override
@@ -5013,6 +5126,26 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get miniMapScrollToBottomTooltip => 'En alta kaydır';
+
+  @override
+  String get miniMapSearchHint => 'Mini haritada ara';
+
+  @override
+  String miniMapSearchMatchCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count eşleşme',
+      one: '1 eşleşme',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get miniMapSearchNoResults => 'Eşleşen mesaj yok';
+
+  @override
+  String get miniMapSearchFailed => 'Mesajlar aranamadı';
 
   @override
   String get conversationFindHint => 'Bul';
@@ -5153,10 +5286,32 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bölge (isteğe bağlı, varsayılan: us-en)';
 
   @override
+  String get searchServicesFourGetUrlInvalid =>
+      'Bir HTTP veya HTTPS temel URL\'si girin.';
+
+  @override
+  String get searchServicesFourGetScraperOptional =>
+      'Üst kaynak motoru (isteğe bağlı)';
+
+  @override
+  String get searchServicesFourGetPassOptional => 'pass çerezi (isteğe bağlı)';
+
+  @override
+  String get searchServicesFourGetPassHelp =>
+      'Örnek bir CAPTCHA gerektiriyorsa, CAPTCHA\'yı tamamlayın ve pass çerezinin değerini yapıştırın.';
+
+  @override
   String get searchServiceEditorProviderTypeTitle => 'Arama sağlayıcısı';
 
   @override
   String get searchServiceEditorConfigurationTitle => 'Yapılandırma';
+
+  @override
+  String get searchServiceEditorChangeIcon => 'Simgeyi değiştir';
+
+  @override
+  String get searchServiceEditorIconFailed =>
+      'Bu simge kullanılamadı. Başka bir görsel veya simge seçin.';
 
   @override
   String get searchServiceEditorNoConfiguration =>
@@ -5726,6 +5881,14 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get displaySettingsPageAutoSwitchTopicsTitle =>
       'Otomatik olarak Konulara geç';
+
+  @override
+  String get desktopDisplaySettingsFullWidthChatTitle =>
+      'Tam genişlikte sohbet';
+
+  @override
+  String get desktopDisplaySettingsFullWidthChatSubtitle =>
+      'Mesajları ve giriş kutusunu sohbet alanını dolduracak şekilde genişlet.';
 
   @override
   String get desktopDisplaySettingsTopicPositionTitle => 'Konu konumu';
@@ -6574,6 +6737,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Gizliliğe saygılı meta arama motoru. Kendi barındırdığınız bir örnek gerekir; izleme yok.';
 
   @override
+  String get searchProviderFourGetDescription =>
+      'API\'si etkinleştirilmiş genel veya kendi barındırdığınız bir 4get örneği üzerinden web araması yapın.';
+
+  @override
   String get searchProviderTavilyDescription =>
       'LLM\'ler için optimize edilmiş AI arama API\'si. Yüksek kaliteli, ilgili sonuçlar sağlar.';
 
@@ -6613,6 +6780,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get searchServiceNameSearXNG => 'SearXNG';
+
+  @override
+  String get searchServiceNameFourGet => '4get';
 
   @override
   String get searchServiceNameLinkUp => 'LinkUp';
@@ -11692,7 +11862,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get workspaceToolHelpViewImage =>
-      'Modelin çalışma alanındaki bir görseli incelemesine izin verin.';
+      'Modelin çalışma alanındaki görselleri veya genel URL\'lerdeki görselleri incelemesine izin verin.';
 
   @override
   String get workspaceToolHelpWrite =>
@@ -16364,12 +16534,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get compressionRequests => 'Maksimum istek';
 
   @override
-  String get compressionReference =>
-      'Dünya kitaplarına ve geçmiş belleğe başvur';
+  String get compressionReference => 'Arka plan referanslarını kullan';
 
   @override
   String get compressionReferenceHint =>
-      'Dünya kitapları yalnızca sıkıştırılan geçmişe göre eşleştirilir ve o zamanki bellek anlık görüntüleri kullanılır. Bu yalnızca adları ve kuralları açıklamak içindir — bu olayların yaşandığı veya bir karakterin bunları zaten bildiği anlamına gelmez.';
+      'Özet hazırlanırken asistanın sistem isteminden, sohbetin bu bölümüyle eşleşen dünya kitabı girdilerinden ve o sırada kaydedilen anılardan yararlanılabilir. Olaylar ve her karakterin bildikleri için sohbet geçmişi esas alınır.';
+
+  @override
+  String get compressionInstructionInjections =>
+      'Talimat enjeksiyonlarını referans olarak kullan';
+
+  @override
+  String get compressionInstructionInjectionsHint =>
+      'Bu sohbet için etkinleştirilen talimat kartlarını arka plan referansı olarak özet modeline gönder.';
 
   @override
   String get compressionToolReferences =>
@@ -16887,6 +17064,609 @@ class AppLocalizationsTr extends AppLocalizations {
   String get themePaletteCustom => 'Özel';
 
   @override
+  String get compressionNativeImported => 'Sunucu tarafı sıkıştırma yüklendi';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      'Bu sohbet, sunucu tarafı sıkıştırılmış sonuç ve en son turlarla başlar. Sonuç metin olarak görüntülenemez veya düzenlenemez. Daha önceki orijinaller orijinal sohbette kalır ve burada geri alınarak kurtarılamaz.';
+
+  @override
+  String get compressionNativeOpenSource => 'Orijinal sohbeti aç';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      'Bu sohbette yüklenen sunucu tarafı sonuca karşılık gelen orijinaller yok. Sunucu tarafı sıkıştırmayı kullanmaya devam edebilir veya orijinalleri görüntülemek ya da metin özeti oluşturmak için orijinal sohbete dönebilirsiniz.';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      'Yeni geçici sohbet yalnızca tam sunucu tarafı sonucu ve son turları tutar. Orijinal geçici sohbetten ayrıldığınızda, o sohbet ve taşınmayan orijinaller silinir ve burada kurtarılamaz.';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      'Bu sohbet, tam sunucu tarafı sonucu ve tuttuğunuz son turları içerir. Orijinal sohbet artık kullanılamıyor. Buraya kopyalanmayan orijinaller kurtarılamaz ve sonuç metin olarak görüntülenemez veya düzenlenemez.';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => 'Görsel modeli';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => 'Otomatik';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => 'Görsel karmaşıklığı';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => 'Varsayılan';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => 'Düşük';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => 'Orta';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => 'Yüksek';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      'Görsel planlamayı sohbet akıl yürütmesinden bağımsız olarak kontrol eder. Varsayılan, sunucu davranışını kullanır ve sohbet akıl yürütmesini devralabilir.';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT ile oturum açma farklı bir görsel modeli kullanabilir. Model ve karmaşıklık ayarları sunucu desteğine bağlıdır.';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      'Sohbet akıl yürütmesini Otomatik, görsel karmaşıklığını Varsayılan olarak ayarlayıp görsel oluşturmayı yeniden deneyin. ChatGPT ile oturum açma farklı bir görsel modeli kullanabilir veya açık karmaşıklığı reddedebilir.';
+
+  @override
+  String get workspaceEnvNativeShellTitle => 'Varsayılan kabuk';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      'Otomatik algılama için boş bırakın. Aksi takdirde PowerShell, cmd veya -lc destekleyen bir kabuğun (bash, zsh veya fish gibi) mutlak yolunu girin. Bu ayar yalnızca bu cihaz için geçerlidir.';
+
+  @override
+  String get workspaceEnvNativeShellInvalid =>
+      'Bu kabuk başlatılamadı. Mutlak yolunu ve desteklenen komut sözdizimini kontrol edin.';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Kabuk kullanılamıyor';
+
+  @override
+  String get workspaceEnvNativeShellDetect => 'Yeniden algıla';
+
+  @override
+  String get workspaceEnvNativeShellSave => 'Kaydet';
+
+  @override
+  String get desktopAutostartTitle => 'Başlangıçta başlat';
+
+  @override
+  String get desktopAutostartDescription =>
+      'Bu bilgisayarda oturum açtığınızda Kelivo\'yu başlat.';
+
+  @override
+  String get desktopAutostartHiddenTitle => 'Otomatik başlatmada tepsiye gizle';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      'Başlangıçta başlatma ve tepsi simgesi gerektirir. Kelivo\'yu elle açtığınızda pencere yine görünür.';
+
+  @override
+  String get desktopAutostartUnsupported =>
+      'Başlangıçta başlatma için macOS 13 veya üstü gerekir.';
+
+  @override
+  String get desktopAutostartError =>
+      'Başlangıç ayarı uygulanamadı. Sistem başlangıç veya oturum açma öğeleri ayarlarında bu uygulamayı kontrol edip tekrar deneyin.';
+
+  @override
+  String get compressionOutputBudget => 'Toplam çıktı sınırı (token)';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      'Düşünme ve özetin kendisini içerir. Özet uzunluğunu kullanmak için boş bırakın. Düşünme açıksa, özeti uzatmadan bu sınırı yükseltebilirsiniz. Modelin kendi çıktı sınırı yine geçerlidir.';
+
+  @override
+  String get responseOutputLimitReached =>
+      'Yanıt kesildi: çıktı sınırı akıl yürütmeyi de kapsar. Yeniden denemeden önce çıktı sınırını artırın veya akıl yürütmeyi azaltın.';
+
+  @override
+  String responseContextLimitReached(int inputTokens, int contextWindow) {
+    return 'Yanıt kesildi: bu istek $inputTokens giriş token\'ı kullandı ve $contextWindow token\'lık bağlam sınırına yaklaştı. Yeniden denemeden önce bağlamı kısaltın.';
+  }
+
+  @override
+  String get responseRetryWithoutImages =>
+      'Görseller olmadan yeniden dene (orijinalleri koru)';
+
+  @override
+  String get browserOperationTimeout => 'İşlem zaman aşımı';
+
+  @override
+  String get browserOperationTimeoutDescription =>
+      'Bir tarayıcı komutu için en uzun bekleme süresi. Zaman aşımından sonra asistan sayfa durumunu kontrol edebilir.';
+
+  @override
+  String browserOperationTimeoutSeconds(int seconds) {
+    return '$seconds saniye';
+  }
+
+  @override
+  String get browserErrObservationRequired =>
+      'Devam etmeden önce sayfayı inceleyin; önceki işlem doğrulanmadı.';
+
+  @override
+  String get storageAttachmentRetention => 'Ekleri otomatik temizle';
+
+  @override
+  String get storageAttachmentRetentionDays => 'Temizlemeden önceki gün sayısı';
+
+  @override
+  String get storageAttachmentRetentionImmediately => 'Hemen temizle';
+
+  @override
+  String get storageAttachmentRetentionHint =>
+      'Mesajları veya sohbetleri sildikten sonra artık kullanılmayan görselleri ve dosyaları otomatik olarak kaldır.';
+
+  @override
+  String get storageAttachmentUnused => 'Kullanılmıyor';
+
+  @override
+  String storageAttachmentPending(String date) {
+    return 'Temizlenmeyi bekliyor · $date';
+  }
+
+  @override
+  String storageAttachmentConversations(String names) {
+    return 'Sohbetler: $names';
+  }
+
+  @override
+  String get storageAttachmentCleanUnused => 'Kullanılmayanları temizle';
+
+  @override
+  String get storageAttachmentProtectedHint =>
+      'Hâlâ kullanımda olan dosyalar korunacak.';
+
+  @override
+  String storageAttachmentDeleteConfirm(int count) {
+    return '$count kullanılmayan dosya şimdi silinsin mi? Hâlâ kullanımda olan dosyalar korunacak.';
+  }
+
+  @override
+  String get storageAttachmentRetentionDelayed => 'Daha sonra temizle';
+
+  @override
+  String get storageAttachmentRetentionInvalidDays => '1–3650 gün girin.';
+
+  @override
+  String get storageAttachmentDetailsTitle => 'Dosya bilgisi';
+
+  @override
+  String get compressionCarryTitle =>
+      'Önceki mesajlarınızı da yazdığınız gibi gönder';
+
+  @override
+  String get compressionCarryHint =>
+      'Özete dönüşen kısımdaki kendi mesajlarınız, özetin aktardığı şekliyle değil, yazdığınız gibi modele gönderilir.';
+
+  @override
+  String get compressionCarryCountLabel => 'En son şunları gönder:';
+
+  @override
+  String get compressionCarryUnit => 'mesaj';
+
+  @override
+  String get compressionCarryAll => 'Sığabildiği kadar';
+
+  @override
+  String get compressionCarryAllHint =>
+      'Sabit sayı yok. En yeniden başlayıp neredeyse dolana kadar geriye gider; en eski mesaj çok uzunsa yalnızca başı ve sonu gönderilir.';
+
+  @override
+  String get compressionCarryEarlier =>
+      'Daha önceki özetlerdeki mesajları da geri getir';
+
+  @override
+  String get compressionCarryEarlierHint =>
+      'Daha önce sıkıştırılan kısımlardaki mesajlarınız da dahil edilebilir.';
+
+  @override
+  String compressionCarryPreview(int count, int replyCount, String tokens) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kullanıcı mesajı',
+      one: '1 kullanıcı mesajı',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      replyCount,
+      locale: localeName,
+      other: '$replyCount yanıt',
+      one: '1 yanıt',
+    );
+    return '$_temp0 · $_temp1 · yaklaşık $tokens token';
+  }
+
+  @override
+  String get compressionCarryNone => 'Özetlenen kısımda size ait mesaj yok.';
+
+  @override
+  String compressionCarryNotFit(int count) {
+    return '$count eski mesaj sığmıyor ve bu sefer gönderilmeyecek.';
+  }
+
+  @override
+  String compressionCarryMoreRows(int count) {
+    return '$count tane daha';
+  }
+
+  @override
+  String get compressionCarryOverBudget =>
+      'Bu mesajlar büyük ihtimalle mevcut modelin kapasitesini aşar. Daha az gönderin veya daha büyük bağlamı olan bir modele geçin.';
+
+  @override
+  String compressionCarryFitAction(int count) {
+    return '$count olarak değiştir';
+  }
+
+  @override
+  String get compressionCarryTruncated =>
+      'Çok uzun; yalnızca başı ve sonu gönderilir';
+
+  @override
+  String get compressionCarryAutoToo =>
+      'Otomatik sıkıştırma da aynısını yapar.';
+
+  @override
+  String get compressionCarryNewChatText =>
+      'Görseller ve dosyalar yeni sohbete taşınmaz; yalnızca metin taşınır.';
+
+  @override
+  String get compressionCarryServerKeeps =>
+      'Bu hizmet, sıkıştırırken önceki mesajlarınızı kendisi saklar.';
+
+  @override
+  String get contextDetailCarried => 'Yazdığınız gibi gönderildi';
+
+  @override
+  String contextDetailCarriedCount(int count) {
+    return 'Önceki $count mesajınız';
+  }
+
+  @override
+  String get contextDetailServerKept => 'Hizmet tarafından saklandı';
+
+  @override
+  String get contextCarriedEditHint =>
+      'Bu yalnızca modele gönderilen metni değiştirir. Sohbetteki orijinal mesaj aynı kalır.';
+
+  @override
+  String get contextCarriedEmpty =>
+      'Bu boş olamaz. Göndermeyi durdurmak için “Göndermeyi durdur”u seçin.';
+
+  @override
+  String get contextCarriedRemove => 'Göndermeyi durdur';
+
+  @override
+  String get contextCarriedRemoveConfirm =>
+      'Bu artık modele gönderilmeyecek. Sohbetteki orijinal mesaj etkilenmez.';
+
+  @override
+  String get contextCarriedSourceDeleted =>
+      'Orijinal silindi; yalnızca bu metin kaldı';
+
+  @override
+  String get compressionCarryReply => 'Yanıtı da dahil et';
+
+  @override
+  String compressionCarryReplyTokens(String tokens) {
+    return '+yaklaşık $tokens';
+  }
+
+  @override
+  String get compressionCarryReplyInKept => 'Yanıt zaten saklanan turlarda';
+
+  @override
+  String get contextCarriedReplyLabel => 'Yanıt';
+
+  @override
+  String get contextCarriedRemoveReply => 'Yanıtı gönderme';
+
+  @override
+  String get imageEditorCancel => 'İptal';
+
+  @override
+  String get imageEditorDone => 'Bitti';
+
+  @override
+  String get imageEditorUndo => 'Geri al';
+
+  @override
+  String get imageEditorRedo => 'Yinele';
+
+  @override
+  String get imageEditorToolCrop => 'Kırp';
+
+  @override
+  String get imageEditorToolDraw => 'Çiz';
+
+  @override
+  String get imageEditorToolText => 'Metin';
+
+  @override
+  String get imageEditorToolMosaic => 'Mozaik';
+
+  @override
+  String get imageEditorPen => 'Kalem';
+
+  @override
+  String get imageEditorArrow => 'Ok';
+
+  @override
+  String get imageEditorEraser => 'Silgi';
+
+  @override
+  String get imageEditorAspectFree => 'Serbest';
+
+  @override
+  String get imageEditorAspectOriginal => 'Orijinal';
+
+  @override
+  String get imageEditorRotate => 'Sola döndür';
+
+  @override
+  String get imageEditorFlip => 'Çevir';
+
+  @override
+  String get imageEditorTextPlain => 'Düz';
+
+  @override
+  String get imageEditorTextOutline => 'Dış çizgi';
+
+  @override
+  String get imageEditorTextFill => 'Dolgu';
+
+  @override
+  String get imageEditorAlign => 'Hizala';
+
+  @override
+  String get imageEditorMosaicBrush => 'Fırça';
+
+  @override
+  String get imageEditorMosaicRect => 'Kutu';
+
+  @override
+  String get imageEditorDiscardTitle => 'Değişiklikler atılsın mı?';
+
+  @override
+  String get imageEditorKeepEditing => 'Düzenlemeye devam et';
+
+  @override
+  String get imageEditorDiscard => 'At';
+
+  @override
+  String get imageEditorProcessFailed => 'Görsel işlenemedi';
+
+  @override
+  String get imageEditorRetry => 'Yeniden dene';
+
+  @override
+  String get imageEditorRemove => 'Kaldır';
+
+  @override
+  String get imageEditorRestore => 'Geri yükle';
+
+  @override
+  String imageEditorColor(String color) {
+    return 'Renk $color';
+  }
+
+  @override
+  String get imageViewerPageEditButton => 'Düzenle';
+
+  @override
+  String get imageViewerPageFileSize => 'Görsel boyutu';
+
+  @override
+  String get compressionCarryModeCount => 'Son mesajlar';
+
+  @override
+  String get compressionCarryListTitle => 'Mesaj önizlemesi';
+
+  @override
+  String get compressionCarrySelectAllReplies => 'Tüm yanıtları seç';
+
+  @override
+  String get compressionCarryDeselectAllReplies =>
+      'Tüm yanıtların seçimini kaldır';
+
+  @override
+  String get compressionCarryPairNotFit =>
+      'Bu mesaj ve yanıtı kalan bütçeyi aşıyor. İkisi de dışarıda bırakılacak.';
+
+  @override
+  String compressionCarryImageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count görsel',
+      one: '1 görsel',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String compressionCarryAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ek',
+      one: '1 ek',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get compressionCarryNoText => 'Mesaj metni yok';
+
+  @override
+  String get compressionCarryInvalidCount =>
+      '1 ile 10.000 arasında bir sayı girin.';
+
+  @override
+  String get backupRunningInBackground => 'Yedekleme arka planda devam edecek';
+
+  @override
+  String backupBackgroundFailed(String error) {
+    return 'Arka plan yedeklemesi başarısız oldu: $error';
+  }
+
+  @override
+  String get backupAutoEnableTitle => 'Zamanı geldiğinde otomatik yedekle';
+
+  @override
+  String get backupAutoEnableHint =>
+      'Planlanan saat geldiğinde Kelivo, uygulama ön plandayken yedekleme yapar. Uygulama kapatılır veya sonlandırılırsa yedekleme devam etmez ve kaldığı yerden sürdürülmez; uygulamayı bir sonraki açışınızda süre hâlâ dolmuşsa tek bir tam yedekleme çalışır.';
+
+  @override
+  String get backupAutoDestinationTitle => 'Otomatik yedekleme hedefi';
+
+  @override
+  String get backupAutoDestinationWebDav => 'WebDAV';
+
+  @override
+  String get backupAutoDestinationS3 => 'S3';
+
+  @override
+  String get backupAutoDestinationLocal => 'Yerel klasör';
+
+  @override
+  String get backupAutoNeedRemoteHint => 'Önce WebDAV veya S3 ayarlayın.';
+
+  @override
+  String get backupAutoNeedDestinationHint =>
+      'Önce WebDAV veya S3 ayarlayın ya da bir yerel klasör seçin.';
+
+  @override
+  String get backupAutoNeedFolderHint => 'Önce bir yedekleme klasörü seçin.';
+
+  @override
+  String get backupAutoLocalFolderChoose => 'Klasör seç…';
+
+  @override
+  String get backupAutoLocalFolderChange => 'Klasörü değiştir';
+
+  @override
+  String get backupAutoLocalFolderInvalid =>
+      'Uygulamanın kendi veri dizini dışında bir klasör seçin.';
+
+  @override
+  String get backupAutoLocalRetentionTitle => 'En fazla sakla';
+
+  @override
+  String backupAutoLocalRetentionCount(int count) {
+    return '$count yedek';
+  }
+
+  @override
+  String get backupAutoLocalRetentionUnlimited => 'Sınır yok';
+
+  @override
+  String get backupAutoLocalNow => 'Şimdi bu klasöre yedekle';
+
+  @override
+  String get backupAutoLocalDirUnavailable =>
+      'Seçilen klasöre yazılamıyor. Hâlâ kullanılabilir olduğunu kontrol edin veya başka bir klasör seçin. Kelivo kayıtlı konumu kendi başına değiştirmez.';
+
+  @override
+  String get backupAutoLocalDirPermission =>
+      'Seçilen klasöre yazma izniniz yok. Lütfen klasörü yeniden seçin. Kelivo kayıtlı konumu kendi başına değiştirmez.';
+
+  @override
+  String get backupAutoLocalDirFull =>
+      'Yeterli disk alanı yok, bu yüzden yedekleme tamamlanmadı. Önceki yedekleriniz hâlâ duruyor.';
+
+  @override
+  String get backupAutoLocalBookmarkLost =>
+      'Kelivo seçilen klasöre erişemiyor. Lütfen yeniden seçin. Kayıtlı konum otomatik olarak değiştirilmez.';
+
+  @override
+  String get backupAutoNextTitle => 'Sonraki otomatik yedekleme';
+
+  @override
+  String get backupAutoRememberPasswordTitle =>
+      'Parola bu cihazda hatırlansın mı?';
+
+  @override
+  String get backupAutoRememberPasswordMessage =>
+      'Otomatik yedeklemelerin çalışabilmesi için parolayı bu cihazda hatırla. Parola bu cihazda kalır ve hiçbir zaman yüklenmez.';
+
+  @override
+  String get backupAutoRememberPasswordConfirm => 'Hatırla';
+
+  @override
+  String get backupAutoRememberPasswordDecline => 'Şimdi değil';
+
+  @override
+  String get backupAutoRememberDeclined =>
+      'Otomatik yedekleme açılmadı. Zamanı geldiğinde yine hatırlatma alacaksınız.';
+
+  @override
+  String get backupAutoKeychainUnavailable =>
+      'Kelivo, yedekleme parolası için sistem anahtarlığına erişemiyor. Yine de manuel olarak yedekleme yapabilirsiniz.';
+
+  @override
+  String get backupAutoSucceeded => 'Otomatik yedekleme tamamlandı';
+
+  @override
+  String backupAutoFailed(String error) {
+    return 'Otomatik yedekleme başarısız oldu: $error';
+  }
+
+  @override
+  String get backupAutoFailedPassword =>
+      'Otomatik yedekleme başarısız oldu: parola yanlış.';
+
+  @override
+  String get backupReminderSidebarSubtitleAutoFailed =>
+      'Otomatik yedekleme tamamlanmadı. Ağı kontrol edin veya elle yedekleyin.';
+
+  @override
+  String get backupEncryptionOnHintRemembered =>
+      'Yedekler şifrelenir. Parola bu cihazda kayıtlı.';
+
+  @override
+  String get backupRememberPasswordOnDevice => 'Parolayı bu cihazda hatırla';
+
+  @override
+  String get backupForgetDisablesAutomaticHint =>
+      'Bunu kapatmak otomatik yedeklemeyi de kapatır.';
+
+  @override
+  String get backupManualPasswordHint =>
+      'Şifreli yedekler için belirlediğiniz parolayı girin.';
+
+  @override
+  String get backupManualPasswordNotSaved =>
+      'Parola bu cihazda kaydedilemedi. Bu yedekleme devam edecek.';
+
+  @override
+  String get backupEncryptionChangePassword => 'Yedek parolasını değiştir';
+
+  @override
+  String get backupMacKeychainNeedsUnlock =>
+      'macOS oturum açma anahtarlığının kilidini açamadı. Anahtar Zinciri Erişimi\'ni açın, “oturum açma” anahtarlığının kilidini açın ve ardından Kelivo\'da tekrar deneyin.';
+
+  @override
+  String get backupMacOpenKeychainAccess => 'Anahtar Zinciri Erişimi\'ni aç';
+
+  @override
+  String get backupMacKeychainAccessDenied =>
+      'macOS yedek parolasına erişimi reddetti. Bir sistem istemi görünürse Kelivo\'nun erişmesine izin verin. Ayrıca Anahtar Zinciri Erişimi\'nde varsayılan anahtar zincirini ve parola öğesinin izinlerini kontrol edebilirsiniz.';
+
+  @override
   String get settingsPageExternalAutoSend =>
       'Harici otomatik gönderime izin ver';
 
@@ -17102,581 +17882,4 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get deepLinkGenNewOnlyHint =>
       'Asistan ve geçici sohbet yalnızca yeni bir sohbete uygulanır.';
-
-  @override
-  String get compressionNativeImportedDescription =>
-      'Bu sohbet, sunucu tarafı sıkıştırılmış sonuç ve en son turlarla başlar. Sonuç metin olarak görüntülenemez veya düzenlenemez. Daha önceki orijinaller orijinal sohbette kalır ve burada geri alınarak kurtarılamaz.';
-
-  @override
-  String get compressionNativeOpenSource => 'Orijinal sohbeti aç';
-
-  @override
-  String get compressionNativeOriginalsUnavailable =>
-      'Bu sohbette yüklenen sunucu tarafı sonuca karşılık gelen orijinaller yok. Sunucu tarafı sıkıştırmayı kullanmaya devam edebilir veya orijinalleri görüntülemek ya da metin özeti oluşturmak için orijinal sohbete dönebilirsiniz.';
-
-  @override
-  String get compressionNativeTemporaryCopyHint =>
-      'Yeni geçici sohbet yalnızca tam sunucu tarafı sonucu ve son turları tutar. Orijinal geçici sohbetten ayrıldığınızda, o sohbet ve taşınmayan orijinaller silinir ve burada kurtarılamaz.';
-
-  @override
-  String get compressionNativeSourceUnavailable =>
-      'Bu sohbet, tam sunucu tarafı sonucu ve tuttuğunuz son turları içerir. Orijinal sohbet artık kullanılamıyor. Buraya kopyalanmayan orijinaller kurtarılamaz ve sonuç metin olarak görüntülenemez veya düzenlenemez.';
-
-  @override
-  String get modelDetailSheetImageGenerationModel => 'Görsel modeli';
-
-  @override
-  String get modelDetailSheetImageGenerationAuto => 'Otomatik';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexity => 'Görsel karmaşıklığı';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityDefault => 'Varsayılan';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityLow => 'Düşük';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityMedium => 'Orta';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityHigh => 'Yüksek';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityDescription =>
-      'Görsel planlamayı sohbet akıl yürütmesinden bağımsız olarak kontrol eder. Varsayılan, sunucu davranışını kullanır ve sohbet akıl yürütmesini devralabilir.';
-
-  @override
-  String get modelDetailSheetImageGenerationOAuthHint =>
-      'ChatGPT ile oturum açma farklı bir görsel modeli kullanabilir. Model ve karmaşıklık ayarları sunucu desteğine bağlıdır.';
-
-  @override
-  String get imageGenerationComplexityErrorHint =>
-      'Sohbet akıl yürütmesini Otomatik, görsel karmaşıklığını Varsayılan olarak ayarlayıp görsel oluşturmayı yeniden deneyin. ChatGPT ile oturum açma farklı bir görsel modeli kullanabilir veya açık karmaşıklığı reddedebilir.';
-
-  @override
-  String get workspaceEnvNativeShellTitle => 'Varsayılan kabuk';
-
-  @override
-  String get workspaceEnvNativeShellHint =>
-      'Otomatik algılama için boş bırakın. Aksi takdirde PowerShell, cmd veya -lc destekleyen bir kabuğun (bash, zsh veya fish gibi) mutlak yolunu girin. Bu ayar yalnızca bu cihaz için geçerlidir.';
-
-  @override
-  String get workspaceEnvNativeShellInvalid =>
-      'Bu kabuk başlatılamadı. Mutlak yolunu ve desteklenen komut sözdizimini kontrol edin.';
-
-  @override
-  String get workspaceEnvNativeShellUnavailable => 'Kabuk kullanılamıyor';
-
-  @override
-  String get workspaceEnvNativeShellDetect => 'Yeniden algıla';
-
-  @override
-  String get workspaceEnvNativeShellSave => 'Kaydet';
-
-  @override
-  String get desktopAutostartTitle => 'Başlangıçta başlat';
-
-  @override
-  String get desktopAutostartDescription =>
-      'Bu bilgisayarda oturum açtığınızda Kelivo\'yu başlat.';
-
-  @override
-  String get desktopAutostartHiddenTitle => 'Otomatik başlatmada tepsiye gizle';
-
-  @override
-  String get desktopAutostartHiddenDescription =>
-      'Başlangıçta başlatma ve tepsi simgesi gerektirir. Kelivo\'yu elle açtığınızda pencere yine görünür.';
-
-  @override
-  String get desktopAutostartUnsupported =>
-      'Başlangıçta başlatma için macOS 13 veya üstü gerekir.';
-
-  @override
-  String get desktopAutostartError =>
-      'Başlangıç ayarı uygulanamadı. Sistem başlangıç veya oturum açma öğeleri ayarlarında bu uygulamayı kontrol edip tekrar deneyin.';
-
-  @override
-  String get compressionOutputBudget => 'Toplam çıktı sınırı (token)';
-
-  @override
-  String get compressionOutputBudgetHint =>
-      'Düşünme ve özetin kendisini içerir. Özet uzunluğunu kullanmak için boş bırakın. Düşünme açıksa, özeti uzatmadan bu sınırı yükseltebilirsiniz. Modelin kendi çıktı sınırı yine geçerlidir.';
-
-  @override
-  String get responseOutputLimitReached =>
-      'Yanıt kesildi: çıktı sınırı akıl yürütmeyi de kapsar. Yeniden denemeden önce çıktı sınırını artırın veya akıl yürütmeyi azaltın.';
-
-  @override
-  String responseContextLimitReached(int inputTokens, int contextWindow) {
-    return 'Yanıt kesildi: bu istek $inputTokens giriş token\'ı kullandı ve $contextWindow token\'lık bağlam sınırına yaklaştı. Yeniden denemeden önce bağlamı kısaltın.';
-  }
-
-  @override
-  String get responseRetryWithoutImages =>
-      'Görseller olmadan yeniden dene (orijinalleri koru)';
-
-  @override
-  String get browserOperationTimeout => 'İşlem zaman aşımı';
-
-  @override
-  String get browserOperationTimeoutDescription =>
-      'Bir tarayıcı komutu için en uzun bekleme süresi. Zaman aşımından sonra asistan sayfa durumunu kontrol edebilir.';
-
-  @override
-  String browserOperationTimeoutSeconds(int seconds) {
-    return '$seconds saniye';
-  }
-
-  @override
-  String get browserErrObservationRequired =>
-      'Devam etmeden önce sayfayı inceleyin; önceki işlem doğrulanmadı.';
-
-  @override
-  String get storageAttachmentRetention => 'Ekleri otomatik temizle';
-
-  @override
-  String get storageAttachmentRetentionDays => 'Temizlemeden önceki gün sayısı';
-
-  @override
-  String get storageAttachmentRetentionImmediately => 'Hemen temizle';
-
-  @override
-  String get storageAttachmentRetentionHint =>
-      'Mesajları veya sohbetleri sildikten sonra artık kullanılmayan görselleri ve dosyaları otomatik olarak kaldır.';
-
-  @override
-  String get storageAttachmentUnused => 'Kullanılmıyor';
-
-  @override
-  String storageAttachmentPending(String date) {
-    return 'Temizlenmeyi bekliyor · $date';
-  }
-
-  @override
-  String storageAttachmentConversations(String names) {
-    return 'Sohbetler: $names';
-  }
-
-  @override
-  String get storageAttachmentCleanUnused => 'Kullanılmayanları temizle';
-
-  @override
-  String get storageAttachmentProtectedHint =>
-      'Hâlâ kullanımda olan dosyalar korunacak.';
-
-  @override
-  String storageAttachmentDeleteConfirm(int count) {
-    return '$count kullanılmayan dosya şimdi silinsin mi? Hâlâ kullanımda olan dosyalar korunacak.';
-  }
-
-  @override
-  String get storageAttachmentRetentionDelayed => 'Daha sonra temizle';
-
-  @override
-  String get storageAttachmentRetentionInvalidDays => '1–3650 gün girin.';
-
-  @override
-  String get storageAttachmentDetailsTitle => 'Dosya bilgisi';
-
-  @override
-  String get compressionCarryTitle =>
-      'Önceki mesajlarınızı da yazdığınız gibi gönder';
-
-  @override
-  String get compressionCarryHint =>
-      'Özete dönüşen kısımdaki kendi mesajlarınız, özetin aktardığı şekliyle değil, yazdığınız gibi modele gönderilir.';
-
-  @override
-  String get compressionCarryCountLabel => 'En son şunları gönder:';
-
-  @override
-  String get compressionCarryUnit => 'mesaj';
-
-  @override
-  String get compressionCarryAll => 'Sığabildiği kadar';
-
-  @override
-  String get compressionCarryAllHint =>
-      'Sabit sayı yok. En yeniden başlayıp neredeyse dolana kadar geriye gider; en eski mesaj çok uzunsa yalnızca başı ve sonu gönderilir.';
-
-  @override
-  String get compressionCarryEarlier =>
-      'Daha önceki özetlerdeki mesajları da geri getir';
-
-  @override
-  String get compressionCarryEarlierHint =>
-      'Daha önce sıkıştırılan kısımlardaki mesajlarınız da dahil edilebilir.';
-
-  @override
-  String compressionCarryPreview(int count, String tokens) {
-    return '$count mesaj gönderilecek · yaklaşık $tokens token';
-  }
-
-  @override
-  String get compressionCarryNone => 'Özetlenen kısımda size ait mesaj yok.';
-
-  @override
-  String compressionCarryNotFit(int count) {
-    return '$count eski mesaj sığmıyor ve bu sefer gönderilmeyecek.';
-  }
-
-  @override
-  String compressionCarryMoreRows(int count) {
-    return '$count tane daha';
-  }
-
-  @override
-  String get compressionCarryOverBudget =>
-      'Bu mesajlar büyük ihtimalle mevcut modelin kapasitesini aşar. Daha az gönderin veya daha büyük bağlamı olan bir modele geçin.';
-
-  @override
-  String compressionCarryFitAction(int count) {
-    return '$count olarak değiştir';
-  }
-
-  @override
-  String get compressionCarryTruncated =>
-      'Çok uzun; yalnızca başı ve sonu gönderilir';
-
-  @override
-  String get compressionCarryAutoToo =>
-      'Otomatik sıkıştırma da aynısını yapar.';
-
-  @override
-  String get compressionCarryNewChatText =>
-      'Görseller ve dosyalar yeni sohbete taşınmaz; yalnızca metin taşınır.';
-
-  @override
-  String get compressionCarryServerKeeps =>
-      'Bu hizmet, sıkıştırırken önceki mesajlarınızı kendisi saklar.';
-
-  @override
-  String get contextDetailCarried => 'Yazdığınız gibi gönderildi';
-
-  @override
-  String contextDetailCarriedCount(int count) {
-    return 'Önceki $count mesajınız';
-  }
-
-  @override
-  String get contextDetailServerKept => 'Hizmet tarafından saklandı';
-
-  @override
-  String get contextCarriedEditHint =>
-      'Bu yalnızca modele gönderilen metni değiştirir. Sohbetteki orijinal mesaj aynı kalır.';
-
-  @override
-  String get contextCarriedEmpty =>
-      'Bu boş olamaz. Göndermeyi durdurmak için “Göndermeyi durdur”u seçin.';
-
-  @override
-  String get contextCarriedRemove => 'Göndermeyi durdur';
-
-  @override
-  String get contextCarriedRemoveConfirm =>
-      'Bu artık modele gönderilmeyecek. Sohbetteki orijinal mesaj etkilenmez.';
-
-  @override
-  String get contextCarriedSourceDeleted =>
-      'Orijinal silindi; yalnızca bu metin kaldı';
-
-  @override
-  String get compressionCarryReply => 'Yanıtı da dahil et';
-
-  @override
-  String compressionCarryReplyTokens(String tokens) {
-    return '+yaklaşık $tokens';
-  }
-
-  @override
-  String get compressionCarryReplyInKept => 'Yanıt zaten saklanan turlarda';
-
-  @override
-  String get contextCarriedReplyLabel => 'Yanıt';
-
-  @override
-  String get contextCarriedRemoveReply => 'Yanıtı gönderme';
-
-  @override
-  String get imageEditorCancel => 'İptal';
-
-  @override
-  String get imageEditorDone => 'Bitti';
-
-  @override
-  String get imageEditorUndo => 'Geri al';
-
-  @override
-  String get imageEditorRedo => 'Yinele';
-
-  @override
-  String get imageEditorToolCrop => 'Kırp';
-
-  @override
-  String get imageEditorToolDraw => 'Çiz';
-
-  @override
-  String get imageEditorToolText => 'Metin';
-
-  @override
-  String get imageEditorToolMosaic => 'Mozaik';
-
-  @override
-  String get imageEditorPen => 'Kalem';
-
-  @override
-  String get imageEditorArrow => 'Ok';
-
-  @override
-  String get imageEditorEraser => 'Silgi';
-
-  @override
-  String get imageEditorAspectFree => 'Serbest';
-
-  @override
-  String get imageEditorAspectOriginal => 'Orijinal';
-
-  @override
-  String get imageEditorRotate => 'Sola döndür';
-
-  @override
-  String get imageEditorFlip => 'Çevir';
-
-  @override
-  String get imageEditorTextPlain => 'Düz';
-
-  @override
-  String get imageEditorTextOutline => 'Dış çizgi';
-
-  @override
-  String get imageEditorTextFill => 'Dolgu';
-
-  @override
-  String get imageEditorAlign => 'Hizala';
-
-  @override
-  String get imageEditorMosaicBrush => 'Fırça';
-
-  @override
-  String get imageEditorMosaicRect => 'Kutu';
-
-  @override
-  String get imageEditorDiscardTitle => 'Değişiklikler atılsın mı?';
-
-  @override
-  String get imageEditorKeepEditing => 'Düzenlemeye devam et';
-
-  @override
-  String get imageEditorDiscard => 'At';
-
-  @override
-  String get imageEditorProcessFailed => 'Görsel işlenemedi';
-
-  @override
-  String get imageEditorRetry => 'Yeniden dene';
-
-  @override
-  String get imageEditorRemove => 'Kaldır';
-
-  @override
-  String get imageEditorRestore => 'Geri yükle';
-
-  @override
-  String imageEditorColor(String color) {
-    return 'Renk $color';
-  }
-
-  @override
-  String get imageViewerPageEditButton => 'Düzenle';
-
-  @override
-  String get imageViewerPageFileSize => 'Görsel boyutu';
-
-  @override
-  String get compressionCarryModeCount => 'Son mesajlar';
-
-  @override
-  String get compressionCarryListTitle => 'Mesaj önizlemesi';
-
-  @override
-  String compressionCarryImageCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count görsel',
-      one: '1 görsel',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String compressionCarryAttachmentCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count ek',
-      one: '1 ek',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get compressionCarryNoText => 'Mesaj metni yok';
-
-  @override
-  String get compressionCarryInvalidCount =>
-      '1 ile 10.000 arasında bir sayı girin.';
-
-  @override
-  String get backupRunningInBackground => 'Yedekleme arka planda devam edecek';
-
-  @override
-  String backupBackgroundFailed(String error) {
-    return 'Arka plan yedeklemesi başarısız oldu: $error';
-  }
-
-  @override
-  String get backupAutoEnableTitle => 'Zamanı geldiğinde otomatik yedekle';
-
-  @override
-  String get backupAutoEnableHint =>
-      'Planlanan saat geldiğinde Kelivo, uygulama ön plandayken yedekleme yapar. Uygulama kapatılır veya sonlandırılırsa yedekleme devam etmez ve kaldığı yerden sürdürülmez; uygulamayı bir sonraki açışınızda süre hâlâ dolmuşsa tek bir tam yedekleme çalışır.';
-
-  @override
-  String get backupAutoDestinationTitle => 'Otomatik yedekleme hedefi';
-
-  @override
-  String get backupAutoDestinationWebDav => 'WebDAV';
-
-  @override
-  String get backupAutoDestinationS3 => 'S3';
-
-  @override
-  String get backupAutoDestinationLocal => 'Yerel klasör';
-
-  @override
-  String get backupAutoNeedRemoteHint => 'Önce WebDAV veya S3 ayarlayın.';
-
-  @override
-  String get backupAutoNeedDestinationHint =>
-      'Önce WebDAV veya S3 ayarlayın ya da bir yerel klasör seçin.';
-
-  @override
-  String get backupAutoNeedFolderHint => 'Önce bir yedekleme klasörü seçin.';
-
-  @override
-  String get backupAutoLocalFolderChoose => 'Klasör seç…';
-
-  @override
-  String get backupAutoLocalFolderChange => 'Klasörü değiştir';
-
-  @override
-  String get backupAutoLocalFolderInvalid =>
-      'Uygulamanın kendi veri dizini dışında bir klasör seçin.';
-
-  @override
-  String get backupAutoLocalRetentionTitle => 'En fazla sakla';
-
-  @override
-  String backupAutoLocalRetentionCount(int count) {
-    return '$count yedek';
-  }
-
-  @override
-  String get backupAutoLocalRetentionUnlimited => 'Sınır yok';
-
-  @override
-  String get backupAutoLocalNow => 'Şimdi bu klasöre yedekle';
-
-  @override
-  String get backupAutoLocalDirUnavailable =>
-      'Seçilen klasöre yazılamıyor. Hâlâ kullanılabilir olduğunu kontrol edin veya başka bir klasör seçin. Kelivo kayıtlı konumu kendi başına değiştirmez.';
-
-  @override
-  String get backupAutoLocalDirPermission =>
-      'Seçilen klasöre yazma izniniz yok. Lütfen klasörü yeniden seçin. Kelivo kayıtlı konumu kendi başına değiştirmez.';
-
-  @override
-  String get backupAutoLocalDirFull =>
-      'Yeterli disk alanı yok, bu yüzden yedekleme tamamlanmadı. Önceki yedekleriniz hâlâ duruyor.';
-
-  @override
-  String get backupAutoLocalBookmarkLost =>
-      'Kelivo seçilen klasöre erişemiyor. Lütfen yeniden seçin. Kayıtlı konum otomatik olarak değiştirilmez.';
-
-  @override
-  String get backupAutoNextTitle => 'Sonraki otomatik yedekleme';
-
-  @override
-  String get backupAutoRememberPasswordTitle =>
-      'Parola bu cihazda hatırlansın mı?';
-
-  @override
-  String get backupAutoRememberPasswordMessage =>
-      'Otomatik yedeklemelerin çalışabilmesi için parolayı bu cihazda hatırla. Parola bu cihazda kalır ve hiçbir zaman yüklenmez.';
-
-  @override
-  String get backupAutoRememberPasswordConfirm => 'Hatırla';
-
-  @override
-  String get backupAutoRememberPasswordDecline => 'Şimdi değil';
-
-  @override
-  String get backupAutoRememberDeclined =>
-      'Otomatik yedekleme açılmadı. Zamanı geldiğinde yine hatırlatma alacaksınız.';
-
-  @override
-  String get backupAutoKeychainUnavailable =>
-      'Kelivo, yedekleme parolası için sistem anahtarlığına erişemiyor. Yine de manuel olarak yedekleme yapabilirsiniz.';
-
-  @override
-  String get backupAutoSucceeded => 'Otomatik yedekleme tamamlandı';
-
-  @override
-  String backupAutoFailed(String error) {
-    return 'Otomatik yedekleme başarısız oldu: $error';
-  }
-
-  @override
-  String get backupAutoFailedPassword =>
-      'Otomatik yedekleme başarısız oldu: parola yanlış.';
-
-  @override
-  String get backupReminderSidebarSubtitleAutoFailed =>
-      'Otomatik yedekleme tamamlanmadı. Ağı kontrol edin veya elle yedekleyin.';
-
-  @override
-  String get backupEncryptionOnHintRemembered =>
-      'Yedekler şifrelenir. Parola bu cihazda kayıtlı.';
-
-  @override
-  String get backupRememberPasswordOnDevice => 'Parolayı bu cihazda hatırla';
-
-  @override
-  String get backupForgetDisablesAutomaticHint =>
-      'Bunu kapatmak otomatik yedeklemeyi de kapatır.';
-
-  @override
-  String get backupManualPasswordHint =>
-      'Şifreli yedekler için belirlediğiniz parolayı girin.';
-
-  @override
-  String get backupManualPasswordNotSaved =>
-      'Parola bu cihazda kaydedilemedi. Bu yedekleme devam edecek.';
-
-  @override
-  String get backupEncryptionChangePassword => 'Yedek parolasını değiştir';
-
-  @override
-  String get backupMacKeychainNeedsUnlock =>
-      'macOS oturum açma anahtarlığının kilidini açamadı. Anahtar Zinciri Erişimi\'ni açın, “oturum açma” anahtarlığının kilidini açın ve ardından Kelivo\'da tekrar deneyin.';
-
-  @override
-  String get backupMacOpenKeychainAccess => 'Anahtar Zinciri Erişimi\'ni aç';
-
-  @override
-  String get backupMacKeychainAccessDenied =>
-      'macOS yedek parolasına erişimi reddetti. Bir sistem istemi görünürse Kelivo\'nun erişmesine izin verin. Ayrıca Anahtar Zinciri Erişimi\'nde varsayılan anahtar zincirini ve parola öğesinin izinlerini kontrol edebilirsiniz.';
 }

@@ -147,6 +147,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get storageSpaceCopyErrorDetails => 'Копировать сведения об ошибке';
 
   @override
+  String get storageAttachmentChecking => 'Проверка использования вложений…';
+
+  @override
+  String get storageAttachmentCheckFailed =>
+      'Не удалось проверить использование вложений. Обновите, чтобы повторить попытку.';
+
+  @override
   String get storageSpaceCopyErrorFailed =>
       'Не удалось скопировать сведения об ошибке. Попробуйте ещё раз.';
 
@@ -1747,6 +1754,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get backupPageFilesLabel => 'Файлы и изображения';
 
   @override
+  String get backupPageSettingsSaveFailed =>
+      'Не удалось сохранить настройки резервного копирования. Попробуйте ещё раз.';
+
+  @override
   String get backupPageScopeTitle => 'Содержимое резервной копии и импорта';
 
   @override
@@ -2260,6 +2271,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get backupPageImportFromOtherApps => 'Импорт из других приложений';
 
   @override
+  String get backupPageImportFromOtherAppsSubtitle =>
+      'Резервные копии новых версий Chatbox и Cherry Studio 2.x, а также ChatGPT, Claude, DeepSeek, Gemini, Grok, Open WebUI, NextChat и LobeChat. Файл конвертируется локально в браузере в резервную копию Kelivo и не загружается.';
+
+  @override
+  String get backupPageOpenImportToolbox => 'Открыть инструменты';
+
+  @override
+  String backupPageImportToolboxOpenFailed(String url) {
+    return 'Не удалось открыть браузер. Откройте этот адрес вручную: $url';
+  }
+
+  @override
+  String get backupPageToolboxImportMergeOnlyHint =>
+      'Этот файл конвертирован официальными инструментами. При импорте данные будут объединены с существующими, а чаты и ассистенты на этом устройстве не будут заменены.';
+
+  @override
   String get backupPageNotSupportedYet => 'Пока не поддерживается';
 
   @override
@@ -2345,7 +2372,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String backupPageCherryStudioUnsupportedBackupVersion(String version) {
-    return 'Эта резервная копия использует версию формата Cherry Studio $version, которую Kelivo пока не может импортировать. Экспортируйте резервную копию из Cherry Studio v1 или дождитесь обновления Kelivo с поддержкой резервных копий Cherry Studio v2.';
+    return 'Это резервная копия Cherry Studio 2.x (версия формата $version), её нельзя импортировать в приложение напрямую. Конвертируйте её официальными инструментами в резервную копию Kelivo, затем откройте «Импорт файла резервной копии» и выберите «Объединение». Конвертация выполняется локально в браузере, файл не загружается.';
+  }
+
+  @override
+  String backupPageChatboxUnsupportedBackupVersion(String version) {
+    return 'Это резервная копия новой версии Chatbox (версия формата $version), её нельзя импортировать в приложение напрямую. Конвертируйте её официальными инструментами в резервную копию Kelivo, затем откройте «Импорт файла резервной копии» и выберите «Объединение». Конвертация выполняется локально в браузере, файл не загружается.';
   }
 
   @override
@@ -3508,9 +3540,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contextUsageUnavailable => 'Использование сейчас недоступно.';
 
   @override
+  String contextUsagePartialSummary(String tokens) {
+    return 'Оценено $tokens, плюс неизвестное использование на стороне сервера';
+  }
+
   @override
+  String get contextUsageBucketNativeCompaction => 'Сжатие на стороне сервера';
+
   @override
+  String get contextUsageUnknownTokens => 'Неизвестно';
+
   @override
+  String contextUsageLastRequestInput(String tokens) {
+    return 'Последний фактически отправленный модели объём: $tokens';
+  }
+
   @override
   String get contextUsageStateNone => 'Пока нет данных';
 
@@ -4302,6 +4346,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Отправлять ссылки на изображения http(s) как есть; при выключении удалённые ссылки отбрасываются и отправляются только локальные изображения';
 
   @override
+  String get modelSpecFormResponseSpeedTiers => 'Уровни скорости ответа';
+
+  @override
+  String get modelSpecFormResponseSpeedTiersSubtitle =>
+      'Настройте, какие уровни ускорения доступны для этой модели в чатах. Снимите оба флажка, чтобы оставить только «Стандартный».';
+
+  @override
   String get modelSpecFormPromptCacheControl => 'Маркер кэша промпта';
 
   @override
@@ -4517,6 +4568,62 @@ class AppLocalizationsRu extends AppLocalizations {
   String get providerDetailPageClaudePromptCachingTtl1h => '1 час';
 
   @override
+  String get providerBalanceAutoRefresh => 'Автоматическое обновление баланса';
+
+  @override
+  String get providerBalanceScopeProvider => 'Этот провайдер';
+
+  @override
+  String get providerBalanceScopeGlobal => 'Глобальные настройки по умолчанию';
+
+  @override
+  String get providerBalanceInterval => 'Обновление по таймеру';
+
+  @override
+  String get providerBalanceRefreshOnReply => 'Обновлять после ответов';
+
+  @override
+  String providerBalanceFollowDefault(String value) {
+    return 'По умолчанию · $value';
+  }
+
+  @override
+  String get providerBalanceRefreshOff => 'Выкл.';
+
+  @override
+  String get providerBalanceRefreshOn => 'Вкл.';
+
+  @override
+  String providerBalanceRefreshMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count минуты',
+      many: '$count минут',
+      few: '$count минуты',
+      one: '$count минута',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get providerBalanceRefreshHour => '1 час';
+
+  @override
+  String get providerBalanceCustomInterval => 'Свой интервал…';
+
+  @override
+  String get providerBalanceIntervalMinutes => 'Интервал в минутах';
+
+  @override
+  String get providerBalanceRefreshNow => 'Обновить баланс сейчас';
+
+  @override
+  String providerBalanceLastUpdated(String date, String time) {
+    return 'Последнее обновление: $date в $time';
+  }
+
+  @override
   String get providerDetailPageBalanceTitle => 'Баланс аккаунта';
 
   @override
@@ -4553,11 +4660,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get providerDetailPageBalanceQuerying => 'Проверка...';
 
   @override
-  String get providerDetailPageBalanceResetDefaultsButton => 'Сбросить';
+  String get providerDetailPageBalanceResetDefaultsButton =>
+      'Восстановить настройки баланса по умолчанию';
 
   @override
-  String get providerDetailPageBalanceResetDefaultsTooltip =>
-      'Сбросить настройки баланса';
+  String get providerDetailPageBalanceResetConfirmMessage =>
+      'Это заменит пользовательские настройки запроса баланса этого провайдера, восстановит состояние его переключателя баланса по умолчанию и настроит автоматическое обновление в соответствии с глобальными настройками.';
+
+  @override
+  String get providerDetailPageBalanceResetConfirmButton =>
+      'Восстановить по умолчанию';
 
   @override
   String providerDetailPageBalanceResult(String value) {
@@ -4917,6 +5029,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get providerDetailPageModelsTitle => 'Модели';
 
   @override
+  String get providerDetailPageReorderModels => 'Изменить порядок моделей';
+
+  @override
   String get providerModelsGetButton => 'Получить';
 
   @override
@@ -5048,6 +5163,28 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get miniMapScrollToBottomTooltip => 'Прокрутить вниз';
+
+  @override
+  String get miniMapSearchHint => 'Поиск по миникарте';
+
+  @override
+  String miniMapSearchMatchCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count совпадения',
+      many: '$count совпадений',
+      few: '$count совпадения',
+      one: '$count совпадение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get miniMapSearchNoResults => 'Нет подходящих сообщений';
+
+  @override
+  String get miniMapSearchFailed => 'Не удалось выполнить поиск сообщений';
 
   @override
   String get conversationFindHint => 'Найти';
@@ -5188,10 +5325,32 @@ class AppLocalizationsRu extends AppLocalizations {
       'Регион (необязательно, по умолчанию: us-en)';
 
   @override
+  String get searchServicesFourGetUrlInvalid =>
+      'Введите базовый URL HTTP или HTTPS.';
+
+  @override
+  String get searchServicesFourGetScraperOptional =>
+      'Вышестоящий движок (необязательно)';
+
+  @override
+  String get searchServicesFourGetPassOptional => 'Cookie pass (необязательно)';
+
+  @override
+  String get searchServicesFourGetPassHelp =>
+      'Если экземпляр требует CAPTCHA, пройдите её и вставьте значение cookie pass.';
+
+  @override
   String get searchServiceEditorProviderTypeTitle => 'Поисковый провайдер';
 
   @override
   String get searchServiceEditorConfigurationTitle => 'Конфигурация';
+
+  @override
+  String get searchServiceEditorChangeIcon => 'Сменить значок';
+
+  @override
+  String get searchServiceEditorIconFailed =>
+      'Не удалось использовать этот значок. Выберите другое изображение или значок.';
 
   @override
   String get searchServiceEditorNoConfiguration =>
@@ -5763,6 +5922,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get displaySettingsPageAutoSwitchTopicsTitle => 'Автопереход к темам';
+
+  @override
+  String get desktopDisplaySettingsFullWidthChatTitle => 'Чат на всю ширину';
+
+  @override
+  String get desktopDisplaySettingsFullWidthChatSubtitle =>
+      'Растянуть сообщения и поле ввода на всю доступную ширину области чата.';
 
   @override
   String get desktopDisplaySettingsTopicPositionTitle => 'Положение тем';
@@ -6618,6 +6784,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Метапоисковик, уважающий приватность. Требуется собственный экземпляр; без отслеживания.';
 
   @override
+  String get searchProviderFourGetDescription =>
+      'Веб-поиск через публичный или самостоятельно размещённый экземпляр 4get с включённым API.';
+
+  @override
   String get searchProviderTavilyDescription =>
       'Поисковый API на базе ИИ, оптимизированный для LLM. Предоставляет качественные релевантные результаты.';
 
@@ -6657,6 +6827,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get searchServiceNameSearXNG => 'SearXNG';
+
+  @override
+  String get searchServiceNameFourGet => '4get';
 
   @override
   String get searchServiceNameLinkUp => 'LinkUp';
@@ -11788,7 +11961,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get workspaceToolHelpViewImage =>
-      'Позволить модели просмотреть изображение из рабочей области.';
+      'Позволяет модели просматривать изображения в рабочей области или изображения по публичным URL.';
 
   @override
   String get workspaceToolHelpWrite =>
@@ -16550,12 +16723,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get compressionRequests => 'Максимум запросов';
 
   @override
-  String get compressionReference =>
-      'Учитывать книги мира и историческую память';
+  String get compressionReference => 'Использовать справочные материалы';
 
   @override
   String get compressionReferenceHint =>
-      'Мировые книги сопоставляются только с историей, которая сжимается, с использованием снимков памяти того времени. Это нужно только для объяснения имён и правил — это не означает, что те события произошли или что персонаж уже о них знает.';
+      'Сводка может опираться на системный промпт ассистента, записи мировой книги, совпавшие с этой частью чата, и сохранённые на тот момент воспоминания. История чата определяет, что произошло и что знает каждый персонаж.';
+
+  @override
+  String get compressionInstructionInjections =>
+      'Учитывать внедрённые инструкции при сжатии';
+
+  @override
+  String get compressionInstructionInjectionsHint =>
+      'Отправлять модели, которая составляет сводку, включённые для этого чата карточки инструкций как справочный материал.';
 
   @override
   String get compressionToolReferences =>
@@ -17073,6 +17253,629 @@ class AppLocalizationsRu extends AppLocalizations {
   String get themePaletteCustom => 'Пользовательская';
 
   @override
+  String get compressionNativeImported =>
+      'Результат серверной обработки загружен';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      'Этот чат начинается с результата серверной обработки и последних реплик. Результат нельзя просмотреть или изменить как текст. Более ранние оригиналы остаются в исходном чате, и их нельзя восстановить отменой здесь.';
+
+  @override
+  String get compressionNativeOpenSource => 'Открыть исходный чат';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      'В этом чате нет оригиналов для загруженного результата серверной обработки. Вы можете продолжить использовать серверную обработку или вернуться в исходный чат, чтобы просмотреть оригиналы или создать текстовое резюме.';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      'Новый временный чат сохранит только полный результат серверной обработки и последние реплики. Когда вы покинете исходный временный чат, он и все неперенесённые оригиналы будут удалены и не смогут быть восстановлены здесь.';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      'В этом чате сохранены полный результат серверной обработки и оставленные последние реплики. Исходный чат больше недоступен. Оригиналы, не скопированные сюда, нельзя восстановить, а результат нельзя просмотреть или изменить как текст.';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => 'Модель изображений';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => 'Авто';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity =>
+      'Сложность изображения';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => 'По умолчанию';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => 'Низкая';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => 'Средняя';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => 'Высокая';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      'Управляет планированием изображения отдельно от рассуждений чата. «По умолчанию» использует поведение сервера и может наследовать уровень рассуждений чата.';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'Вход через ChatGPT может использовать другую модель изображений. Настройки модели и сложности зависят от поддержки сервера.';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      'Установите рассуждения чата в «Авто», а сложность изображения — в «По умолчанию», затем повторите генерацию изображения. Вход через ChatGPT может использовать другую модель изображений или отклонять явную сложность.';
+
+  @override
+  String get workspaceEnvNativeShellTitle => 'Оболочка по умолчанию';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      'Оставьте пустым для автоматического определения. Иначе укажите абсолютный путь к PowerShell, cmd или оболочке, поддерживающей -lc (например, bash, zsh или fish). Эта настройка применяется только к этому устройству.';
+
+  @override
+  String get workspaceEnvNativeShellInvalid =>
+      'Не удалось запустить эту оболочку. Проверьте абсолютный путь и поддерживаемый синтаксис команд.';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Оболочка недоступна';
+
+  @override
+  String get workspaceEnvNativeShellDetect => 'Определить снова';
+
+  @override
+  String get workspaceEnvNativeShellSave => 'Сохранить';
+
+  @override
+  String get desktopAutostartTitle => 'Запускать при входе';
+
+  @override
+  String get desktopAutostartDescription =>
+      'Запускать Kelivo при входе в систему на этом компьютере.';
+
+  @override
+  String get desktopAutostartHiddenTitle => 'Скрывать в трей при автозапуске';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      'Требуется автозапуск и значок в трее. При ручном запуске Kelivo окно всё равно отображается.';
+
+  @override
+  String get desktopAutostartUnsupported =>
+      'Автозапуск требует macOS 13 или новее.';
+
+  @override
+  String get desktopAutostartError =>
+      'Не удалось применить настройку автозапуска. Проверьте Kelivo в настройках автозагрузки или элементов входа системы и повторите попытку.';
+
+  @override
+  String get compressionOutputBudget => 'Общий лимит вывода (токены)';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      'Включает рассуждение и само резюме. Оставьте пустым, чтобы использовать длину резюме. Если рассуждение включено, этот лимит можно увеличить, не удлиняя резюме. Собственный лимит вывода модели по-прежнему действует.';
+
+  @override
+  String get responseOutputLimitReached =>
+      'Ответ обрезан: лимит вывода включает рассуждение. Увеличьте лимит вывода или уменьшите рассуждение, затем повторите попытку.';
+
+  @override
+  String responseContextLimitReached(int inputTokens, int contextWindow) {
+    return 'Ответ обрезан: этот запрос использовал $inputTokens входных токенов, что близко к лимиту контекста в $contextWindow токенов. Сократите контекст, затем повторите попытку.';
+  }
+
+  @override
+  String get responseRetryWithoutImages =>
+      'Повторить без изображений (сохранить оригиналы)';
+
+  @override
+  String get browserOperationTimeout => 'Тайм-аут операции';
+
+  @override
+  String get browserOperationTimeoutDescription =>
+      'Максимальное время ожидания команды браузера. После тайм-аута ассистент может проверить состояние страницы.';
+
+  @override
+  String browserOperationTimeoutSeconds(int seconds) {
+    return '$seconds с';
+  }
+
+  @override
+  String get browserErrObservationRequired =>
+      'Проверьте страницу перед продолжением: результат предыдущей операции не подтверждён.';
+
+  @override
+  String get storageAttachmentRetention => 'Автоочистка вложений';
+
+  @override
+  String get storageAttachmentRetentionDays => 'Дней до очистки';
+
+  @override
+  String get storageAttachmentRetentionImmediately => 'Очистить сразу';
+
+  @override
+  String get storageAttachmentRetentionHint =>
+      'После удаления сообщений или чатов автоматически удаляйте неиспользуемые изображения и файлы.';
+
+  @override
+  String get storageAttachmentUnused => 'Не используется';
+
+  @override
+  String storageAttachmentPending(String date) {
+    return 'Ожидает очистки · $date';
+  }
+
+  @override
+  String storageAttachmentConversations(String names) {
+    return 'Чаты: $names';
+  }
+
+  @override
+  String get storageAttachmentCleanUnused => 'Очистить неиспользуемые';
+
+  @override
+  String get storageAttachmentProtectedHint =>
+      'Файлы, которые ещё используются, будут сохранены.';
+
+  @override
+  String storageAttachmentDeleteConfirm(int count) {
+    return 'Удалить сейчас неиспользуемых файлов: $count? Файлы, которые всё ещё используются, будут сохранены.';
+  }
+
+  @override
+  String get storageAttachmentRetentionDelayed => 'Очистить позже';
+
+  @override
+  String get storageAttachmentRetentionInvalidDays =>
+      'Введите от 1 до 3650 дней.';
+
+  @override
+  String get storageAttachmentDetailsTitle => 'Информация о файле';
+
+  @override
+  String get compressionCarryTitle =>
+      'Также отправлять ваши прежние сообщения как есть';
+
+  @override
+  String get compressionCarryHint =>
+      'Из той части, которая становится сводкой, ваши собственные сообщения отправляются модели в том виде, как вы их написали, а не только в пересказе сводки.';
+
+  @override
+  String get compressionCarryCountLabel => 'Отправлять последние';
+
+  @override
+  String get compressionCarryUnit => 'сообщений';
+
+  @override
+  String get compressionCarryAll => 'Сколько поместится';
+
+  @override
+  String get compressionCarryAllHint =>
+      'Без фиксированного числа. Начинается с самых новых и идёт назад, пока не заполнится почти всё; если самое старое слишком длинное, отправляются только его начало и конец.';
+
+  @override
+  String get compressionCarryEarlier =>
+      'Также возвращать сообщения из прежних сводок';
+
+  @override
+  String get compressionCarryEarlierHint =>
+      'Ваши сообщения из частей, сжатых ранее, тоже можно включить.';
+
+  @override
+  String compressionCarryPreview(int count, int replyCount, String tokens) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count сообщения пользователя',
+      many: '$count сообщений пользователя',
+      few: '$count сообщения пользователя',
+      one: '$count сообщение пользователя',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      replyCount,
+      locale: localeName,
+      other: '$replyCount ответа',
+      many: '$replyCount ответов',
+      few: '$replyCount ответа',
+      one: '$replyCount ответ',
+    );
+    return '$_temp0 · $_temp1 · около $tokens токенов';
+  }
+
+  @override
+  String get compressionCarryNone =>
+      'В части, которая сворачивается в сводку, нет ваших сообщений.';
+
+  @override
+  String compressionCarryNotFit(int count) {
+    return '$count более старых сообщений не помещаются и не будут отправлены в этот раз.';
+  }
+
+  @override
+  String compressionCarryMoreRows(int count) {
+    return 'ещё $count';
+  }
+
+  @override
+  String get compressionCarryOverBudget =>
+      'Эти сообщения, вероятно, превысят вместимость текущей модели. Отправьте меньше или переключитесь на модель с большим контекстом.';
+
+  @override
+  String compressionCarryFitAction(int count) {
+    return 'Изменить на $count';
+  }
+
+  @override
+  String get compressionCarryTruncated =>
+      'Слишком длинное; отправляются только начало и конец';
+
+  @override
+  String get compressionCarryAutoToo => 'Автоматическое сжатие сделает так же.';
+
+  @override
+  String get compressionCarryNewChatText =>
+      'Изображения и файлы не переносятся в новый чат; переносится только текст.';
+
+  @override
+  String get compressionCarryServerKeeps =>
+      'Этот сервис при сжатии сам сохраняет ваши прежние сообщения.';
+
+  @override
+  String get contextDetailCarried => 'Отправлено как есть';
+
+  @override
+  String contextDetailCarriedCount(int count) {
+    return '$count ваших прежних сообщений';
+  }
+
+  @override
+  String get contextDetailServerKept => 'Сохранено сервисом';
+
+  @override
+  String get contextCarriedEditHint =>
+      'Это меняет только текст, отправляемый модели. Исходное сообщение в чате остаётся прежним.';
+
+  @override
+  String get contextCarriedEmpty =>
+      'Это не может быть пустым. Чтобы перестать отправлять, выберите «Не отправлять».';
+
+  @override
+  String get contextCarriedRemove => 'Не отправлять';
+
+  @override
+  String get contextCarriedRemoveConfirm =>
+      'Это больше не будет отправляться модели. Исходное сообщение в чате не затрагивается.';
+
+  @override
+  String get contextCarriedSourceDeleted =>
+      'Исходное сообщение удалено; остался только этот текст';
+
+  @override
+  String get compressionCarryReply => 'Также включить ответ';
+
+  @override
+  String compressionCarryReplyTokens(String tokens) {
+    return '+около $tokens';
+  }
+
+  @override
+  String get compressionCarryReplyInKept =>
+      'Ответ уже есть в сохранённых репликах';
+
+  @override
+  String get contextCarriedReplyLabel => 'Ответ';
+
+  @override
+  String get contextCarriedRemoveReply => 'Не отправлять ответ';
+
+  @override
+  String get imageEditorCancel => 'Отмена';
+
+  @override
+  String get imageEditorDone => 'Готово';
+
+  @override
+  String get imageEditorUndo => 'Отменить';
+
+  @override
+  String get imageEditorRedo => 'Повторить';
+
+  @override
+  String get imageEditorToolCrop => 'Обрезать';
+
+  @override
+  String get imageEditorToolDraw => 'Рисовать';
+
+  @override
+  String get imageEditorToolText => 'Текст';
+
+  @override
+  String get imageEditorToolMosaic => 'Мозаика';
+
+  @override
+  String get imageEditorPen => 'Перо';
+
+  @override
+  String get imageEditorArrow => 'Стрелка';
+
+  @override
+  String get imageEditorEraser => 'Ластик';
+
+  @override
+  String get imageEditorAspectFree => 'Свободно';
+
+  @override
+  String get imageEditorAspectOriginal => 'Оригинал';
+
+  @override
+  String get imageEditorRotate => 'Повернуть влево';
+
+  @override
+  String get imageEditorFlip => 'Отразить';
+
+  @override
+  String get imageEditorTextPlain => 'Обычный';
+
+  @override
+  String get imageEditorTextOutline => 'Обводка';
+
+  @override
+  String get imageEditorTextFill => 'Заливка';
+
+  @override
+  String get imageEditorAlign => 'Выравнивание';
+
+  @override
+  String get imageEditorMosaicBrush => 'Кисть';
+
+  @override
+  String get imageEditorMosaicRect => 'Рамка';
+
+  @override
+  String get imageEditorDiscardTitle => 'Отменить изменения?';
+
+  @override
+  String get imageEditorKeepEditing => 'Продолжить редактирование';
+
+  @override
+  String get imageEditorDiscard => 'Отменить изменения';
+
+  @override
+  String get imageEditorProcessFailed => 'Не удалось обработать изображение';
+
+  @override
+  String get imageEditorRetry => 'Повторить';
+
+  @override
+  String get imageEditorRemove => 'Удалить';
+
+  @override
+  String get imageEditorRestore => 'Восстановить';
+
+  @override
+  String imageEditorColor(String color) {
+    return 'Цвет $color';
+  }
+
+  @override
+  String get imageViewerPageEditButton => 'Редактировать';
+
+  @override
+  String get imageViewerPageFileSize => 'Размер изображения';
+
+  @override
+  String get compressionCarryModeCount => 'Последние сообщения';
+
+  @override
+  String get compressionCarryListTitle => 'Предпросмотр сообщений';
+
+  @override
+  String get compressionCarrySelectAllReplies => 'Выбрать все ответы';
+
+  @override
+  String get compressionCarryDeselectAllReplies =>
+      'Снять выбор со всех ответов';
+
+  @override
+  String get compressionCarryPairNotFit =>
+      'Это сообщение и ответ на него превышают оставшийся бюджет. Оба будут пропущены.';
+
+  @override
+  String compressionCarryImageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count изображения',
+      many: '$count изображений',
+      few: '$count изображения',
+      one: '$count изображение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String compressionCarryAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count вложения',
+      many: '$count вложений',
+      few: '$count вложения',
+      one: '$count вложение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get compressionCarryNoText => 'Нет текста сообщения';
+
+  @override
+  String get compressionCarryInvalidCount => 'Введите число от 1 до 10 000.';
+
+  @override
+  String get backupRunningInBackground =>
+      'Резервное копирование продолжится в фоновом режиме';
+
+  @override
+  String backupBackgroundFailed(String error) {
+    return 'Фоновое резервное копирование не удалось: $error';
+  }
+
+  @override
+  String get backupAutoEnableTitle =>
+      'Автоматически создавать резервную копию по расписанию';
+
+  @override
+  String get backupAutoEnableHint =>
+      'Когда наступает запланированное время, Kelivo создаёт резервную копию, пока приложение на переднем плане. Если приложение закрыто или остановлено, резервное копирование не продолжается и не возобновляется; при следующем открытии приложения выполняется одна полная резервная копия, если срок всё ещё наступил.';
+
+  @override
+  String get backupAutoDestinationTitle =>
+      'Место автоматического резервного копирования';
+
+  @override
+  String get backupAutoDestinationWebDav => 'WebDAV';
+
+  @override
+  String get backupAutoDestinationS3 => 'S3';
+
+  @override
+  String get backupAutoDestinationLocal => 'Локальная папка';
+
+  @override
+  String get backupAutoNeedRemoteHint => 'Сначала настройте WebDAV или S3.';
+
+  @override
+  String get backupAutoNeedDestinationHint =>
+      'Сначала настройте WebDAV или S3 либо выберите локальную папку.';
+
+  @override
+  String get backupAutoNeedFolderHint =>
+      'Сначала выберите папку для резервных копий.';
+
+  @override
+  String get backupAutoLocalFolderChoose => 'Выбрать папку…';
+
+  @override
+  String get backupAutoLocalFolderChange => 'Изменить папку';
+
+  @override
+  String get backupAutoLocalFolderInvalid =>
+      'Выберите папку вне собственного каталога данных приложения.';
+
+  @override
+  String get backupAutoLocalRetentionTitle => 'Хранить не более';
+
+  @override
+  String backupAutoLocalRetentionCount(int count) {
+    return '$count резервных копий';
+  }
+
+  @override
+  String get backupAutoLocalRetentionUnlimited => 'Без ограничений';
+
+  @override
+  String get backupAutoLocalNow =>
+      'Создать резервную копию в этой папке сейчас';
+
+  @override
+  String get backupAutoLocalDirUnavailable =>
+      'Не удаётся записать в выбранную папку. Проверьте, доступна ли она, или выберите другую. Kelivo не изменит сохранённое расположение самостоятельно.';
+
+  @override
+  String get backupAutoLocalDirPermission =>
+      'У вас нет разрешения на запись в выбранную папку. Выберите папку снова. Kelivo не изменит сохранённое расположение самостоятельно.';
+
+  @override
+  String get backupAutoLocalDirFull =>
+      'Недостаточно места на диске, поэтому резервное копирование не завершилось. Ваши предыдущие резервные копии сохранены.';
+
+  @override
+  String get backupAutoLocalBookmarkLost =>
+      'Kelivo не может получить доступ к выбранной папке. Выберите её снова. Сохранённое расположение не будет изменено автоматически.';
+
+  @override
+  String get backupAutoNextTitle =>
+      'Следующее автоматическое резервное копирование';
+
+  @override
+  String get backupAutoRememberPasswordTitle =>
+      'Запомнить пароль на этом устройстве?';
+
+  @override
+  String get backupAutoRememberPasswordMessage =>
+      'Запомните пароль на этом устройстве, чтобы автоматические резервные копии могли выполняться. Он хранится только на этом устройстве и никогда не загружается.';
+
+  @override
+  String get backupAutoRememberPasswordConfirm => 'Запомнить';
+
+  @override
+  String get backupAutoRememberPasswordDecline => 'Не сейчас';
+
+  @override
+  String get backupAutoRememberDeclined =>
+      'Автоматическое резервное копирование не включено. Напоминание всё равно придёт, когда наступит срок.';
+
+  @override
+  String get backupAutoKeychainUnavailable =>
+      'Kelivo не может получить доступ к системной связке ключей для пароля резервной копии. Вы по-прежнему можете создать резервную копию вручную.';
+
+  @override
+  String get backupAutoSucceeded =>
+      'Автоматическое резервное копирование завершено';
+
+  @override
+  String backupAutoFailed(String error) {
+    return 'Автоматическое резервное копирование не удалось: $error';
+  }
+
+  @override
+  String get backupAutoFailedPassword =>
+      'Автоматическое резервное копирование не удалось: неверный пароль.';
+
+  @override
+  String get backupReminderSidebarSubtitleAutoFailed =>
+      'Автоматическое резервное копирование не завершилось. Проверьте сеть или создайте резервную копию вручную.';
+
+  @override
+  String get backupEncryptionOnHintRemembered =>
+      'Резервные копии шифруются. Пароль сохранён на этом устройстве.';
+
+  @override
+  String get backupRememberPasswordOnDevice =>
+      'Запомнить пароль на этом устройстве';
+
+  @override
+  String get backupForgetDisablesAutomaticHint =>
+      'Если отключить эту функцию, автоматические резервные копии также будут отключены.';
+
+  @override
+  String get backupManualPasswordHint =>
+      'Введите пароль, заданный для зашифрованных резервных копий.';
+
+  @override
+  String get backupManualPasswordNotSaved =>
+      'Не удалось сохранить пароль на этом устройстве. Резервное копирование продолжится.';
+
+  @override
+  String get backupEncryptionChangePassword =>
+      'Изменить пароль резервной копии';
+
+  @override
+  String get backupMacKeychainNeedsUnlock =>
+      'macOS не удалось разблокировать связку ключей «login». Откройте «Связка ключей» (Keychain Access), разблокируйте «login», затем повторите попытку в Kelivo.';
+
+  @override
+  String get backupMacOpenKeychainAccess => 'Открыть «Связку ключей»';
+
+  @override
+  String get backupMacKeychainAccessDenied =>
+      'macOS запретила доступ к паролю резервной копии. Если появится системный запрос, разрешите Kelivo доступ к нему. Также можно проверить связку ключей по умолчанию и разрешения элемента пароля в «Связке ключей».';
+
+  @override
   String get settingsPageExternalAutoSend => 'Разрешить внешнюю автоотправку';
 
   @override
@@ -17287,596 +18090,4 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get deepLinkGenNewOnlyHint =>
       'Ассистент и временный чат применяются только к новому чату.';
-
-  @override
-  String get compressionNativeImportedDescription =>
-      'Этот чат начинается с результата серверной обработки и последних реплик. Результат нельзя просмотреть или изменить как текст. Более ранние оригиналы остаются в исходном чате, и их нельзя восстановить отменой здесь.';
-
-  @override
-  String get compressionNativeOpenSource => 'Открыть исходный чат';
-
-  @override
-  String get compressionNativeOriginalsUnavailable =>
-      'В этом чате нет оригиналов для загруженного результата серверной обработки. Вы можете продолжить использовать серверную обработку или вернуться в исходный чат, чтобы просмотреть оригиналы или создать текстовое резюме.';
-
-  @override
-  String get compressionNativeTemporaryCopyHint =>
-      'Новый временный чат сохранит только полный результат серверной обработки и последние реплики. Когда вы покинете исходный временный чат, он и все неперенесённые оригиналы будут удалены и не смогут быть восстановлены здесь.';
-
-  @override
-  String get compressionNativeSourceUnavailable =>
-      'В этом чате сохранены полный результат серверной обработки и оставленные последние реплики. Исходный чат больше недоступен. Оригиналы, не скопированные сюда, нельзя восстановить, а результат нельзя просмотреть или изменить как текст.';
-
-  @override
-  String get modelDetailSheetImageGenerationModel => 'Модель изображений';
-
-  @override
-  String get modelDetailSheetImageGenerationAuto => 'Авто';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexity =>
-      'Сложность изображения';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityDefault => 'По умолчанию';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityLow => 'Низкая';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityMedium => 'Средняя';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityHigh => 'Высокая';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityDescription =>
-      'Управляет планированием изображения отдельно от рассуждений чата. «По умолчанию» использует поведение сервера и может наследовать уровень рассуждений чата.';
-
-  @override
-  String get modelDetailSheetImageGenerationOAuthHint =>
-      'Вход через ChatGPT может использовать другую модель изображений. Настройки модели и сложности зависят от поддержки сервера.';
-
-  @override
-  String get imageGenerationComplexityErrorHint =>
-      'Установите рассуждения чата в «Авто», а сложность изображения — в «По умолчанию», затем повторите генерацию изображения. Вход через ChatGPT может использовать другую модель изображений или отклонять явную сложность.';
-
-  @override
-  String get workspaceEnvNativeShellTitle => 'Оболочка по умолчанию';
-
-  @override
-  String get workspaceEnvNativeShellHint =>
-      'Оставьте пустым для автоматического определения. Иначе укажите абсолютный путь к PowerShell, cmd или оболочке, поддерживающей -lc (например, bash, zsh или fish). Эта настройка применяется только к этому устройству.';
-
-  @override
-  String get workspaceEnvNativeShellInvalid =>
-      'Не удалось запустить эту оболочку. Проверьте абсолютный путь и поддерживаемый синтаксис команд.';
-
-  @override
-  String get workspaceEnvNativeShellUnavailable => 'Оболочка недоступна';
-
-  @override
-  String get workspaceEnvNativeShellDetect => 'Определить снова';
-
-  @override
-  String get workspaceEnvNativeShellSave => 'Сохранить';
-
-  @override
-  String get desktopAutostartTitle => 'Запускать при входе';
-
-  @override
-  String get desktopAutostartDescription =>
-      'Запускать Kelivo при входе в систему на этом компьютере.';
-
-  @override
-  String get desktopAutostartHiddenTitle => 'Скрывать в трей при автозапуске';
-
-  @override
-  String get desktopAutostartHiddenDescription =>
-      'Требуется автозапуск и значок в трее. При ручном запуске Kelivo окно всё равно отображается.';
-
-  @override
-  String get desktopAutostartUnsupported =>
-      'Автозапуск требует macOS 13 или новее.';
-
-  @override
-  String get desktopAutostartError =>
-      'Не удалось применить настройку автозапуска. Проверьте Kelivo в настройках автозагрузки или элементов входа системы и повторите попытку.';
-
-  @override
-  String get compressionOutputBudget => 'Общий лимит вывода (токены)';
-
-  @override
-  String get compressionOutputBudgetHint =>
-      'Включает рассуждение и само резюме. Оставьте пустым, чтобы использовать длину резюме. Если рассуждение включено, этот лимит можно увеличить, не удлиняя резюме. Собственный лимит вывода модели по-прежнему действует.';
-
-  @override
-  String get responseOutputLimitReached =>
-      'Ответ обрезан: лимит вывода включает рассуждение. Увеличьте лимит вывода или уменьшите рассуждение, затем повторите попытку.';
-
-  @override
-  String responseContextLimitReached(int inputTokens, int contextWindow) {
-    return 'Ответ обрезан: этот запрос использовал $inputTokens входных токенов, что близко к лимиту контекста в $contextWindow токенов. Сократите контекст, затем повторите попытку.';
-  }
-
-  @override
-  String get responseRetryWithoutImages =>
-      'Повторить без изображений (сохранить оригиналы)';
-
-  @override
-  String get browserOperationTimeout => 'Тайм-аут операции';
-
-  @override
-  String get browserOperationTimeoutDescription =>
-      'Максимальное время ожидания команды браузера. После тайм-аута ассистент может проверить состояние страницы.';
-
-  @override
-  String browserOperationTimeoutSeconds(int seconds) {
-    return '$seconds с';
-  }
-
-  @override
-  String get browserErrObservationRequired =>
-      'Проверьте страницу перед продолжением: результат предыдущей операции не подтверждён.';
-
-  @override
-  String get storageAttachmentRetention => 'Автоочистка вложений';
-
-  @override
-  String get storageAttachmentRetentionDays => 'Дней до очистки';
-
-  @override
-  String get storageAttachmentRetentionImmediately => 'Очистить сразу';
-
-  @override
-  String get storageAttachmentRetentionHint =>
-      'После удаления сообщений или чатов автоматически удаляйте неиспользуемые изображения и файлы.';
-
-  @override
-  String get storageAttachmentUnused => 'Не используется';
-
-  @override
-  String storageAttachmentPending(String date) {
-    return 'Ожидает очистки · $date';
-  }
-
-  @override
-  String storageAttachmentConversations(String names) {
-    return 'Чаты: $names';
-  }
-
-  @override
-  String get storageAttachmentCleanUnused => 'Очистить неиспользуемые';
-
-  @override
-  String get storageAttachmentProtectedHint =>
-      'Файлы, которые ещё используются, будут сохранены.';
-
-  @override
-  String storageAttachmentDeleteConfirm(int count) {
-    return 'Удалить сейчас неиспользуемых файлов: $count? Файлы, которые всё ещё используются, будут сохранены.';
-  }
-
-  @override
-  String get storageAttachmentRetentionDelayed => 'Очистить позже';
-
-  @override
-  String get storageAttachmentRetentionInvalidDays =>
-      'Введите от 1 до 3650 дней.';
-
-  @override
-  String get storageAttachmentDetailsTitle => 'Информация о файле';
-
-  @override
-  String get compressionCarryTitle =>
-      'Также отправлять ваши прежние сообщения как есть';
-
-  @override
-  String get compressionCarryHint =>
-      'Из той части, которая становится сводкой, ваши собственные сообщения отправляются модели в том виде, как вы их написали, а не только в пересказе сводки.';
-
-  @override
-  String get compressionCarryCountLabel => 'Отправлять последние';
-
-  @override
-  String get compressionCarryUnit => 'сообщений';
-
-  @override
-  String get compressionCarryAll => 'Сколько поместится';
-
-  @override
-  String get compressionCarryAllHint =>
-      'Без фиксированного числа. Начинается с самых новых и идёт назад, пока не заполнится почти всё; если самое старое слишком длинное, отправляются только его начало и конец.';
-
-  @override
-  String get compressionCarryEarlier =>
-      'Также возвращать сообщения из прежних сводок';
-
-  @override
-  String get compressionCarryEarlierHint =>
-      'Ваши сообщения из частей, сжатых ранее, тоже можно включить.';
-
-  @override
-  String compressionCarryPreview(int count, String tokens) {
-    return 'Будет отправлено $count · около $tokens токенов';
-  }
-
-  @override
-  String get compressionCarryNone =>
-      'В части, которая сворачивается в сводку, нет ваших сообщений.';
-
-  @override
-  String compressionCarryNotFit(int count) {
-    return '$count более старых сообщений не помещаются и не будут отправлены в этот раз.';
-  }
-
-  @override
-  String compressionCarryMoreRows(int count) {
-    return 'ещё $count';
-  }
-
-  @override
-  String get compressionCarryOverBudget =>
-      'Эти сообщения, вероятно, превысят вместимость текущей модели. Отправьте меньше или переключитесь на модель с большим контекстом.';
-
-  @override
-  String compressionCarryFitAction(int count) {
-    return 'Изменить на $count';
-  }
-
-  @override
-  String get compressionCarryTruncated =>
-      'Слишком длинное; отправляются только начало и конец';
-
-  @override
-  String get compressionCarryAutoToo => 'Автоматическое сжатие сделает так же.';
-
-  @override
-  String get compressionCarryNewChatText =>
-      'Изображения и файлы не переносятся в новый чат; переносится только текст.';
-
-  @override
-  String get compressionCarryServerKeeps =>
-      'Этот сервис при сжатии сам сохраняет ваши прежние сообщения.';
-
-  @override
-  String get contextDetailCarried => 'Отправлено как есть';
-
-  @override
-  String contextDetailCarriedCount(int count) {
-    return '$count ваших прежних сообщений';
-  }
-
-  @override
-  String get contextDetailServerKept => 'Сохранено сервисом';
-
-  @override
-  String get contextCarriedEditHint =>
-      'Это меняет только текст, отправляемый модели. Исходное сообщение в чате остаётся прежним.';
-
-  @override
-  String get contextCarriedEmpty =>
-      'Это не может быть пустым. Чтобы перестать отправлять, выберите «Не отправлять».';
-
-  @override
-  String get contextCarriedRemove => 'Не отправлять';
-
-  @override
-  String get contextCarriedRemoveConfirm =>
-      'Это больше не будет отправляться модели. Исходное сообщение в чате не затрагивается.';
-
-  @override
-  String get contextCarriedSourceDeleted =>
-      'Исходное сообщение удалено; остался только этот текст';
-
-  @override
-  String get compressionCarryReply => 'Также включить ответ';
-
-  @override
-  String compressionCarryReplyTokens(String tokens) {
-    return '+около $tokens';
-  }
-
-  @override
-  String get compressionCarryReplyInKept =>
-      'Ответ уже есть в сохранённых репликах';
-
-  @override
-  String get contextCarriedReplyLabel => 'Ответ';
-
-  @override
-  String get contextCarriedRemoveReply => 'Не отправлять ответ';
-
-  @override
-  String get imageEditorCancel => 'Отмена';
-
-  @override
-  String get imageEditorDone => 'Готово';
-
-  @override
-  String get imageEditorUndo => 'Отменить';
-
-  @override
-  String get imageEditorRedo => 'Повторить';
-
-  @override
-  String get imageEditorToolCrop => 'Обрезать';
-
-  @override
-  String get imageEditorToolDraw => 'Рисовать';
-
-  @override
-  String get imageEditorToolText => 'Текст';
-
-  @override
-  String get imageEditorToolMosaic => 'Мозаика';
-
-  @override
-  String get imageEditorPen => 'Перо';
-
-  @override
-  String get imageEditorArrow => 'Стрелка';
-
-  @override
-  String get imageEditorEraser => 'Ластик';
-
-  @override
-  String get imageEditorAspectFree => 'Свободно';
-
-  @override
-  String get imageEditorAspectOriginal => 'Оригинал';
-
-  @override
-  String get imageEditorRotate => 'Повернуть влево';
-
-  @override
-  String get imageEditorFlip => 'Отразить';
-
-  @override
-  String get imageEditorTextPlain => 'Обычный';
-
-  @override
-  String get imageEditorTextOutline => 'Обводка';
-
-  @override
-  String get imageEditorTextFill => 'Заливка';
-
-  @override
-  String get imageEditorAlign => 'Выравнивание';
-
-  @override
-  String get imageEditorMosaicBrush => 'Кисть';
-
-  @override
-  String get imageEditorMosaicRect => 'Рамка';
-
-  @override
-  String get imageEditorDiscardTitle => 'Отменить изменения?';
-
-  @override
-  String get imageEditorKeepEditing => 'Продолжить редактирование';
-
-  @override
-  String get imageEditorDiscard => 'Отменить изменения';
-
-  @override
-  String get imageEditorProcessFailed => 'Не удалось обработать изображение';
-
-  @override
-  String get imageEditorRetry => 'Повторить';
-
-  @override
-  String get imageEditorRemove => 'Удалить';
-
-  @override
-  String get imageEditorRestore => 'Восстановить';
-
-  @override
-  String imageEditorColor(String color) {
-    return 'Цвет $color';
-  }
-
-  @override
-  String get imageViewerPageEditButton => 'Редактировать';
-
-  @override
-  String get imageViewerPageFileSize => 'Размер изображения';
-
-  @override
-  String get compressionCarryModeCount => 'Последние сообщения';
-
-  @override
-  String get compressionCarryListTitle => 'Предпросмотр сообщений';
-
-  @override
-  String compressionCarryImageCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count изображения',
-      many: '$count изображений',
-      few: '$count изображения',
-      one: '$count изображение',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String compressionCarryAttachmentCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count вложения',
-      many: '$count вложений',
-      few: '$count вложения',
-      one: '$count вложение',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get compressionCarryNoText => 'Нет текста сообщения';
-
-  @override
-  String get compressionCarryInvalidCount => 'Введите число от 1 до 10 000.';
-
-  @override
-  String get backupRunningInBackground =>
-      'Резервное копирование продолжится в фоновом режиме';
-
-  @override
-  String backupBackgroundFailed(String error) {
-    return 'Фоновое резервное копирование не удалось: $error';
-  }
-
-  @override
-  String get backupAutoEnableTitle =>
-      'Автоматически создавать резервную копию по расписанию';
-
-  @override
-  String get backupAutoEnableHint =>
-      'Когда наступает запланированное время, Kelivo создаёт резервную копию, пока приложение на переднем плане. Если приложение закрыто или остановлено, резервное копирование не продолжается и не возобновляется; при следующем открытии приложения выполняется одна полная резервная копия, если срок всё ещё наступил.';
-
-  @override
-  String get backupAutoDestinationTitle =>
-      'Место автоматического резервного копирования';
-
-  @override
-  String get backupAutoDestinationWebDav => 'WebDAV';
-
-  @override
-  String get backupAutoDestinationS3 => 'S3';
-
-  @override
-  String get backupAutoDestinationLocal => 'Локальная папка';
-
-  @override
-  String get backupAutoNeedRemoteHint => 'Сначала настройте WebDAV или S3.';
-
-  @override
-  String get backupAutoNeedDestinationHint =>
-      'Сначала настройте WebDAV или S3 либо выберите локальную папку.';
-
-  @override
-  String get backupAutoNeedFolderHint =>
-      'Сначала выберите папку для резервных копий.';
-
-  @override
-  String get backupAutoLocalFolderChoose => 'Выбрать папку…';
-
-  @override
-  String get backupAutoLocalFolderChange => 'Изменить папку';
-
-  @override
-  String get backupAutoLocalFolderInvalid =>
-      'Выберите папку вне собственного каталога данных приложения.';
-
-  @override
-  String get backupAutoLocalRetentionTitle => 'Хранить не более';
-
-  @override
-  String backupAutoLocalRetentionCount(int count) {
-    return '$count резервных копий';
-  }
-
-  @override
-  String get backupAutoLocalRetentionUnlimited => 'Без ограничений';
-
-  @override
-  String get backupAutoLocalNow =>
-      'Создать резервную копию в этой папке сейчас';
-
-  @override
-  String get backupAutoLocalDirUnavailable =>
-      'Не удаётся записать в выбранную папку. Проверьте, доступна ли она, или выберите другую. Kelivo не изменит сохранённое расположение самостоятельно.';
-
-  @override
-  String get backupAutoLocalDirPermission =>
-      'У вас нет разрешения на запись в выбранную папку. Выберите папку снова. Kelivo не изменит сохранённое расположение самостоятельно.';
-
-  @override
-  String get backupAutoLocalDirFull =>
-      'Недостаточно места на диске, поэтому резервное копирование не завершилось. Ваши предыдущие резервные копии сохранены.';
-
-  @override
-  String get backupAutoLocalBookmarkLost =>
-      'Kelivo не может получить доступ к выбранной папке. Выберите её снова. Сохранённое расположение не будет изменено автоматически.';
-
-  @override
-  String get backupAutoNextTitle =>
-      'Следующее автоматическое резервное копирование';
-
-  @override
-  String get backupAutoRememberPasswordTitle =>
-      'Запомнить пароль на этом устройстве?';
-
-  @override
-  String get backupAutoRememberPasswordMessage =>
-      'Запомните пароль на этом устройстве, чтобы автоматические резервные копии могли выполняться. Он хранится только на этом устройстве и никогда не загружается.';
-
-  @override
-  String get backupAutoRememberPasswordConfirm => 'Запомнить';
-
-  @override
-  String get backupAutoRememberPasswordDecline => 'Не сейчас';
-
-  @override
-  String get backupAutoRememberDeclined =>
-      'Автоматическое резервное копирование не включено. Напоминание всё равно придёт, когда наступит срок.';
-
-  @override
-  String get backupAutoKeychainUnavailable =>
-      'Kelivo не может получить доступ к системной связке ключей для пароля резервной копии. Вы по-прежнему можете создать резервную копию вручную.';
-
-  @override
-  String get backupAutoSucceeded =>
-      'Автоматическое резервное копирование завершено';
-
-  @override
-  String backupAutoFailed(String error) {
-    return 'Автоматическое резервное копирование не удалось: $error';
-  }
-
-  @override
-  String get backupAutoFailedPassword =>
-      'Автоматическое резервное копирование не удалось: неверный пароль.';
-
-  @override
-  String get backupReminderSidebarSubtitleAutoFailed =>
-      'Автоматическое резервное копирование не завершилось. Проверьте сеть или создайте резервную копию вручную.';
-
-  @override
-  String get backupEncryptionOnHintRemembered =>
-      'Резервные копии шифруются. Пароль сохранён на этом устройстве.';
-
-  @override
-  String get backupRememberPasswordOnDevice =>
-      'Запомнить пароль на этом устройстве';
-
-  @override
-  String get backupForgetDisablesAutomaticHint =>
-      'Если отключить эту функцию, автоматические резервные копии также будут отключены.';
-
-  @override
-  String get backupManualPasswordHint =>
-      'Введите пароль, заданный для зашифрованных резервных копий.';
-
-  @override
-  String get backupManualPasswordNotSaved =>
-      'Не удалось сохранить пароль на этом устройстве. Резервное копирование продолжится.';
-
-  @override
-  String get backupEncryptionChangePassword =>
-      'Изменить пароль резервной копии';
-
-  @override
-  String get backupMacKeychainNeedsUnlock =>
-      'macOS не удалось разблокировать связку ключей «login». Откройте «Связка ключей» (Keychain Access), разблокируйте «login», затем повторите попытку в Kelivo.';
-
-  @override
-  String get backupMacOpenKeychainAccess => 'Открыть «Связку ключей»';
-
-  @override
-  String get backupMacKeychainAccessDenied =>
-      'macOS запретила доступ к паролю резервной копии. Если появится системный запрос, разрешите Kelivo доступ к нему. Также можно проверить связку ключей по умолчанию и разрешения элемента пароля в «Связке ключей».';
 }

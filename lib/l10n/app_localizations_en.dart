@@ -145,6 +145,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageSpaceCopyErrorDetails => 'Copy error details';
 
   @override
+  String get storageAttachmentChecking => 'Checking attachment usage…';
+
+  @override
+  String get storageAttachmentCheckFailed =>
+      'Could not check attachment usage. Refresh to try again.';
+
+  @override
   String get storageSpaceCopyErrorFailed =>
       'Could not copy the error details. Please try again.';
 
@@ -1717,6 +1724,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupPageFilesLabel => 'Files and Images';
 
   @override
+  String get backupPageSettingsSaveFailed =>
+      'Could not save the backup settings. Please try again.';
+
+  @override
   String get backupPageScopeTitle => 'Backup and import content';
 
   @override
@@ -2221,6 +2232,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupPageImportFromOtherApps => 'Import from Other Apps';
 
   @override
+  String get backupPageImportFromOtherAppsSubtitle =>
+      'Newer Chatbox and Cherry Studio 2.x backups, plus ChatGPT, Claude, DeepSeek, Gemini, Grok, Open WebUI, NextChat, and LobeChat. Converts locally in your browser into a Kelivo backup; the file is not uploaded.';
+
+  @override
+  String get backupPageOpenImportToolbox => 'Open Toolbox';
+
+  @override
+  String backupPageImportToolboxOpenFailed(String url) {
+    return 'Couldn’t open the browser. Open this URL yourself: $url';
+  }
+
+  @override
+  String get backupPageToolboxImportMergeOnlyHint =>
+      'This file was converted by the official toolbox. It will be merged into your existing data and will not replace chats or assistants already on this device.';
+
+  @override
   String get backupPageNotSupportedYet => 'Not supported yet';
 
   @override
@@ -2306,7 +2333,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String backupPageCherryStudioUnsupportedBackupVersion(String version) {
-    return 'This backup uses Cherry Studio format version $version, which Kelivo cannot import yet. Export from Cherry Studio v1 instead, or wait for a Kelivo update that supports Cherry Studio v2 backups.';
+    return 'This is a Cherry Studio 2.x backup (format version $version) and can’t be imported in the app directly. Convert it with the official toolbox into a Kelivo backup, then use Import Backup File and choose Merge. Conversion happens in your browser; the file is not uploaded.';
+  }
+
+  @override
+  String backupPageChatboxUnsupportedBackupVersion(String version) {
+    return 'This is a newer Chatbox backup (format version $version) and can’t be imported in the app directly. Convert it with the official toolbox into a Kelivo backup, then use Import Backup File and choose Merge. Conversion happens in your browser; the file is not uploaded.';
   }
 
   @override
@@ -3460,9 +3492,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contextUsageUnavailable => 'Usage isn’t available right now.';
 
   @override
+  String contextUsagePartialSummary(String tokens) {
+    return 'Estimated $tokens, plus unknown server-side usage';
+  }
+
   @override
+  String get contextUsageBucketNativeCompaction => 'Server-side compression';
+
   @override
+  String get contextUsageUnknownTokens => 'Unknown';
+
   @override
+  String contextUsageLastRequestInput(String tokens) {
+    return 'Last amount actually sent to the model: $tokens';
+  }
+
   @override
   String get contextUsageStateNone => 'No data yet';
 
@@ -4246,6 +4290,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Send http(s) image links as-is; when off, remote links are dropped and only local images are sent';
 
   @override
+  String get modelSpecFormResponseSpeedTiers => 'Response speed tiers';
+
+  @override
+  String get modelSpecFormResponseSpeedTiersSubtitle =>
+      'Customize which acceleration tiers this model offers in chats. Clear both to offer only Standard.';
+
+  @override
   String get modelSpecFormPromptCacheControl => 'Prompt cache marker';
 
   @override
@@ -4460,6 +4511,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerDetailPageClaudePromptCachingTtl1h => '1 hour';
 
   @override
+  String get providerBalanceAutoRefresh => 'Automatic balance refresh';
+
+  @override
+  String get providerBalanceScopeProvider => 'This provider';
+
+  @override
+  String get providerBalanceScopeGlobal => 'Global defaults';
+
+  @override
+  String get providerBalanceInterval => 'Timed refresh';
+
+  @override
+  String get providerBalanceRefreshOnReply => 'Refresh after replies';
+
+  @override
+  String providerBalanceFollowDefault(String value) {
+    return 'Default · $value';
+  }
+
+  @override
+  String get providerBalanceRefreshOff => 'Off';
+
+  @override
+  String get providerBalanceRefreshOn => 'On';
+
+  @override
+  String providerBalanceRefreshMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes',
+      one: '1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get providerBalanceRefreshHour => '1 hour';
+
+  @override
+  String get providerBalanceCustomInterval => 'Custom interval…';
+
+  @override
+  String get providerBalanceIntervalMinutes => 'Interval in minutes';
+
+  @override
+  String get providerBalanceRefreshNow => 'Refresh balance now';
+
+  @override
+  String providerBalanceLastUpdated(String date, String time) {
+    return 'Last updated $date at $time';
+  }
+
+  @override
   String get providerDetailPageBalanceTitle => 'Account Balance';
 
   @override
@@ -4493,11 +4598,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerDetailPageBalanceQuerying => 'Checking...';
 
   @override
-  String get providerDetailPageBalanceResetDefaultsButton => 'Reset';
+  String get providerDetailPageBalanceResetDefaultsButton =>
+      'Restore default balance settings';
 
   @override
-  String get providerDetailPageBalanceResetDefaultsTooltip =>
-      'Reset balance settings';
+  String get providerDetailPageBalanceResetConfirmMessage =>
+      'This will replace this provider’s custom balance request settings, restore the default state of its balance switch, and make automatic refresh follow the global settings.';
+
+  @override
+  String get providerDetailPageBalanceResetConfirmButton => 'Restore defaults';
 
   @override
   String providerDetailPageBalanceResult(String value) {
@@ -4853,6 +4962,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerDetailPageModelsTitle => 'Models';
 
   @override
+  String get providerDetailPageReorderModels => 'Reorder models';
+
+  @override
   String get providerModelsGetButton => 'Get';
 
   @override
@@ -4984,6 +5096,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get miniMapScrollToBottomTooltip => 'Scroll to bottom';
+
+  @override
+  String get miniMapSearchHint => 'Search minimap';
+
+  @override
+  String miniMapSearchMatchCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count matches',
+      one: '1 match',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get miniMapSearchNoResults => 'No matching messages';
+
+  @override
+  String get miniMapSearchFailed => 'Couldn’t search messages';
 
   @override
   String get conversationFindHint => 'Find';
@@ -5118,10 +5250,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'Region (optional, default: us-en)';
 
   @override
+  String get searchServicesFourGetUrlInvalid =>
+      'Enter an HTTP or HTTPS base URL.';
+
+  @override
+  String get searchServicesFourGetScraperOptional =>
+      'Upstream engine (optional)';
+
+  @override
+  String get searchServicesFourGetPassOptional => 'Pass cookie (optional)';
+
+  @override
+  String get searchServicesFourGetPassHelp =>
+      'If the instance requires a CAPTCHA, complete it and paste the value of the pass cookie.';
+
+  @override
   String get searchServiceEditorProviderTypeTitle => 'Search provider';
 
   @override
   String get searchServiceEditorConfigurationTitle => 'Configuration';
+
+  @override
+  String get searchServiceEditorChangeIcon => 'Change icon';
+
+  @override
+  String get searchServiceEditorIconFailed =>
+      'Could not use this icon. Choose another image or icon.';
 
   @override
   String get searchServiceEditorNoConfiguration =>
@@ -5679,6 +5833,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get displaySettingsPageAutoSwitchTopicsTitle =>
       'Auto switch to Topics';
+
+  @override
+  String get desktopDisplaySettingsFullWidthChatTitle => 'Full-width chat';
+
+  @override
+  String get desktopDisplaySettingsFullWidthChatSubtitle =>
+      'Expand messages and the input box to fill the chat area.';
 
   @override
   String get desktopDisplaySettingsTopicPositionTitle => 'Topic position';
@@ -6519,6 +6680,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Privacy-respecting metasearch engine. Self-hosted instance required; no tracking.';
 
   @override
+  String get searchProviderFourGetDescription =>
+      'Web search through a public or self-hosted 4get instance with the API enabled.';
+
+  @override
   String get searchProviderTavilyDescription =>
       'AI search API optimized for LLMs. Provides high-quality, relevant results.';
 
@@ -6558,6 +6723,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchServiceNameSearXNG => 'SearXNG';
+
+  @override
+  String get searchServiceNameFourGet => '4get';
 
   @override
   String get searchServiceNameLinkUp => 'LinkUp';
@@ -11622,7 +11790,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceToolHelpViewImage =>
-      'Let the model inspect an image from the workspace.';
+      'Let the model inspect workspace images or images at public URLs.';
 
   @override
   String get workspaceToolHelpWrite =>
@@ -16269,12 +16437,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get compressionRequests => 'Maximum requests';
 
   @override
-  String get compressionReference =>
-      'Reference world books and historical memory';
+  String get compressionReference => 'Use background references';
 
   @override
   String get compressionReferenceHint =>
-      'World books are matched only against the history being compressed, using memory snapshots from that time. This is only to explain names and rules — it doesn’t mean those events happened, or that a character already knows them.';
+      'The summary can draw on the assistant’s system prompt, world book entries matched to this part of the chat, and memories saved at the time. The chat history establishes what happened and what each character knows.';
+
+  @override
+  String get compressionInstructionInjections =>
+      'Use instruction injections as references';
+
+  @override
+  String get compressionInstructionInjectionsHint =>
+      'Send the instruction cards enabled for this chat to the summary model as background references.';
 
   @override
   String get compressionToolReferences =>
@@ -16791,6 +16966,611 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themePaletteCustom => 'Custom';
 
   @override
+  String get compressionNativeImported => 'Server-side compression loaded';
+
+  @override
+  String get compressionNativeImportedDescription =>
+      'This chat starts with the server-side compressed result and the most recent turns. The result can’t be viewed or edited as text. Earlier originals remain in the original chat and can’t be restored by undoing here.';
+
+  @override
+  String get compressionNativeOpenSource => 'Open original chat';
+
+  @override
+  String get compressionNativeOriginalsUnavailable =>
+      'This chat has no originals for the loaded server-side result. You can keep using server-side compression, or go back to the original chat to view the originals or create a text summary.';
+
+  @override
+  String get compressionNativeTemporaryCopyHint =>
+      'The new temporary chat only keeps the complete server-side result and recent turns. When you leave the original temporary chat, it and any originals not carried over are deleted and can’t be restored here.';
+
+  @override
+  String get compressionNativeSourceUnavailable =>
+      'This chat has the complete server-side result and the recent turns you kept. The original chat is no longer available. Originals not copied here can’t be restored, and the result can’t be viewed or edited as text.';
+
+  @override
+  String get modelDetailSheetImageGenerationModel => 'Image model';
+
+  @override
+  String get modelDetailSheetImageGenerationAuto => 'Auto';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexity => 'Image complexity';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDefault => 'Default';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityLow => 'Low';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityMedium => 'Medium';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityHigh => 'High';
+
+  @override
+  String get modelDetailSheetImageGenerationComplexityDescription =>
+      'Controls image planning separately from chat reasoning. Default uses server behavior and may inherit chat reasoning.';
+
+  @override
+  String get modelDetailSheetImageGenerationOAuthHint =>
+      'ChatGPT sign-in may use a different image model. Model and complexity settings depend on server support.';
+
+  @override
+  String get imageGenerationComplexityErrorHint =>
+      'Set chat reasoning to Auto and image complexity to Default, then retry image generation. ChatGPT sign-in may use a different image model or reject explicit complexity.';
+
+  @override
+  String get workspaceEnvNativeShellTitle => 'Default shell';
+
+  @override
+  String get workspaceEnvNativeShellHint =>
+      'Leave empty for automatic detection. Otherwise, enter the absolute path to PowerShell, cmd, or a shell that supports -lc (such as bash, zsh, or fish). This setting applies only to this device.';
+
+  @override
+  String get workspaceEnvNativeShellInvalid =>
+      'Could not start this shell. Check its absolute path and supported command syntax.';
+
+  @override
+  String get workspaceEnvNativeShellUnavailable => 'Shell unavailable';
+
+  @override
+  String get workspaceEnvNativeShellDetect => 'Detect again';
+
+  @override
+  String get workspaceEnvNativeShellSave => 'Save';
+
+  @override
+  String get desktopAutostartTitle => 'Launch at startup';
+
+  @override
+  String get desktopAutostartDescription =>
+      'Start Kelivo when you sign in to this computer.';
+
+  @override
+  String get desktopAutostartHiddenTitle => 'Hide to tray on automatic startup';
+
+  @override
+  String get desktopAutostartHiddenDescription =>
+      'Requires launch at startup and the tray icon. Opening Kelivo manually still shows the window.';
+
+  @override
+  String get desktopAutostartUnsupported =>
+      'Launch at startup requires macOS 13 or later.';
+
+  @override
+  String get desktopAutostartError =>
+      'Could not apply the startup setting. Check this app in your system startup or login-item settings and try again.';
+
+  @override
+  String get compressionOutputBudget => 'Total output limit (tokens)';
+
+  @override
+  String get compressionOutputBudgetHint =>
+      'Includes thinking and the summary itself. Leave blank to use the summary length. If thinking is on, you can raise this limit without making the summary longer. The model’s own output limit still applies.';
+
+  @override
+  String get responseOutputLimitReached =>
+      'Response truncated: the output limit includes reasoning. Increase the output limit or reduce reasoning before retrying.';
+
+  @override
+  String responseContextLimitReached(int inputTokens, int contextWindow) {
+    return 'Response truncated: this request used $inputTokens input tokens, close to the $contextWindow-token context limit. Shorten the context before retrying.';
+  }
+
+  @override
+  String get responseRetryWithoutImages =>
+      'Retry without images (keep originals)';
+
+  @override
+  String get browserOperationTimeout => 'Operation timeout';
+
+  @override
+  String get browserOperationTimeoutDescription =>
+      'Maximum wait for a browser command. The assistant can check the page after a timeout.';
+
+  @override
+  String browserOperationTimeoutSeconds(int seconds) {
+    return '$seconds seconds';
+  }
+
+  @override
+  String get browserErrObservationRequired =>
+      'Inspect the page before continuing; the previous operation is unconfirmed.';
+
+  @override
+  String get storageAttachmentRetention => 'Auto-clean attachments';
+
+  @override
+  String get storageAttachmentRetentionDays => 'Days before cleanup';
+
+  @override
+  String get storageAttachmentRetentionImmediately => 'Clean immediately';
+
+  @override
+  String get storageAttachmentRetentionHint =>
+      'After you delete messages or chats, automatically remove images and files that are no longer used.';
+
+  @override
+  String get storageAttachmentUnused => 'Unused';
+
+  @override
+  String storageAttachmentPending(String date) {
+    return 'Waiting for cleanup · $date';
+  }
+
+  @override
+  String storageAttachmentConversations(String names) {
+    return 'Chats: $names';
+  }
+
+  @override
+  String get storageAttachmentCleanUnused => 'Clean unused';
+
+  @override
+  String get storageAttachmentProtectedHint =>
+      'Files still in use will be kept.';
+
+  @override
+  String storageAttachmentDeleteConfirm(int count) {
+    return 'Delete $count unused files now? Files that are still in use will be kept.';
+  }
+
+  @override
+  String get storageAttachmentRetentionDelayed => 'Clean later';
+
+  @override
+  String get storageAttachmentRetentionInvalidDays => 'Enter 1–3650 days.';
+
+  @override
+  String get storageAttachmentDetailsTitle => 'File info';
+
+  @override
+  String get compressionCarryTitle =>
+      'Also send your earlier messages as written';
+
+  @override
+  String get compressionCarryHint =>
+      'From the part that becomes a summary, your own messages are sent to the model as you wrote them, not just as the summary retells them.';
+
+  @override
+  String get compressionCarryCountLabel => 'Send the latest';
+
+  @override
+  String get compressionCarryUnit => 'messages';
+
+  @override
+  String get compressionCarryAll => 'As many as fit';
+
+  @override
+  String get compressionCarryAllHint =>
+      'No set number. Starts from the newest and goes back until it’s nearly full; if the oldest one is too long, only its start and end are sent.';
+
+  @override
+  String get compressionCarryEarlier =>
+      'Also bring back messages from earlier summaries';
+
+  @override
+  String get compressionCarryEarlierHint =>
+      'Your messages from parts compressed earlier can be included too.';
+
+  @override
+  String compressionCarryPreview(int count, int replyCount, String tokens) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count user messages',
+      one: '1 user message',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      replyCount,
+      locale: localeName,
+      other: '$replyCount replies',
+      one: '1 reply',
+    );
+    return '$_temp0 · $_temp1 · about $tokens tokens';
+  }
+
+  @override
+  String get compressionCarryNone =>
+      'The part being summarized has no messages from you.';
+
+  @override
+  String compressionCarryNotFit(int count) {
+    return '$count older messages don’t fit and won’t be sent this time.';
+  }
+
+  @override
+  String compressionCarryMoreRows(int count) {
+    return '$count more';
+  }
+
+  @override
+  String get compressionCarryOverBudget =>
+      'These messages would likely be more than the current model can take. Send fewer, or switch to a model with a larger context.';
+
+  @override
+  String compressionCarryFitAction(int count) {
+    return 'Change to $count';
+  }
+
+  @override
+  String get compressionCarryTruncated =>
+      'Too long; only the start and end are sent';
+
+  @override
+  String get compressionCarryAutoToo =>
+      'Automatic compression will do the same.';
+
+  @override
+  String get compressionCarryNewChatText =>
+      'Images and files aren’t carried to the new chat; only the text is.';
+
+  @override
+  String get compressionCarryServerKeeps =>
+      'This service keeps your earlier messages on its own when compressing.';
+
+  @override
+  String get contextDetailCarried => 'Sent as written';
+
+  @override
+  String contextDetailCarriedCount(int count) {
+    return '$count of your earlier messages';
+  }
+
+  @override
+  String get contextDetailServerKept => 'Kept by the service';
+
+  @override
+  String get contextCarriedEditHint =>
+      'This only changes the text sent to the model. The original message in the chat stays the same.';
+
+  @override
+  String get contextCarriedEmpty =>
+      'This can’t be empty. To stop sending it, choose “Stop sending”.';
+
+  @override
+  String get contextCarriedRemove => 'Stop sending';
+
+  @override
+  String get contextCarriedRemoveConfirm =>
+      'This won’t be sent to the model anymore. The original message in the chat isn’t affected.';
+
+  @override
+  String get contextCarriedSourceDeleted =>
+      'The original was deleted; only this text remains';
+
+  @override
+  String get compressionCarryReply => 'Include the reply too';
+
+  @override
+  String compressionCarryReplyTokens(String tokens) {
+    return '+about $tokens';
+  }
+
+  @override
+  String get compressionCarryReplyInKept =>
+      'The reply is already in the kept turns';
+
+  @override
+  String get contextCarriedReplyLabel => 'The reply';
+
+  @override
+  String get contextCarriedRemoveReply => 'Don’t send the reply';
+
+  @override
+  String get imageEditorCancel => 'Cancel';
+
+  @override
+  String get imageEditorDone => 'Done';
+
+  @override
+  String get imageEditorUndo => 'Undo';
+
+  @override
+  String get imageEditorRedo => 'Redo';
+
+  @override
+  String get imageEditorToolCrop => 'Crop';
+
+  @override
+  String get imageEditorToolDraw => 'Draw';
+
+  @override
+  String get imageEditorToolText => 'Text';
+
+  @override
+  String get imageEditorToolMosaic => 'Mosaic';
+
+  @override
+  String get imageEditorPen => 'Pen';
+
+  @override
+  String get imageEditorArrow => 'Arrow';
+
+  @override
+  String get imageEditorEraser => 'Eraser';
+
+  @override
+  String get imageEditorAspectFree => 'Free';
+
+  @override
+  String get imageEditorAspectOriginal => 'Original';
+
+  @override
+  String get imageEditorRotate => 'Rotate left';
+
+  @override
+  String get imageEditorFlip => 'Flip';
+
+  @override
+  String get imageEditorTextPlain => 'Plain';
+
+  @override
+  String get imageEditorTextOutline => 'Outline';
+
+  @override
+  String get imageEditorTextFill => 'Fill';
+
+  @override
+  String get imageEditorAlign => 'Align';
+
+  @override
+  String get imageEditorMosaicBrush => 'Brush';
+
+  @override
+  String get imageEditorMosaicRect => 'Box';
+
+  @override
+  String get imageEditorDiscardTitle => 'Discard changes?';
+
+  @override
+  String get imageEditorKeepEditing => 'Keep editing';
+
+  @override
+  String get imageEditorDiscard => 'Discard';
+
+  @override
+  String get imageEditorProcessFailed => 'Couldn\'t process image';
+
+  @override
+  String get imageEditorRetry => 'Retry';
+
+  @override
+  String get imageEditorRemove => 'Remove';
+
+  @override
+  String get imageEditorRestore => 'Revert';
+
+  @override
+  String imageEditorColor(String color) {
+    return 'Color $color';
+  }
+
+  @override
+  String get imageViewerPageEditButton => 'Edit';
+
+  @override
+  String get imageViewerPageFileSize => 'Image size';
+
+  @override
+  String get compressionCarryModeCount => 'Latest messages';
+
+  @override
+  String get compressionCarryListTitle => 'Message preview';
+
+  @override
+  String get compressionCarrySelectAllReplies => 'Select all replies';
+
+  @override
+  String get compressionCarryDeselectAllReplies => 'Deselect all replies';
+
+  @override
+  String get compressionCarryPairNotFit =>
+      'This message and its reply exceed the remaining budget. Both will be left out.';
+
+  @override
+  String compressionCarryImageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count images',
+      one: '1 image',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String compressionCarryAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments',
+      one: '1 attachment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get compressionCarryNoText => 'No message text';
+
+  @override
+  String get compressionCarryInvalidCount => 'Enter a number from 1 to 10,000.';
+
+  @override
+  String get backupRunningInBackground =>
+      'Backup will continue in the background';
+
+  @override
+  String backupBackgroundFailed(String error) {
+    return 'Background backup failed: $error';
+  }
+
+  @override
+  String get backupAutoEnableTitle => 'Back up automatically when due';
+
+  @override
+  String get backupAutoEnableHint =>
+      'When the scheduled time arrives, Kelivo backs up while the app is in the foreground. If the app is closed or killed, the backup does not keep running and is not resumed; the next time you open the app, a single full backup runs if it is still due.';
+
+  @override
+  String get backupAutoDestinationTitle => 'Automatic backup destination';
+
+  @override
+  String get backupAutoDestinationWebDav => 'WebDAV';
+
+  @override
+  String get backupAutoDestinationS3 => 'S3';
+
+  @override
+  String get backupAutoDestinationLocal => 'Local folder';
+
+  @override
+  String get backupAutoNeedRemoteHint => 'Set up WebDAV or S3 first.';
+
+  @override
+  String get backupAutoNeedDestinationHint =>
+      'Set up WebDAV or S3, or choose a local folder first.';
+
+  @override
+  String get backupAutoNeedFolderHint => 'Choose a backup folder first.';
+
+  @override
+  String get backupAutoLocalFolderChoose => 'Choose folder…';
+
+  @override
+  String get backupAutoLocalFolderChange => 'Change folder';
+
+  @override
+  String get backupAutoLocalFolderInvalid =>
+      'Choose a folder outside the app\'s own data directory.';
+
+  @override
+  String get backupAutoLocalRetentionTitle => 'Keep at most';
+
+  @override
+  String backupAutoLocalRetentionCount(int count) {
+    return '$count backups';
+  }
+
+  @override
+  String get backupAutoLocalRetentionUnlimited => 'No limit';
+
+  @override
+  String get backupAutoLocalNow => 'Back up to this folder now';
+
+  @override
+  String get backupAutoLocalDirUnavailable =>
+      'Can\'t write to the chosen folder. Check that it is still available, or choose another one. Kelivo won\'t change the saved location on its own.';
+
+  @override
+  String get backupAutoLocalDirPermission =>
+      'You don\'t have permission to write to the chosen folder. Please choose the folder again. Kelivo won\'t change the saved location on its own.';
+
+  @override
+  String get backupAutoLocalDirFull =>
+      'There isn\'t enough disk space, so the backup didn\'t finish. Your earlier backups are still there.';
+
+  @override
+  String get backupAutoLocalBookmarkLost =>
+      'Kelivo can\'t access the chosen folder. Please choose it again. The saved location won\'t be changed automatically.';
+
+  @override
+  String get backupAutoNextTitle => 'Next automatic backup';
+
+  @override
+  String get backupAutoRememberPasswordTitle =>
+      'Remember the password on this device?';
+
+  @override
+  String get backupAutoRememberPasswordMessage =>
+      'Remember the password on this device so automatic backups can run. It stays on this device and is never uploaded.';
+
+  @override
+  String get backupAutoRememberPasswordConfirm => 'Remember';
+
+  @override
+  String get backupAutoRememberPasswordDecline => 'Not now';
+
+  @override
+  String get backupAutoRememberDeclined =>
+      'Automatic backup was not turned on. You\'ll still get a reminder when it\'s due.';
+
+  @override
+  String get backupAutoKeychainUnavailable =>
+      'Kelivo can’t access the system keychain for the backup password. You can still back up manually.';
+
+  @override
+  String get backupAutoSucceeded => 'Automatic backup finished';
+
+  @override
+  String backupAutoFailed(String error) {
+    return 'Automatic backup failed: $error';
+  }
+
+  @override
+  String get backupAutoFailedPassword =>
+      'Automatic backup failed: the password is incorrect.';
+
+  @override
+  String get backupReminderSidebarSubtitleAutoFailed =>
+      'The automatic backup didn\'t finish. Check the network or back up manually.';
+
+  @override
+  String get backupEncryptionOnHintRemembered =>
+      'Backups are encrypted. The password is saved on this device.';
+
+  @override
+  String get backupRememberPasswordOnDevice =>
+      'Remember password on this device';
+
+  @override
+  String get backupForgetDisablesAutomaticHint =>
+      'Turning this off also turns off automatic backups.';
+
+  @override
+  String get backupManualPasswordHint =>
+      'Enter the password you set for encrypted backups.';
+
+  @override
+  String get backupManualPasswordNotSaved =>
+      'The password couldn’t be saved on this device. This backup will continue.';
+
+  @override
+  String get backupEncryptionChangePassword => 'Change backup password';
+
+  @override
+  String get backupMacKeychainNeedsUnlock =>
+      'macOS couldn’t unlock the login keychain. Open Keychain Access, unlock “login”, then try again in Kelivo.';
+
+  @override
+  String get backupMacOpenKeychainAccess => 'Open Keychain Access';
+
+  @override
+  String get backupMacKeychainAccessDenied =>
+      'macOS denied access to the backup password. If a system prompt appears, allow Kelivo to access it. You can also check the default keychain and the password item’s permissions in Keychain Access.';
+
+  @override
   String get settingsPageExternalAutoSend => 'Allow External Auto-Send';
 
   @override
@@ -17009,584 +17789,4 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deepLinkGenNewOnlyHint =>
       'Assistant and temporary chat only apply to a new conversation.';
-
-  @override
-  String get compressionNativeImportedDescription =>
-      'This chat starts with the server-side compressed result and the most recent turns. The result can’t be viewed or edited as text. Earlier originals remain in the original chat and can’t be restored by undoing here.';
-
-  @override
-  String get compressionNativeOpenSource => 'Open original chat';
-
-  @override
-  String get compressionNativeOriginalsUnavailable =>
-      'This chat has no originals for the loaded server-side result. You can keep using server-side compression, or go back to the original chat to view the originals or create a text summary.';
-
-  @override
-  String get compressionNativeTemporaryCopyHint =>
-      'The new temporary chat only keeps the complete server-side result and recent turns. When you leave the original temporary chat, it and any originals not carried over are deleted and can’t be restored here.';
-
-  @override
-  String get compressionNativeSourceUnavailable =>
-      'This chat has the complete server-side result and the recent turns you kept. The original chat is no longer available. Originals not copied here can’t be restored, and the result can’t be viewed or edited as text.';
-
-  @override
-  String get modelDetailSheetImageGenerationModel => 'Image model';
-
-  @override
-  String get modelDetailSheetImageGenerationAuto => 'Auto';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexity => 'Image complexity';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityDefault => 'Default';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityLow => 'Low';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityMedium => 'Medium';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityHigh => 'High';
-
-  @override
-  String get modelDetailSheetImageGenerationComplexityDescription =>
-      'Controls image planning separately from chat reasoning. Default uses server behavior and may inherit chat reasoning.';
-
-  @override
-  String get modelDetailSheetImageGenerationOAuthHint =>
-      'ChatGPT sign-in may use a different image model. Model and complexity settings depend on server support.';
-
-  @override
-  String get imageGenerationComplexityErrorHint =>
-      'Set chat reasoning to Auto and image complexity to Default, then retry image generation. ChatGPT sign-in may use a different image model or reject explicit complexity.';
-
-  @override
-  String get workspaceEnvNativeShellTitle => 'Default shell';
-
-  @override
-  String get workspaceEnvNativeShellHint =>
-      'Leave empty for automatic detection. Otherwise, enter the absolute path to PowerShell, cmd, or a shell that supports -lc (such as bash, zsh, or fish). This setting applies only to this device.';
-
-  @override
-  String get workspaceEnvNativeShellInvalid =>
-      'Could not start this shell. Check its absolute path and supported command syntax.';
-
-  @override
-  String get workspaceEnvNativeShellUnavailable => 'Shell unavailable';
-
-  @override
-  String get workspaceEnvNativeShellDetect => 'Detect again';
-
-  @override
-  String get workspaceEnvNativeShellSave => 'Save';
-
-  @override
-  String get desktopAutostartTitle => 'Launch at startup';
-
-  @override
-  String get desktopAutostartDescription =>
-      'Start Kelivo when you sign in to this computer.';
-
-  @override
-  String get desktopAutostartHiddenTitle => 'Hide to tray on automatic startup';
-
-  @override
-  String get desktopAutostartHiddenDescription =>
-      'Requires launch at startup and the tray icon. Opening Kelivo manually still shows the window.';
-
-  @override
-  String get desktopAutostartUnsupported =>
-      'Launch at startup requires macOS 13 or later.';
-
-  @override
-  String get desktopAutostartError =>
-      'Could not apply the startup setting. Check this app in your system startup or login-item settings and try again.';
-
-  @override
-  String get compressionOutputBudget => 'Total output limit (tokens)';
-
-  @override
-  String get compressionOutputBudgetHint =>
-      'Includes thinking and the summary itself. Leave blank to use the summary length. If thinking is on, you can raise this limit without making the summary longer. The model’s own output limit still applies.';
-
-  @override
-  String get responseOutputLimitReached =>
-      'Response truncated: the output limit includes reasoning. Increase the output limit or reduce reasoning before retrying.';
-
-  @override
-  String responseContextLimitReached(int inputTokens, int contextWindow) {
-    return 'Response truncated: this request used $inputTokens input tokens, close to the $contextWindow-token context limit. Shorten the context before retrying.';
-  }
-
-  @override
-  String get responseRetryWithoutImages =>
-      'Retry without images (keep originals)';
-
-  @override
-  String get browserOperationTimeout => 'Operation timeout';
-
-  @override
-  String get browserOperationTimeoutDescription =>
-      'Maximum wait for a browser command. The assistant can check the page after a timeout.';
-
-  @override
-  String browserOperationTimeoutSeconds(int seconds) {
-    return '$seconds seconds';
-  }
-
-  @override
-  String get browserErrObservationRequired =>
-      'Inspect the page before continuing; the previous operation is unconfirmed.';
-
-  @override
-  String get storageAttachmentRetention => 'Auto-clean attachments';
-
-  @override
-  String get storageAttachmentRetentionDays => 'Days before cleanup';
-
-  @override
-  String get storageAttachmentRetentionImmediately => 'Clean immediately';
-
-  @override
-  String get storageAttachmentRetentionHint =>
-      'After you delete messages or chats, automatically remove images and files that are no longer used.';
-
-  @override
-  String get storageAttachmentUnused => 'Unused';
-
-  @override
-  String storageAttachmentPending(String date) {
-    return 'Waiting for cleanup · $date';
-  }
-
-  @override
-  String storageAttachmentConversations(String names) {
-    return 'Chats: $names';
-  }
-
-  @override
-  String get storageAttachmentCleanUnused => 'Clean unused';
-
-  @override
-  String get storageAttachmentProtectedHint =>
-      'Files still in use will be kept.';
-
-  @override
-  String storageAttachmentDeleteConfirm(int count) {
-    return 'Delete $count unused files now? Files that are still in use will be kept.';
-  }
-
-  @override
-  String get storageAttachmentRetentionDelayed => 'Clean later';
-
-  @override
-  String get storageAttachmentRetentionInvalidDays => 'Enter 1–3650 days.';
-
-  @override
-  String get storageAttachmentDetailsTitle => 'File info';
-
-  @override
-  String get compressionCarryTitle =>
-      'Also send your earlier messages as written';
-
-  @override
-  String get compressionCarryHint =>
-      'From the part that becomes a summary, your own messages are sent to the model as you wrote them, not just as the summary retells them.';
-
-  @override
-  String get compressionCarryCountLabel => 'Send the latest';
-
-  @override
-  String get compressionCarryUnit => 'messages';
-
-  @override
-  String get compressionCarryAll => 'As many as fit';
-
-  @override
-  String get compressionCarryAllHint =>
-      'No set number. Starts from the newest and goes back until it’s nearly full; if the oldest one is too long, only its start and end are sent.';
-
-  @override
-  String get compressionCarryEarlier =>
-      'Also bring back messages from earlier summaries';
-
-  @override
-  String get compressionCarryEarlierHint =>
-      'Your messages from parts compressed earlier can be included too.';
-
-  @override
-  String compressionCarryPreview(int count, String tokens) {
-    return 'Will send $count · about $tokens tokens';
-  }
-
-  @override
-  String get compressionCarryNone =>
-      'The part being summarized has no messages from you.';
-
-  @override
-  String compressionCarryNotFit(int count) {
-    return '$count older messages don’t fit and won’t be sent this time.';
-  }
-
-  @override
-  String compressionCarryMoreRows(int count) {
-    return '$count more';
-  }
-
-  @override
-  String get compressionCarryOverBudget =>
-      'These messages would likely be more than the current model can take. Send fewer, or switch to a model with a larger context.';
-
-  @override
-  String compressionCarryFitAction(int count) {
-    return 'Change to $count';
-  }
-
-  @override
-  String get compressionCarryTruncated =>
-      'Too long; only the start and end are sent';
-
-  @override
-  String get compressionCarryAutoToo =>
-      'Automatic compression will do the same.';
-
-  @override
-  String get compressionCarryNewChatText =>
-      'Images and files aren’t carried to the new chat; only the text is.';
-
-  @override
-  String get compressionCarryServerKeeps =>
-      'This service keeps your earlier messages on its own when compressing.';
-
-  @override
-  String get contextDetailCarried => 'Sent as written';
-
-  @override
-  String contextDetailCarriedCount(int count) {
-    return '$count of your earlier messages';
-  }
-
-  @override
-  String get contextDetailServerKept => 'Kept by the service';
-
-  @override
-  String get contextCarriedEditHint =>
-      'This only changes the text sent to the model. The original message in the chat stays the same.';
-
-  @override
-  String get contextCarriedEmpty =>
-      'This can’t be empty. To stop sending it, choose “Stop sending”.';
-
-  @override
-  String get contextCarriedRemove => 'Stop sending';
-
-  @override
-  String get contextCarriedRemoveConfirm =>
-      'This won’t be sent to the model anymore. The original message in the chat isn’t affected.';
-
-  @override
-  String get contextCarriedSourceDeleted =>
-      'The original was deleted; only this text remains';
-
-  @override
-  String get compressionCarryReply => 'Include the reply too';
-
-  @override
-  String compressionCarryReplyTokens(String tokens) {
-    return '+about $tokens';
-  }
-
-  @override
-  String get compressionCarryReplyInKept =>
-      'The reply is already in the kept turns';
-
-  @override
-  String get contextCarriedReplyLabel => 'The reply';
-
-  @override
-  String get contextCarriedRemoveReply => 'Don’t send the reply';
-
-  @override
-  String get imageEditorCancel => 'Cancel';
-
-  @override
-  String get imageEditorDone => 'Done';
-
-  @override
-  String get imageEditorUndo => 'Undo';
-
-  @override
-  String get imageEditorRedo => 'Redo';
-
-  @override
-  String get imageEditorToolCrop => 'Crop';
-
-  @override
-  String get imageEditorToolDraw => 'Draw';
-
-  @override
-  String get imageEditorToolText => 'Text';
-
-  @override
-  String get imageEditorToolMosaic => 'Mosaic';
-
-  @override
-  String get imageEditorPen => 'Pen';
-
-  @override
-  String get imageEditorArrow => 'Arrow';
-
-  @override
-  String get imageEditorEraser => 'Eraser';
-
-  @override
-  String get imageEditorAspectFree => 'Free';
-
-  @override
-  String get imageEditorAspectOriginal => 'Original';
-
-  @override
-  String get imageEditorRotate => 'Rotate left';
-
-  @override
-  String get imageEditorFlip => 'Flip';
-
-  @override
-  String get imageEditorTextPlain => 'Plain';
-
-  @override
-  String get imageEditorTextOutline => 'Outline';
-
-  @override
-  String get imageEditorTextFill => 'Fill';
-
-  @override
-  String get imageEditorAlign => 'Align';
-
-  @override
-  String get imageEditorMosaicBrush => 'Brush';
-
-  @override
-  String get imageEditorMosaicRect => 'Box';
-
-  @override
-  String get imageEditorDiscardTitle => 'Discard changes?';
-
-  @override
-  String get imageEditorKeepEditing => 'Keep editing';
-
-  @override
-  String get imageEditorDiscard => 'Discard';
-
-  @override
-  String get imageEditorProcessFailed => 'Couldn\'t process image';
-
-  @override
-  String get imageEditorRetry => 'Retry';
-
-  @override
-  String get imageEditorRemove => 'Remove';
-
-  @override
-  String get imageEditorRestore => 'Revert';
-
-  @override
-  String imageEditorColor(String color) {
-    return 'Color $color';
-  }
-
-  @override
-  String get imageViewerPageEditButton => 'Edit';
-
-  @override
-  String get imageViewerPageFileSize => 'Image size';
-
-  @override
-  String get compressionCarryModeCount => 'Latest messages';
-
-  @override
-  String get compressionCarryListTitle => 'Message preview';
-
-  @override
-  String compressionCarryImageCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count images',
-      one: '1 image',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String compressionCarryAttachmentCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count attachments',
-      one: '1 attachment',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get compressionCarryNoText => 'No message text';
-
-  @override
-  String get compressionCarryInvalidCount => 'Enter a number from 1 to 10,000.';
-
-  @override
-  String get backupRunningInBackground =>
-      'Backup will continue in the background';
-
-  @override
-  String backupBackgroundFailed(String error) {
-    return 'Background backup failed: $error';
-  }
-
-  @override
-  String get backupAutoEnableTitle => 'Back up automatically when due';
-
-  @override
-  String get backupAutoEnableHint =>
-      'When the scheduled time arrives, Kelivo backs up while the app is in the foreground. If the app is closed or killed, the backup does not keep running and is not resumed; the next time you open the app, a single full backup runs if it is still due.';
-
-  @override
-  String get backupAutoDestinationTitle => 'Automatic backup destination';
-
-  @override
-  String get backupAutoDestinationWebDav => 'WebDAV';
-
-  @override
-  String get backupAutoDestinationS3 => 'S3';
-
-  @override
-  String get backupAutoDestinationLocal => 'Local folder';
-
-  @override
-  String get backupAutoNeedRemoteHint => 'Set up WebDAV or S3 first.';
-
-  @override
-  String get backupAutoNeedDestinationHint =>
-      'Set up WebDAV or S3, or choose a local folder first.';
-
-  @override
-  String get backupAutoNeedFolderHint => 'Choose a backup folder first.';
-
-  @override
-  String get backupAutoLocalFolderChoose => 'Choose folder…';
-
-  @override
-  String get backupAutoLocalFolderChange => 'Change folder';
-
-  @override
-  String get backupAutoLocalFolderInvalid =>
-      'Choose a folder outside the app\'s own data directory.';
-
-  @override
-  String get backupAutoLocalRetentionTitle => 'Keep at most';
-
-  @override
-  String backupAutoLocalRetentionCount(int count) {
-    return '$count backups';
-  }
-
-  @override
-  String get backupAutoLocalRetentionUnlimited => 'No limit';
-
-  @override
-  String get backupAutoLocalNow => 'Back up to this folder now';
-
-  @override
-  String get backupAutoLocalDirUnavailable =>
-      'Can\'t write to the chosen folder. Check that it is still available, or choose another one. Kelivo won\'t change the saved location on its own.';
-
-  @override
-  String get backupAutoLocalDirPermission =>
-      'You don\'t have permission to write to the chosen folder. Please choose the folder again. Kelivo won\'t change the saved location on its own.';
-
-  @override
-  String get backupAutoLocalDirFull =>
-      'There isn\'t enough disk space, so the backup didn\'t finish. Your earlier backups are still there.';
-
-  @override
-  String get backupAutoLocalBookmarkLost =>
-      'Kelivo can\'t access the chosen folder. Please choose it again. The saved location won\'t be changed automatically.';
-
-  @override
-  String get backupAutoNextTitle => 'Next automatic backup';
-
-  @override
-  String get backupAutoRememberPasswordTitle =>
-      'Remember the password on this device?';
-
-  @override
-  String get backupAutoRememberPasswordMessage =>
-      'Remember the password on this device so automatic backups can run. It stays on this device and is never uploaded.';
-
-  @override
-  String get backupAutoRememberPasswordConfirm => 'Remember';
-
-  @override
-  String get backupAutoRememberPasswordDecline => 'Not now';
-
-  @override
-  String get backupAutoRememberDeclined =>
-      'Automatic backup was not turned on. You\'ll still get a reminder when it\'s due.';
-
-  @override
-  String get backupAutoKeychainUnavailable =>
-      'Kelivo can’t access the system keychain for the backup password. You can still back up manually.';
-
-  @override
-  String get backupAutoSucceeded => 'Automatic backup finished';
-
-  @override
-  String backupAutoFailed(String error) {
-    return 'Automatic backup failed: $error';
-  }
-
-  @override
-  String get backupAutoFailedPassword =>
-      'Automatic backup failed: the password is incorrect.';
-
-  @override
-  String get backupReminderSidebarSubtitleAutoFailed =>
-      'The automatic backup didn\'t finish. Check the network or back up manually.';
-
-  @override
-  String get backupEncryptionOnHintRemembered =>
-      'Backups are encrypted. The password is saved on this device.';
-
-  @override
-  String get backupRememberPasswordOnDevice =>
-      'Remember password on this device';
-
-  @override
-  String get backupForgetDisablesAutomaticHint =>
-      'Turning this off also turns off automatic backups.';
-
-  @override
-  String get backupManualPasswordHint =>
-      'Enter the password you set for encrypted backups.';
-
-  @override
-  String get backupManualPasswordNotSaved =>
-      'The password couldn’t be saved on this device. This backup will continue.';
-
-  @override
-  String get backupEncryptionChangePassword => 'Change backup password';
-
-  @override
-  String get backupMacKeychainNeedsUnlock =>
-      'macOS couldn’t unlock the login keychain. Open Keychain Access, unlock “login”, then try again in Kelivo.';
-
-  @override
-  String get backupMacOpenKeychainAccess => 'Open Keychain Access';
-
-  @override
-  String get backupMacKeychainAccessDenied =>
-      'macOS denied access to the backup password. If a system prompt appears, allow Kelivo to access it. You can also check the default keychain and the password item’s permissions in Keychain Access.';
 }
