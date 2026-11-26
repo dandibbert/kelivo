@@ -9,6 +9,7 @@ import '../utils/chat_image_result.dart';
 import '../utils/conversation_fork_title.dart';
 import '../models/quote_ref.dart';
 import '../../features/chat/models/conversation_find_candidate.dart';
+import '../../features/chat/services/conversation_find_worker.dart';
 import 'package:Kelivo/features/search/utils/searchable_text.dart';
 import 'package:Kelivo/features/intelligent_ui/storage/ui_search_index.dart';
 import 'package:Kelivo/features/intelligent_ui/text/ui_search_text.dart';
@@ -32,7 +33,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart'
-    show debugPrint, visibleForTesting, listEquals;
+    show compute, debugPrint, visibleForTesting, listEquals;
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:uuid/uuid.dart';
 
@@ -52,6 +53,7 @@ import '../../utils/kelivo_file_uri.dart';
 import '../models/memory_entry.dart';
 import '../models/user_profile_field.dart';
 import 'app_database.dart';
+import 'media_repository.dart';
 import 'empty_database_recovery_guard.dart';
 import 'empty_database_permission.dart';
 import 'message_timeline_index.dart';
@@ -81,6 +83,14 @@ typedef ChatDatabaseSnapshotInfo = ({
 });
 
 typedef InstalledChatDatabaseInfo = ({int schemaVersion, String? databaseId});
+
+typedef _FindPage = ({
+  List<MessageRow> messages,
+  List<MessagePartRow> parts,
+  List<GenerationRunRow> runs,
+  Map<String, Map<String, UiSearchSurfaceText>> surfaces,
+  ConversationFindPrefilter? prefilter,
+});
 
 /// What crash recovery is allowed to do with the installed database.
 ///
@@ -162,12 +172,14 @@ class BackupMergeReport {
     required this.skippedConversations,
     required this.remappedConversationIds,
     this.importedConversationIds = const <String>[],
+    this.mergedMessageIds = const {},
   });
 
   final int importedConversations;
   final int deduplicatedConversations;
   final int skippedConversations;
   final Map<String, String> remappedConversationIds;
+  final Map<String, String> mergedMessageIds;
 
   /// Target conversation ids newly inserted by this merge (post-remap ids).
   final List<String> importedConversationIds;
@@ -198,6 +210,7 @@ class ChatDatabaseRepository {
        _observer = observer ?? ChatDatabaseObserver.instance;
 
   final AppDatabase _db;
+  late final MediaRepository mediaRepository = MediaRepository(_db);
   late final compression = CompressionRepository(ExtensionEntityStore(_db));
   late final _timelineIndex = MessageTimelineIndex(_db);
   late final _contextIndex = ContextOperationIndex(_db);
@@ -352,6 +365,10 @@ class ChatDatabaseRepository {
         for (final sql in ContextOperationIndex.discardStatements) {
           database.execute(sql);
         }
+        // A newer index's WHERE clause may depend on a column we must drop.
+        database.execute(
+          'DROP INDEX IF EXISTS idx_timeline_generation_target;',
+        );
         GenUiDerivedSchema.discard(database);
         final presentTables = database
             .select("SELECT name FROM sqlite_master WHERE type = 'table';")
@@ -408,6 +425,9 @@ class ChatDatabaseRepository {
           ),
         );
         try {
+          await Migrator(
+            schemaDatabase,
+          ).create(schemaDatabase.idxTimelineGenerationTarget);
           await GenUiDerivedSchema.rebuild(schemaDatabase);
         } finally {
           await schemaDatabase.close();
@@ -764,7 +784,9 @@ class ChatDatabaseRepository {
     final database = sqlite.sqlite3.open(snapshotFile.absolute.path);
     late final ChatDatabaseSnapshotInfo initialInfo;
     try {
-      initialInfo = _validateRawSnapshot(database);
+      // This is a disposable copy. Check its shape and counts before editing;
+      // inspectPreparedSnapshot fully checks the reopened result before use.
+      initialInfo = _readSnapshotInfo(database);
       // Now a post-condition: the migration above guarantees it.
       if (initialInfo.schemaVersion != AppDatabase.currentSchemaVersion) {
         throw StateError('database_schema_version');
@@ -893,6 +915,12 @@ class ChatDatabaseRepository {
       throw StateError('foreign_key_check');
     }
 
+    final info = _readSnapshotInfo(database);
+    MediaRepository.validateSnapshotPaths(database);
+    return info;
+  }
+
+  static ChatDatabaseSnapshotInfo _readSnapshotInfo(sqlite.Database database) {
     _validateRawStructure(database);
 
     return (
@@ -1118,6 +1146,50 @@ class ChatDatabaseRepository {
       'owner_id',
       'payload',
       'updated_at',
+    ],
+    'generation_topic_rows': [
+      'id',
+      'title',
+      'title_source',
+      'created_at',
+      'updated_at',
+    ],
+    'generation_batch_rows': [
+      'id',
+      'topic_id',
+      'provider_id',
+      'model_id',
+      'mode',
+      'prompt',
+      'negative_prompt',
+      'params_json',
+      'references_json',
+      'status',
+      'error_json',
+      'source',
+      'parent_item_id',
+      'conversation_id',
+      'message_id',
+      'created_at',
+      'started_at',
+      'finished_at',
+    ],
+    'generation_item_rows': [
+      'id',
+      'batch_id',
+      'ordinal',
+      'mode',
+      'path',
+      'thumbnail_path',
+      'width',
+      'height',
+      'duration_ms',
+      'mime',
+      'byte_size',
+      'revised_prompt',
+      'favorite',
+      'status',
+      'created_at',
     ],
     'gen_ui_surface_state_rows': [
       'revision_id',
@@ -1777,6 +1849,7 @@ class ChatDatabaseRepository {
           uri: nextUri,
           mime: part.mime,
           assetId: part.assetId,
+          generationItemId: part.generationItemId,
           unavailable: nextUnavailable,
         ).encodePayload(),
         parseError: null,
@@ -3170,56 +3243,149 @@ ORDER BY m.message_order DESC LIMIT 20
   });
 
   /// Read only this conversation's visible revisions, in timeline order.
-  /// Visual substitutions and Unicode folds make raw-text LIKE filters lossy.
   Stream<List<ConversationFindCandidate>> conversationFindCandidates(
-    String conversationId,
-  ) async* {
+    String conversationId, {
+    bool Function()? isCurrent,
+    ConversationFindPrefilter? prefilter,
+    ConversationFindWorker? worker,
+  }) async* {
+    bool current() => worker?.isCurrent != false && isCurrent?.call() != false;
+    if (!current()) return;
     await _timelineIndex.ensureConversation(conversationId);
-    await _genUiSearch.ensure();
     const batchSize = ConversationFindCandidate.batchSize;
     (int, String)? cursor;
-    while (true) {
+    var scanSize = batchSize;
+    var more = true;
+    final columns = prefilter == null
+        ? 'm.*'
+        : 'm.id, ${_possiblePreviewSql(prefilter)} AS possible';
+    final filterArgs = <Variable<Object>>[
+      if (prefilter != null) ...prefilter.literals.map(Variable<String>.new),
+      if (prefilter?.ideographs == true)
+        ...ConversationFindPrefilter.projectionMarkers.map(
+          Variable<String>.new,
+        ),
+      if (prefilter != null && prefilter.foldSources.isNotEmpty)
+        Variable<String>('*[${prefilter.foldSources}]*'),
+    ];
+    while (more && current()) {
       final after = cursor;
-      final batch = await _db.transaction(() async {
+      final page = await _db.transaction<_FindPage?>(() async {
+        if (!current()) return null;
         final rows = await _db
             .customSelect(
-              'SELECT g.anchor_order,g.group_id,m.id FROM timeline_group_rows g '
+              'SELECT g.anchor_order,g.group_id AS cursor_group_id,$columns FROM timeline_group_rows g '
               'LEFT JOIN timeline_selection_rows s ON s.conversation_id=g.conversation_id AND s.group_id=g.group_id '
               'JOIN message_rows m ON m.id=${MessageTimelineIndex.selectedRevision('g')} '
               "WHERE g.conversation_id=? AND m.role IN ('user','assistant') "
               "${after == null ? '' : 'AND (g.anchor_order,g.group_id)>(?,?) '} "
               'ORDER BY g.anchor_order,g.group_id LIMIT ?',
               variables: [
+                ...filterArgs,
                 Variable<String>(conversationId),
                 if (after != null) ...[
                   Variable<int>(after.$1),
                   Variable<String>(after.$2),
                 ],
-                Variable<int>(batchSize),
+                Variable<int>(scanSize),
               ],
             )
             .get();
-        if (rows.isEmpty) return <ConversationFindCandidate>[];
+        if (rows.isEmpty || !current()) {
+          more = false;
+          return null;
+        }
+        final matching = prefilter == null
+            ? rows
+            : rows
+                  .where((row) => row.read<int>('possible') != 0)
+                  .take(batchSize)
+                  .toList();
+        final last = matching.length == batchSize ? matching.last : rows.last;
+        more = rows.length == scanSize || !identical(last, rows.last);
         cursor = (
-          rows.last.read<int>('anchor_order'),
-          rows.last.read<String>('group_id'),
+          last.read<int>('anchor_order'),
+          last.read<String>('cursor_group_id'),
         );
-        final ids = rows.map((r) => r.read<String>('id')).toList();
-        final messages = await getMessagesByIds(ids);
-        final surfaces = await _genUiSearch.read(ids);
-        return [
-          for (final message in messages)
-            ConversationFindCandidate(
-              message,
-              surfaces: surfaces[message.id] ?? const {},
-            ),
-        ];
+        // Grow the scan only for sparse hits. Each database turn and each
+        // decoded page stay bounded even for an absent or very common word.
+        if (prefilter != null) {
+          scanSize = matching.length == batchSize ? batchSize : 256;
+        }
+        if (matching.isEmpty) return null;
+        final ids = [for (final row in matching) row.read<String>('id')];
+        final List<MessageRow> messages;
+        if (prefilter == null) {
+          messages = [
+            for (final row in matching) _db.messageRows.map(row.data),
+          ];
+        } else {
+          final headers = await (_db.select(
+            _db.messageRows,
+          )..where((m) => m.id.isIn(ids))).get();
+          if (!current()) return null;
+          final byId = {for (final row in headers) row.id: row};
+          messages = [for (final id in ids) byId[id]!];
+        }
+        final parts = await _readMessageParts(ids);
+        if (!current()) return null;
+        final runs = await _readGenerationRuns(ids);
+        if (!current()) return null;
+        return (
+          messages: messages,
+          parts: parts,
+          runs: runs,
+          surfaces: await _genUiSearch.read(ids),
+          prefilter: prefilter,
+        );
       });
-      if (batch.isEmpty) return;
-      yield batch;
-      if (batch.length < batchSize) return;
+      if (!current()) return;
+      if (page == null) continue;
+      // Release the database before decoding attachment and tool payloads.
+      // Missing card text is projected by the matcher for this page only.
+      final batch =
+          await (worker?.run(_hydrateFindPage, page) ??
+              compute(_hydrateFindPage, page));
+      if (batch == null || !current()) return;
+      if (batch.isNotEmpty) yield batch;
     }
   }
+
+  static String _possiblePreviewSql(ConversationFindPrefilter filter) {
+    // Formatting can join the letters of a word. A basic Han character is
+    // itself a necessary literal unless a decoder or card generates the text.
+    // For other words, only rule out unmarked prose. Non-ASCII case-fold
+    // substitutions are verified by the regular matcher.
+    final possible = filter.ideographs
+        ? """(${List.filled(filter.literals.length, 'instr(p.payload, ?)').join(' AND ')})
+             OR ${List.filled(ConversationFindPrefilter.projectionMarkers.length, 'instr(p.payload, ?)').join(' OR ')}"""
+        : """instr(lower(p.payload), ?) OR instr(p.payload, char(0))
+             OR p.payload GLOB '*[^a-zA-Z0-9 .,!?\t\r\n\u0080-\u{10ffff}]*'
+             ${filter.foldSources.isEmpty ? '' : 'OR p.payload GLOB ?'}""";
+    // Only text parts contribute body text. Retained messages still load all
+    // parts so the matcher can resolve citations and display order.
+    return """
+      m.is_streaming OR coalesce(m.translation, '') != ''
+      OR EXISTS (SELECT 1 FROM message_part_rows p WHERE p.revision_id=m.id AND p.kind='text' AND
+        CASE WHEN octet_length(p.payload) > ${ConversationFindPrefilter.maxSqlTextBytes}
+               OR (p.ordinal > 0 AND EXISTS (SELECT 1 FROM message_part_rows prior
+                 WHERE prior.revision_id=p.revision_id AND prior.ordinal<p.ordinal AND prior.kind='text'))
+             THEN 1 ELSE ($possible) END)
+    """;
+  }
+
+  static List<ConversationFindCandidate> _hydrateFindPage(_FindPage page) => [
+    for (final message in _hydrateMessages(
+      page.messages,
+      page.parts,
+      page.runs,
+    ))
+      if (page.prefilter?.mayMatchLargeBody(message) != false)
+        ConversationFindCandidate(
+          message,
+          surfaces: page.surfaces[message.id] ?? const {},
+        ),
+  ];
 
   Future<Set<String>> getMessageIdsForGroups(
     String conversationId,
@@ -4051,6 +4217,8 @@ ORDER BY m.message_order DESC LIMIT 20
 
     final modelRows = await _db.customSelect('''
       SELECT m.model_id AS id, NULLIF(TRIM(m.provider_id), '') AS provider_id,
+        CASE WHEN MIN(m.provider_id) = MAX(m.provider_id)
+          THEN MIN(m.provider_id) END AS original_provider_id,
         COUNT(*) AS item_count,
         COALESCE(SUM(m.prompt_tokens), 0) AS input_tokens,
         COALESCE(SUM(m.completion_tokens), 0) AS output_tokens,
@@ -4115,6 +4283,9 @@ ORDER BY m.message_order DESC LIMIT 20
             label: row.read<String>('id'),
             count: row.read<int>('item_count'),
             providerId: row.readNullable<String>('provider_id'),
+            originalProviderId: row.readNullable<String>(
+              'original_provider_id',
+            ),
             inputTokens: row.read<int>('input_tokens'),
             outputTokens: row.read<int>('output_tokens'),
             cachedTokens: row.read<int>('cached_tokens'),
@@ -4508,6 +4679,12 @@ ORDER BY m.message_order DESC LIMIT 20
     });
   }
 
+  // Start with revisions awaiting asset indexing. An ordinary JOIN can scan
+  // every message part per candidate even when the dirty table is empty.
+  static const _dirtyAssetPartsJoin =
+      'FROM asset_reference_dirty_rows d '
+      'CROSS JOIN message_part_rows p ON p.revision_id = d.revision_id';
+
   /// Set-based dirty-part protection for a candidate page.
   ///
   /// A never-registered malformed attachment whose raw payload no longer
@@ -4543,8 +4720,7 @@ ORDER BY m.message_order DESC LIMIT 20
           FROM candidates c
           WHERE EXISTS (
             SELECT 1
-            FROM asset_reference_dirty_rows d
-            JOIN message_part_rows p ON p.revision_id = d.revision_id
+            $_dirtyAssetPartsJoin
             WHERE p.kind IN ('text', 'image', 'file', 'tool_call')
               AND (
                 instr(p.payload, c.path_form) > 0
@@ -4590,8 +4766,7 @@ ORDER BY m.message_order DESC LIMIT 20
               WHERE r.asset_id = g.asset_id
             )
             AND NOT EXISTS (
-              SELECT 1 FROM asset_reference_dirty_rows d
-              JOIN message_part_rows p ON p.revision_id = d.revision_id
+              SELECT 1 $_dirtyAssetPartsJoin
               WHERE p.kind IN ('text', 'image', 'file', 'tool_call')
                 AND (
                   instr(p.payload, ?) > 0 OR instr(p.payload, ?) > 0
@@ -4646,8 +4821,7 @@ ORDER BY m.message_order DESC LIMIT 20
                 WHERE r.asset_id = g.asset_id
               )
               AND NOT EXISTS (
-                SELECT 1 FROM asset_reference_dirty_rows d
-                JOIN message_part_rows p ON p.revision_id = d.revision_id
+                SELECT 1 $_dirtyAssetPartsJoin
                 WHERE p.kind IN ('text', 'image', 'file', 'tool_call')
                   AND (
                     instr(p.payload, ?) > 0 OR instr(p.payload, ?) > 0
@@ -6391,11 +6565,22 @@ ORDER BY m.message_order DESC LIMIT 20
         if (foreignKeyFailures.isNotEmpty) {
           throw StateError('foreign_key_check');
         }
+        final creationSources = await _db
+            .customSelect(
+              'SELECT DISTINCT message_id FROM merge_source.generation_batch_rows WHERE message_id IS NOT NULL',
+            )
+            .get();
         return BackupMergeReport(
           importedConversations: imported,
           deduplicatedConversations: deduplicated,
           skippedConversations: skipped,
           remappedConversationIds: Map.unmodifiable(remapped),
+          mergedMessageIds: Map.unmodifiable({
+            for (final row in creationSources)
+              if (allMessageIds[row.read<String>('message_id')]
+                  case final target?)
+                row.read<String>('message_id'): target,
+          }),
           importedConversationIds: List.unmodifiable(importedIds),
         );
       });
@@ -6436,6 +6621,7 @@ ORDER BY m.message_order DESC LIMIT 20
                 uri: part.uri,
                 mime: part.mime,
                 assetId: part.assetId,
+                generationItemId: part.generationItemId,
                 unavailable: unavailable,
               ),
             );
@@ -6667,6 +6853,11 @@ ORDER BY m.message_order DESC LIMIT 20
         )
         .get();
     final partPayloads = <String, Map<String, List<String>>>{};
+    final messageOrdinals = {
+      for (final (index, row) in messageRows.indexed)
+        row.read<String>('id'): '$index',
+    };
+    final retainedImageOrigins = <String>{};
     // Image/file identity payloads in ordinal order (unavailable stripped).
     final attachmentPayloads = <String, List<String>>{};
     for (final part in partRows) {
@@ -6682,7 +6873,15 @@ ORDER BY m.message_order DESC LIMIT 20
       partPayloads
           .putIfAbsent(revisionId, () => {})
           .putIfAbsent(kind, () => [])
-          .add(payload);
+          .add(
+            kind == 'tool_call'
+                ? remapChatImagePayload(
+                    payload,
+                    messageOrdinals,
+                    retainedImageOrigins,
+                  )
+                : payload,
+          );
     }
     final signatureRows = await _db
         .customSelect(
@@ -6756,10 +6955,12 @@ ORDER BY m.message_order DESC LIMIT 20
               mcpRows.map((row) => row.data).toList(),
               messages,
               await _compressionFingerprint(schema, id),
-              await _imageContextFingerprint(schema, id, {
-                for (var i = 0; i < messageRows.length; i++)
-                  messageRows[i].read<String>('id'): '$i',
-              }),
+              await _imageContextFingerprint(
+                schema,
+                id,
+                messageOrdinals,
+                retainedImageOrigins,
+              ),
               await _contextFingerprintData(
                 schema,
                 id,
@@ -7037,6 +7238,8 @@ ORDER BY m.message_order DESC LIMIT 20
         messageIdMap,
         payload: sourceImages.read<String>('payload'),
       );
+    } else {
+      await _remapChatImageSources(targetId, messageIdMap);
     }
     final sourceContext = await _db
         .customSelect(
@@ -7187,6 +7390,29 @@ ORDER BY m.message_order DESC LIMIT 20
   /// changes; the other columns never affect parts. Returns the post-update
   /// message,
   /// or null when no row matches [messageId].
+  Future<bool> waitForFinishedMessage(String messageId) async {
+    final table = _db.messageRows;
+    final row =
+        await (_db.selectOnly(table)
+              ..addColumns([table.isStreaming])
+              ..where(table.id.equals(messageId)))
+            .watchSingleOrNull()
+            .firstWhere((row) => row?.read(table.isStreaming) != true);
+    return row != null;
+  }
+
+  Future<ChatMessage?> updateFinishedMessageParts(
+    String messageId,
+    List<MessagePart> Function(List<MessagePart>) transform,
+  ) => _writeTransaction(() async {
+    final current = await getMessage(messageId);
+    if (current == null || current.isStreaming) return null;
+    final parts = transform(current.parts);
+    if (identical(parts, current.parts)) return current;
+    await markMessageAssetReferencesDirty(messageId);
+    return updateMessageFields(messageId, parts: parts);
+  });
+
   Future<ChatMessage?> updateMessageFields(
     String messageId, {
     String? content,
@@ -8357,24 +8583,28 @@ ORDER BY m.message_order DESC LIMIT 20
   }) => _db.transaction(() async {
     if (rows.isEmpty) return const [];
     final ids = rows.map((row) => row.id).toSet();
-    final parts =
-        await (_db.select(_db.messagePartRows)
-              ..where((part) => part.revisionId.isIn(ids))
-              ..orderBy([(part) => OrderingTerm.asc(part.ordinal)]))
-            .get();
-    final runs =
-        await (_db.select(_db.generationRunRows)
-              ..where((run) => run.targetRevisionId.isIn(ids))
-              ..orderBy([
-                (run) => OrderingTerm.desc(run.createdAt),
-                (run) => OrderingTerm.desc(run.updatedAt),
-                (run) => OrderingTerm.desc(run.id),
-              ]))
-            .get();
+    final parts = await _readMessageParts(ids);
+    final runs = await _readGenerationRuns(ids);
     return background
         ? _hydrateMessagesInBackground(rows, parts, runs)
         : _hydrateMessages(rows, parts, runs);
   });
+
+  Future<List<MessagePartRow>> _readMessageParts(Iterable<String> ids) =>
+      (_db.select(_db.messagePartRows)
+            ..where((part) => part.revisionId.isIn(ids))
+            ..orderBy([(part) => OrderingTerm.asc(part.ordinal)]))
+          .get();
+
+  Future<List<GenerationRunRow>> _readGenerationRuns(Iterable<String> ids) =>
+      (_db.select(_db.generationRunRows)
+            ..where((run) => run.targetRevisionId.isIn(ids))
+            ..orderBy([
+              (run) => OrderingTerm.desc(run.createdAt),
+              (run) => OrderingTerm.desc(run.updatedAt),
+              (run) => OrderingTerm.desc(run.id),
+            ]))
+          .get();
 
   static Future<List<ChatMessage>> _hydrateMessagesInBackground(
     List<MessageRow> rows,
@@ -9570,6 +9800,7 @@ final class ChatStatsRank {
     required this.label,
     required this.count,
     this.providerId,
+    this.originalProviderId,
     this.inputTokens = 0,
     this.outputTokens = 0,
     this.cachedTokens = 0,
@@ -9579,6 +9810,8 @@ final class ChatStatsRank {
   final String label;
   final int count;
   final String? providerId;
+  // The original key is known only if the model group has one provider ID.
+  final String? originalProviderId;
   final int inputTokens;
   final int outputTokens;
   final int cachedTokens;

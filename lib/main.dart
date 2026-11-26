@@ -1,3 +1,6 @@
+import 'core/services/media/media_file_store.dart';
+import 'core/services/media/media_generation_runner.dart';
+import 'features/media/providers/media_creation_controller.dart';
 import 'features/side_panel/desktop_side_panel_controller.dart';
 import 'core/services/scheduled_tasks_service.dart';
 import 'core/services/auth/provider_oauth_service.dart';
@@ -113,6 +116,7 @@ import 'dart:io'
     show
         Directory,
         File,
+        FileSystemException,
         Platform,
         stderr; // kept for global override usage inside provider
 import 'core/services/mobile_background.dart';
@@ -269,7 +273,10 @@ Future<void> main(List<String> arguments) async {
               target: appDataDirectory,
               onCopying: () => runApp(
                 _RestoreProgressApp(
-                  stage: ValueNotifier(RestoreStartupStage.protectingData),
+                  progress: ValueNotifier<RestoreStartupProgress>((
+                    stage: RestoreStartupStage.protectingData,
+                    detail: null,
+                  )),
                 ),
               ),
             );
@@ -296,15 +303,18 @@ Future<void> main(List<String> arguments) async {
         // them before the first frame, which is indistinguishable from a hang.
         // Only paint when there is actually work waiting: an ordinary launch
         // must not pay for a frame it immediately replaces.
-        final restoreStage =
+        final restoreProgress =
             await RestoreStartupGate.hasPendingWork(
               appDataDirectory: appDataDirectory,
             )
-            ? ValueNotifier(RestoreStartupStage.checkingBackup)
+            ? ValueNotifier<RestoreStartupProgress>((
+                stage: RestoreStartupStage.checkingBackup,
+                detail: null,
+              ))
             : null;
-        if (restoreStage != null) {
+        if (restoreProgress != null) {
           await _initRestoreFailureWindow();
-          runApp(_RestoreProgressApp(stage: restoreStage));
+          runApp(_RestoreProgressApp(progress: restoreProgress));
         }
         while (true) {
           try {
@@ -318,9 +328,18 @@ Future<void> main(List<String> arguments) async {
                   appDataDirectory: appDataDirectory,
                   businessLease: businessLease,
                   diagnostics: restoreDiagnostics,
-                  onStage: restoreStage == null
+                  onStage: restoreProgress == null
                       ? null
-                      : (stage) => restoreStage.value = stage,
+                      : (stage) => restoreProgress.value = (
+                          stage: stage,
+                          detail: null,
+                        ),
+                  onProgress: restoreProgress == null
+                      ? null
+                      : (detail) => restoreProgress.value = (
+                          stage: restoreProgress.value.stage,
+                          detail: detail,
+                        ),
                 );
             break;
           } catch (error, stackTrace) {
@@ -351,9 +370,12 @@ Future<void> main(List<String> arguments) async {
             );
             if (retry == null) return;
             await retry.future;
-            if (restoreStage != null) {
-              restoreStage.value = RestoreStartupStage.checkingBackup;
-              runApp(_RestoreProgressApp(stage: restoreStage));
+            if (restoreProgress != null) {
+              restoreProgress.value = (
+                stage: RestoreStartupStage.checkingBackup,
+                detail: null,
+              );
+              runApp(_RestoreProgressApp(progress: restoreProgress));
             }
           }
         }
@@ -504,7 +526,17 @@ Future<void> main(List<String> arguments) async {
         final chatService = ChatService(
           existingRepository: processDatabaseLease.chatRepository,
         );
-        _installExitFlush(businessPreferences, chatService);
+        final mediaRunner = MediaGenerationRunner(
+          repository: processDatabaseLease.mediaRepository,
+          files: const MediaFileStore(),
+        );
+        await mediaRunner.initialized;
+        try {
+          await mediaRunner.recoverBatchDeletions();
+        } on FileSystemException catch (error) {
+          stderr.writeln('[CreationCleanup] ${error.message}');
+        }
+        _installExitFlush(businessPreferences, chatService, mediaRunner);
         ScheduledTasksService.configureDevice(businessPreferences);
         // Best-effort trim of archived restore runs after a few cold starts.
         unawaited(_pruneRestoreArchive(appDataDirectory));
@@ -516,6 +548,7 @@ Future<void> main(List<String> arguments) async {
         runApp(
           MyApp(
             databaseLease: processDatabaseLease,
+            mediaRunner: mediaRunner,
             chatService: chatService,
             businessPreferences: businessPreferences,
             appDataDirectory: appDataDirectory,
@@ -631,9 +664,9 @@ Future<void> _initRestoreFailureWindow() async {
 /// Deliberately built from defaults: the user's theme and locale live in the
 /// settings this restore may be replacing, and nothing here may open them.
 class _RestoreProgressApp extends StatelessWidget {
-  const _RestoreProgressApp({required this.stage});
+  const _RestoreProgressApp({required this.progress});
 
-  final ValueNotifier<RestoreStartupStage> stage;
+  final ValueNotifier<RestoreStartupProgress> progress;
 
   @override
   Widget build(BuildContext context) {
@@ -645,7 +678,7 @@ class _RestoreProgressApp extends StatelessWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       theme: buildLightThemeForScheme(palette.light),
       darkTheme: buildDarkThemeForScheme(palette.dark),
-      home: RestoreProgressScreen(stage: stage),
+      home: RestoreProgressScreen(progress: progress),
     );
   }
 }
@@ -726,6 +759,7 @@ AppLifecycleListener? _exitFlushListener;
 void _installExitFlush(
   BusinessPreferences businessPreferences,
   ChatService chatService,
+  MediaGenerationRunner mediaRunner,
 ) {
   if (kIsWeb) return;
   final isDesktop =
@@ -742,6 +776,7 @@ void _installExitFlush(
         await Future.wait([
           ScheduledTasksService.instance.stopForExit(),
           ChatActions.prepareForExit(),
+          mediaRunner.shutdown(),
         ]);
       } finally {
         await chatService.close();
@@ -821,6 +856,7 @@ class MyApp extends StatelessWidget {
     super.key,
     required this.databaseLease,
     required this.chatService,
+    required this.mediaRunner,
     required this.businessPreferences,
     required this.appDataDirectory,
     this.restoreOutcome,
@@ -828,6 +864,7 @@ class MyApp extends StatelessWidget {
 
   final ChatDatabaseLease databaseLease;
   final ChatService chatService;
+  final MediaGenerationRunner mediaRunner;
   final BusinessPreferences businessPreferences;
   final Directory appDataDirectory;
   final RestoreReceiptState? restoreOutcome;
@@ -861,6 +898,7 @@ class MyApp extends StatelessWidget {
             );
             final settings = SettingsProvider(
               businessPreferences,
+              mediaOutputsSaved: mediaRunner.mediaOutputsSaved,
               backupPasswordStore: BackupSecurePasswordStore(
                 namespace: Platform.isWindows
                     ? businessPreferences.getString(
@@ -879,6 +917,14 @@ class MyApp extends StatelessWidget {
             );
             return settings;
           },
+        ),
+        ChangeNotifierProvider.value(value: mediaRunner),
+        ChangeNotifierProvider(
+          create: (context) => MediaCreationController(
+            runner: mediaRunner,
+            settings: context.read<SettingsProvider>(),
+            preferences: businessPreferences,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) =>

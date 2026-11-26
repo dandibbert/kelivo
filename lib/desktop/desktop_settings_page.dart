@@ -7,6 +7,8 @@ import '../features/provider/utils/provider_test_failure.dart';
 import '../features/provider/widgets/provider_test_details.dart';
 import '../features/provider/utils/provider_url_editor.dart';
 import '../features/provider/widgets/provider_input_row.dart';
+import '../features/provider/widgets/fal_catalog_notice.dart';
+import '../features/provider/widgets/fal_model_picker.dart';
 import '../features/provider/widgets/provider_base_url_field.dart';
 import '../features/provider/widgets/provider_icon_picker.dart';
 import '../features/provider/widgets/provider_sponsor_card.dart';
@@ -51,8 +53,7 @@ import '../core/providers/assistant_provider.dart';
 import '../features/assistant/widgets/assistant_copy_dialog.dart';
 import '../features/home/controllers/chat_actions.dart' show ChatActions;
 import '../core/models/assistant.dart';
-import '../utils/avatar_cache.dart';
-import '../utils/sandbox_path_resolver.dart';
+import '../shared/widgets/avatar_image.dart';
 import 'dart:io' show Directory, File, Platform;
 import '../utils/app_directories.dart';
 import 'add_provider_dialog.dart' show showDesktopAddProviderDialog;
@@ -160,6 +161,7 @@ class _DesktopSettingsPageState extends State<DesktopSettingsPage> {
   SettingsSearchItem? _searchTarget;
   int _searchNavigation = 0;
   bool _showTopicPosition = false;
+  bool _selectFal = false;
   bool _showDetail = false;
 
   Future<void> _openSearch() async {
@@ -223,40 +225,26 @@ class _DesktopSettingsPageState extends State<DesktopSettingsPage> {
       _showDetail = true;
       _selected = _SettingsMenuItem.providers;
     }
-    // The settings pane is lazy. Preserve a topic-position request delivered
-    // before this first mount, then consume later requests from the stream.
-    if (DesktopSettingsNavigationBus.instance.consumeTopicPositionRequest()) {
-      _selected = _SettingsMenuItem.display;
-      _showDetail = true;
-      _showTopicPosition = true;
-    }
-    _settingsNavSub = DesktopSettingsNavigationBus.instance.stream.listen((
+    _settingsNavSub = DesktopSettingsNavigationBus.instance.listenForPane((
       target,
     ) {
-      if (!mounted) return;
-      switch (target) {
-        case DesktopSettingsNavigationTarget.topicPosition:
-          DesktopSettingsNavigationBus.instance.consumeTopicPositionRequest();
-          setState(() {
-            _selected = _SettingsMenuItem.display;
-            _showDetail = true;
-            _showTopicPosition = true;
-            _searchNavigation++;
-          });
-          break;
-        case DesktopSettingsNavigationTarget.backup:
-          setState(() {
-            _selected = _SettingsMenuItem.backup;
-            _showDetail = true;
-          });
-          break;
-        case DesktopSettingsNavigationTarget.mcp:
-          setState(() {
-            _selected = _SettingsMenuItem.mcp;
-            _showDetail = true;
-          });
-          break;
-      }
+      setState(() {
+        _showDetail = true;
+        _selected = switch (target) {
+          DesktopSettingsNavigationTarget.topicPosition =>
+            _SettingsMenuItem.display,
+          DesktopSettingsNavigationTarget.backup => _SettingsMenuItem.backup,
+          DesktopSettingsNavigationTarget.mcp => _SettingsMenuItem.mcp,
+          DesktopSettingsNavigationTarget.providers ||
+          DesktopSettingsNavigationTarget.fal => _SettingsMenuItem.providers,
+          DesktopSettingsNavigationTarget.defaultModel =>
+            _SettingsMenuItem.defaultModel,
+        };
+        _showTopicPosition =
+            target == DesktopSettingsNavigationTarget.topicPosition;
+        _selectFal = target == DesktopSettingsNavigationTarget.fal;
+        _searchNavigation++;
+      });
     });
   }
 
@@ -340,8 +328,13 @@ class _DesktopSettingsPageState extends State<DesktopSettingsPage> {
                       );
                     case _SettingsMenuItem.providers:
                       return _DesktopProvidersBody(
-                        key: const ValueKey('providers'),
-                        initialSelectedKey: widget.initialProviderKey,
+                        key: ValueKey((
+                          'providers',
+                          _selectFal ? _searchNavigation : 0,
+                        )),
+                        initialSelectedKey: _selectFal
+                            ? 'fal'
+                            : widget.initialProviderKey,
                       );
                     case _SettingsMenuItem.defaultModel:
                       return const DesktopDefaultModelPane(

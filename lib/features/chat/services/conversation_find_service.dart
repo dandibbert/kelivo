@@ -3,7 +3,6 @@ import 'package:markstream/markstream_core.dart';
 
 import '../../../core/models/assistant.dart';
 import '../../../core/models/assistant_regex.dart';
-import '../../../core/database/generation_run.dart';
 import '../../../shared/cache/byte_lru_cache.dart';
 import '../../../utils/assistant_regex.dart';
 import '../../../utils/protected_text.dart';
@@ -25,6 +24,7 @@ import '../utils/message_reasoning_source.dart';
 import '../utils/assistant_paragraph_splitter.dart';
 import '../utils/thinking_tag_parser.dart';
 import '../widgets/timeline_projection.dart';
+import 'conversation_find_worker.dart';
 
 enum FindPart { body, reasoning, translation, surface }
 
@@ -97,6 +97,14 @@ class ConversationFindService {
   final ParserOptions parserOptions;
   final String translationPlaceholder;
 
+  ConversationFindPrefilter? previewPrefilter(String query) {
+    if (assistant?.regexRules.any((rule) => rule.enabled && rule.visualOnly) ==
+        true) {
+      return null;
+    }
+    return ConversationFindPrefilter.forQuery(query);
+  }
+
   bool usesSamePresentation(ConversationFindService other) =>
       userMarkdown == other.userMarkdown &&
       assistantMarkdown == other.assistantMarkdown &&
@@ -135,6 +143,7 @@ class ConversationFindService {
     Stream<List<ConversationFindCandidate>> candidates,
     String query, {
     ConversationFindCache? cache,
+    ConversationFindWorker? worker,
     bool Function()? isCurrent,
     ConversationFindCandidate Function(ConversationFindCandidate)?
     liveCandidate,
@@ -143,6 +152,7 @@ class ConversationFindService {
     query.trim(),
     defaultFindOptions,
     cache: cache,
+    worker: worker,
     previewsOnly: true,
     isCurrent: isCurrent,
     liveCandidate: liveCandidate,
@@ -156,6 +166,7 @@ class ConversationFindService {
     FindOptions options, {
     required ConversationFindCache? cache,
     required bool previewsOnly,
+    ConversationFindWorker? worker,
     bool Function()? isCurrent,
     ConversationFindCandidate Function(ConversationFindCandidate)?
     liveCandidate,
@@ -173,15 +184,17 @@ class ConversationFindService {
         for (final row in rows)
           (row: row, cached: row.streaming ? null : entries?.get(key(row))),
       ];
-      final matches = await compute(_matchBatch, (
+      final work = (
         service: this,
         rows: inputs,
         query: query,
         options: options,
         previewsOnly: previewsOnly,
         projectionBudget: entries == null ? 0 : _findCacheBytes - entries.bytes,
-      ));
-      if (isCurrent?.call() == false) return;
+      );
+      final matches =
+          await (worker?.run(_matchBatch, work) ?? compute(_matchBatch, work));
+      if (matches == null || isCurrent?.call() == false) return;
       if (entries != null) {
         for (final row in rows) {
           if (matches.projections[row.id] case final projection?) {
@@ -194,6 +207,7 @@ class ConversationFindService {
         }
       }
       yield matches;
+      if (isCurrent?.call() == false) return;
     }
   }
 
@@ -363,11 +377,8 @@ class ConversationFindService {
     );
     late final semantic = uiSearchableText(
       message,
-      row.surfaces.isEmpty &&
-              !message.isStreaming &&
-              message.generationState == GenerationRunState.completed
-          ? initialUiSearchText(message)
-          : row.surfaces,
+      row.surfaces,
+      projectMissingSurfaces: true,
     );
     late final surfaces = {
       for (final surface in semantic.surfaces) surface.surfaceKey: surface,

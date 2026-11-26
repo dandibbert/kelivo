@@ -33,8 +33,11 @@ import 'package:Kelivo/utils/sandbox_path_resolver.dart';
 import 'package:Kelivo/core/providers/backup_provider.dart';
 import 'package:Kelivo/core/providers/s3_backup_provider.dart';
 import 'package:Kelivo/core/services/backup/backup_encryption.dart';
+import 'package:Kelivo/core/services/backup/backup_archive_limits.dart';
+import 'package:Kelivo/core/services/backup/backup_file_export.dart';
 import 'package:Kelivo/core/services/backup/backup_cancel_token.dart';
 import 'package:Kelivo/core/services/backup/backup_task_progress.dart';
+import 'package:Kelivo/core/services/backup/backup_staging.dart';
 import 'package:Kelivo/core/services/backup/data_sync.dart';
 import 'package:Kelivo/core/services/backup/restore_business_lease.dart';
 import 'package:Kelivo/core/services/backup/restore_workspace_lock.dart';
@@ -112,6 +115,44 @@ class _FailingRestoreChatService extends ChatService {
     replaceCalls++;
     throw StateError('chat replacement failed');
   }
+}
+
+// Force the platform's cross-volume rename result while using real files for
+// every byte of the subsequent copy and publication.
+class _OtherVolumeFile implements File {
+  _OtherVolumeFile(this.file);
+  final File file;
+  @override
+  Future<int> length() => file.length();
+  @override
+  Future<RandomAccessFile> open({FileMode mode = FileMode.read}) =>
+      file.open(mode: mode);
+  @override
+  Future<File> rename(String path) async => throw FileSystemException(
+    'Cross-volume rename',
+    path,
+    OSError('cross-volume', Platform.isWindows ? 17 : 18),
+  );
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+// A document portal allows temporary sibling files and rename, but no mkdir.
+class _SingleFileGrantDirectory implements Directory {
+  _SingleFileGrantDirectory(this.directory);
+  final Directory directory;
+  @override
+  String get path => directory.path;
+  @override
+  Future<Directory> create({bool recursive = false}) =>
+      directory.create(recursive: recursive);
+  @override
+  Future<String> resolveSymbolicLinks() => directory.resolveSymbolicLinks();
+  @override
+  Future<Directory> createTemp([String? prefix]) async =>
+      throw FileSystemException('mkdir denied', path);
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _PausedSnapshotChatService extends ChatService {
@@ -480,6 +521,7 @@ Future<RestoreReceipt?> _recoverAcrossColdRestart({
 void main() {
   group('DataSync backup file', () {
     late Directory root;
+    late Directory stagingDirectory;
     late File validSettingsFile;
     late AppDatabase businessDatabase;
     late BusinessRepository businessRepository;
@@ -487,6 +529,7 @@ void main() {
     setUp(() async {
       root = await Directory.systemTemp.createTemp('kelivo_data_sync_test_');
       PathProviderPlatform.instance = _FakePathProviderPlatform(root.path);
+      stagingDirectory = await BackupStaging.resolveRoot();
       PackageInfo.setMockInitialValues(
         appName: 'Kelivo',
         packageName: 'Kelivo',
@@ -512,6 +555,90 @@ void main() {
         await root.delete(recursive: true);
       }
     });
+
+    for (final crossVolume in [false, true]) {
+      test(
+        'publishes a complete desktop file, crossVolume=$crossVolume',
+        () async {
+          final file = File(p.join(root.path, 'source.zip'))
+            ..writeAsBytesSync([1, 2, 3]);
+          final out = Directory(p.join(root.path, 'chosen'))..createSync();
+          final dest = File(p.join(out.path, 'backup.zip'))
+            ..writeAsStringSync('previous');
+          final token = BackupCancelToken();
+          addTearDown(token.dispose);
+          final events = <BackupProgress>[];
+          await saveBackupToPath(
+            crossVolume ? _OtherVolumeFile(file) : file,
+            dest.path,
+            cancelToken: token,
+            onProgress: events.add,
+          );
+          expect(dest.readAsBytesSync(), [1, 2, 3]);
+          expect(out.listSync().map((f) => f.path), [dest.path]);
+          expect(file.existsSync(), crossVolume);
+          expect(events.last.phase, BackupPhase.finalizing);
+          expect(events.last.cancellable, isFalse);
+        },
+      );
+    }
+
+    test(
+      'cancelling a cross-volume copy preserves an earlier desktop backup',
+      () async {
+        final source = File(p.join(root.path, 'source.zip'))
+          ..writeAsBytesSync(List.filled(2 * 1024 * 1024, 3));
+        final out = Directory(p.join(root.path, 'chosen'))..createSync();
+        final dest = File(p.join(out.path, 'backup.zip'))
+          ..writeAsStringSync('previous');
+        final token = BackupCancelToken();
+        addTearDown(token.dispose);
+        await expectLater(
+          saveBackupToPath(
+            _OtherVolumeFile(source),
+            dest.path,
+            cancelToken: token,
+            onProgress: (p) {
+              if (p.total != null &&
+                  p.processed > 0 &&
+                  p.processed < p.total!) {
+                token.cancel();
+              }
+            },
+          ),
+          throwsA(isA<BackupCancelledException>()),
+        );
+        expect(dest.readAsStringSync(), 'previous');
+        expect(out.listSync().map((f) => f.path), [dest.path]);
+      },
+    );
+
+    test(
+      'publishes on a single-file grant using a temporary sibling',
+      () async {
+        final out = Directory(p.join(root.path, 'portal'))..createSync();
+        final dest = File(p.join(out.path, 'backup.zip'))
+          ..writeAsStringSync('previous');
+        final source = File(p.join(root.path, 'source.zip'))
+          ..writeAsStringSync('new backup');
+        final token = BackupCancelToken();
+        addTearDown(token.dispose);
+        final outside = Zone.current;
+        await IOOverrides.runZoned(
+          () => saveBackupToPath(
+            _OtherVolumeFile(source),
+            dest.path,
+            cancelToken: token,
+            onProgress: (_) {},
+          ),
+          createDirectory: (path) => path == out.path
+              ? _SingleFileGrantDirectory(out)
+              : outside.run(() => Directory(path)),
+        );
+        expect(dest.readAsStringSync(), 'new backup');
+        expect(out.listSync().map((entity) => entity.path), [dest.path]);
+      },
+    );
 
     test(
       'database export strips device state from both archive payloads',
@@ -1595,19 +1722,21 @@ void main() {
     );
 
     test(
-      'packs files as deflated zip entries and removes staging files',
+      'stores compressed attachments and deflates other entries in the same ZIP',
       () async {
         final uploadDir = Directory('${root.path}/upload');
         await uploadDir.create(recursive: true);
         final uploadFile = File('${uploadDir.path}/large.bin');
         await uploadFile.writeAsBytes(List<int>.filled(1024 * 1024, 7));
+        final mediaFile = File('${uploadDir.path}/pictures.ZIP');
+        final mediaBytes = utf8.encode('compressed attachment bytes');
+        await mediaFile.writeAsBytes(mediaBytes);
         final fontsDir = Directory('${root.path}/fonts');
         await fontsDir.create(recursive: true);
         final fontFile = File('${fontsDir.path}/custom.ttf');
         await fontFile.writeAsBytes(List<int>.filled(256, 9));
 
-        final tmpDir = Directory('${root.path}/tmp');
-        // Previous releases put these working files in the cache root.
+        final tmpDir = await BackupStaging.root();
         final staleWorkDir = Directory(
           '${tmpDir.path}/kelivo_backup_2000-01-01T00-00-00.000000',
         );
@@ -1632,10 +1761,12 @@ void main() {
           businessRepository: businessRepository,
           chatService: ChatService(),
         );
+        final events = <BackupProgress>[];
         final backupFile = await sync.prepareBackupFile(
           const WebDavConfig(
             scope: BackupScope(excluded: {BackupCategory.chats}),
           ),
+          onProgress: events.add,
         );
 
         expect(await staleWorkDir.exists(), isFalse);
@@ -1649,6 +1780,10 @@ void main() {
         Archive? archive;
         try {
           archive = ZipDecoder().decodeStream(input);
+          final checks = events.where((e) => e.phase == BackupPhase.verifying);
+          expect(checks.last.unit, BackupProgressUnit.items);
+          expect(checks.last.total, archive.length);
+          expect(checks.last.processed, archive.length);
           final settingsEntry = archive.findFile('settings.json');
           final manifestEntry = archive.findFile('manifest.json');
           final uploadEntry = archive.findFile('upload/large.bin');
@@ -1667,6 +1802,18 @@ void main() {
               jsonDecode(utf8.decode(manifestEntry!.readBytes()!))
                   as Map<String, dynamic>;
           final manifestEntries = manifest['entries'] as Map;
+          final media = archive.findFile('upload/pictures.ZIP')!;
+          expect(media.compression, CompressionType.none);
+          expect(
+            (media.rawContent as ZipFile).compressedSize,
+            mediaBytes.length,
+          );
+          expect(media.readBytes(), mediaBytes);
+          expect(
+            manifestEntries['upload/pictures.ZIP']['sha256'],
+            await _fileSha256(mediaFile),
+          );
+
           expect(
             (manifestEntries['upload/large.bin'] as Map)['sha256'],
             await _fileSha256(uploadFile),
@@ -1703,72 +1850,95 @@ void main() {
     );
 
     test(
-      'streaming export verify rejects a packed zip after one entry byte is corrupted',
+      'retained local recovery copies still read back the complete payload',
       () async {
-        final uploadDir = Directory('${root.path}/upload');
-        await uploadDir.create(recursive: true);
-        await File('${uploadDir.path}/payload.bin').writeAsBytes(
-          List<int>.generate(64 * 1024, (index) => index % 251),
-          flush: true,
-        );
-        final sync = DataSync(
+        final chat = ChatService();
+        await chat.init();
+        addTearDown(chat.close);
+        final events = <BackupProgress>[];
+        final snapshot = await DataSync(
+          chatService: chat,
           businessRepository: businessRepository,
-          chatService: ChatService(),
+        ).prepareLocalSnapshotArchive(onProgress: events.add);
+        addTearDown(() => DataSync.cleanupTemporaryBackupFile(snapshot.file));
+        final last = events.lastWhere(
+          (event) => event.phase == BackupPhase.verifying,
         );
-        final backupFile = await sync.prepareBackupFile(
-          const WebDavConfig(
-            scope: BackupScope(excluded: {BackupCategory.chats}),
-          ),
-        );
-        addTearDown(() => DataSync.cleanupTemporaryBackupFile(backupFile));
-
-        final expected = await _expectedPackedEntriesFromManifest(backupFile);
-        DataSync.verifyPackedBackupSync(
-          zipPath: backupFile.path,
-          expectedEntries: expected,
-        );
-
-        final bytes = await backupFile.readAsBytes();
-        // Locate the payload's local ZIP header: the archive midpoint can
-        // fall in central-directory metadata as the manifest grows.
-        final name = utf8.encode('upload/payload.bin');
-        var flipAt = -1;
-        for (
-          var offset = 0;
-          offset + 30 + name.length < bytes.length;
-          offset++
-        ) {
-          if (bytes[offset] != 0x50 ||
-              bytes[offset + 1] != 0x4b ||
-              bytes[offset + 2] != 0x03 ||
-              bytes[offset + 3] != 0x04) {
-            continue;
-          }
-          final nameLength = bytes[offset + 26] | (bytes[offset + 27] << 8);
-          final extraLength = bytes[offset + 28] | (bytes[offset + 29] << 8);
-          if (nameLength != name.length ||
-              !List.generate(
-                name.length,
-                (i) => bytes[offset + 30 + i],
-              ).asMap().entries.every((e) => e.value == name[e.key])) {
-            continue;
-          }
-          flipAt = offset + 30 + nameLength + extraLength;
-          break;
-        }
-        expect(flipAt, greaterThanOrEqualTo(0));
-        bytes[flipAt] = bytes[flipAt] ^ 0xff;
-        await backupFile.writeAsBytes(bytes, flush: true);
-
-        expect(
-          () => DataSync.verifyPackedBackupSync(
-            zipPath: backupFile.path,
-            expectedEntries: expected,
-          ),
-          throwsA(anything),
-        );
+        expect(last.unit, BackupProgressUnit.bytes);
+        expect(last.processed, last.total);
+        expect(last.processed, greaterThan(4096));
       },
     );
+
+    for (final extension in ['bin', 'zip']) {
+      test(
+        'streaming export verify rejects a corrupted .$extension entry',
+        () async {
+          final uploadDir = Directory('${root.path}/upload');
+          await uploadDir.create(recursive: true);
+          await File('${uploadDir.path}/payload.$extension').writeAsBytes(
+            List<int>.generate(64 * 1024, (index) => index % 251),
+            flush: true,
+          );
+          final sync = DataSync(
+            businessRepository: businessRepository,
+            chatService: ChatService(),
+          );
+          final backupFile = await sync.prepareBackupFile(
+            const WebDavConfig(
+              scope: BackupScope(excluded: {BackupCategory.chats}),
+            ),
+          );
+          addTearDown(() => DataSync.cleanupTemporaryBackupFile(backupFile));
+
+          final expected = await _expectedPackedEntriesFromManifest(backupFile);
+          DataSync.verifyPackedBackupSync(
+            zipPath: backupFile.path,
+            expectedEntries: expected,
+          );
+
+          final bytes = await backupFile.readAsBytes();
+          // Locate the payload's local ZIP header: the archive midpoint can
+          // fall in central-directory metadata as the manifest grows.
+          final name = utf8.encode('upload/payload.$extension');
+          var flipAt = -1;
+          for (
+            var offset = 0;
+            offset + 30 + name.length < bytes.length;
+            offset++
+          ) {
+            if (bytes[offset] != 0x50 ||
+                bytes[offset + 1] != 0x4b ||
+                bytes[offset + 2] != 0x03 ||
+                bytes[offset + 3] != 0x04) {
+              continue;
+            }
+            final nameLength = bytes[offset + 26] | (bytes[offset + 27] << 8);
+            final extraLength = bytes[offset + 28] | (bytes[offset + 29] << 8);
+            if (nameLength != name.length ||
+                !List.generate(
+                  name.length,
+                  (i) => bytes[offset + 30 + i],
+                ).asMap().entries.every((e) => e.value == name[e.key])) {
+              continue;
+            }
+            flipAt = offset + 30 + nameLength + extraLength;
+            break;
+          }
+          expect(flipAt, greaterThanOrEqualTo(0));
+          bytes[flipAt] = bytes[flipAt] ^ 0xff;
+          await backupFile.writeAsBytes(bytes, flush: true);
+
+          expect(
+            () => DataSync.verifyPackedBackupSync(
+              zipPath: backupFile.path,
+              expectedEntries: expected,
+            ),
+            throwsA(anything),
+          );
+        },
+      );
+    }
 
     test(
       'streaming export verify rejects a packed zip when manifest.json hash mismatches',
@@ -1826,10 +1996,9 @@ void main() {
       await File(
         '${uploadDir.path}/payload.bin',
       ).writeAsBytes(List<int>.filled(32 * 1024, 5), flush: true);
-      final tmpDir = Directory('${root.path}/tmp/kelivo_backup_staging');
-      await tmpDir.create(recursive: true);
+      await stagingDirectory.create(recursive: true);
       final createdVerify = <String>[];
-      final watch = tmpDir.watch(recursive: true).listen((event) {
+      final watch = stagingDirectory.watch(recursive: true).listen((event) {
         if (p.basename(event.path) == '_verify') {
           createdVerify.add(event.path);
         }
@@ -1943,9 +2112,8 @@ void main() {
         throwsA(isA<BackupCancelledException>()),
       );
 
-      final tmp = Directory('${root.path}/tmp/kelivo_backup_staging');
-      if (await tmp.exists()) {
-        final leftovers = tmp
+      if (await stagingDirectory.exists()) {
+        final leftovers = stagingDirectory
             .listSync(recursive: true, followLinks: false)
             .map((entity) => p.basename(entity.path))
             .toList();
@@ -2004,9 +2172,8 @@ void main() {
         events.map((event) => event.phase),
         contains(BackupPhase.verifying),
       );
-      final tmp = Directory('${root.path}/tmp/kelivo_backup_staging');
-      if (await tmp.exists()) {
-        final leftovers = tmp
+      if (await stagingDirectory.exists()) {
+        final leftovers = stagingDirectory
             .listSync(recursive: true, followLinks: false)
             .map((entity) => p.basename(entity.path))
             .toList();
@@ -2051,7 +2218,7 @@ void main() {
     );
 
     test(
-      'after byte-verify 100% an indeterminate validating tail then finalizing',
+      'validates normalized SQLite bytes after checking the input during extraction',
       () async {
         final zip = await _createSqliteBackupFixture(
           root: root,
@@ -2068,35 +2235,33 @@ void main() {
           chatService: chatService,
         ).restoreFromLocalFile(zip, _withoutAssets, onProgress: events.add);
 
-        final verifyDoneIndex = events.indexWhere(
-          (event) =>
-              event.phase == BackupPhase.validating &&
-              event.total != null &&
-              event.total! > 0 &&
-              event.processed >= event.total!,
-        );
-        expect(verifyDoneIndex, greaterThanOrEqualTo(0));
-        final afterVerify = events.sublist(verifyDoneIndex);
+        final prepared = events
+            .takeWhile((e) => e.phase != BackupPhase.stagingCandidate)
+            .toList();
         expect(
-          afterVerify.any(
-            (event) =>
-                event.phase == BackupPhase.validating && event.total == null,
-          ),
-          isTrue,
+          prepared.map((e) => e.phase),
+          containsAllInOrder([
+            BackupPhase.extracting,
+            BackupPhase.checkingDatabase,
+            BackupPhase.validating,
+            BackupPhase.finalizing,
+          ]),
+        );
+        final checking = prepared.indexWhere(
+          (e) => e.phase == BackupPhase.checkingDatabase,
         );
         expect(
-          afterVerify.map((event) => event.phase),
-          contains(BackupPhase.finalizing),
+          prepared
+              .take(checking)
+              .where((e) => e.phase == BackupPhase.validating),
+          isEmpty,
+          reason: 'User imports check the original payload during extraction.',
         );
-        final tailIndex = afterVerify.indexWhere(
-          (event) =>
-              event.phase == BackupPhase.validating && event.total == null,
+        final validation = prepared.lastWhere(
+          (e) => e.phase == BackupPhase.validating,
         );
-        final finalizingIndex = afterVerify.indexWhere(
-          (event) => event.phase == BackupPhase.finalizing,
-        );
-        expect(tailIndex, greaterThanOrEqualTo(0));
-        expect(finalizingIndex, greaterThan(tailIndex));
+        expect(validation.unit, BackupProgressUnit.bytes);
+        expect(validation.processed, validation.total);
       },
     );
 
@@ -2154,9 +2319,8 @@ void main() {
         throwsA(isA<BackupCancelledException>()),
       );
 
-      final tmp = Directory('${root.path}/tmp/kelivo_backup_staging');
-      if (await tmp.exists()) {
-        final leftovers = tmp
+      if (await stagingDirectory.exists()) {
+        final leftovers = stagingDirectory
             .listSync(followLinks: false)
             .map((entity) => p.basename(entity.path))
             .toList();
@@ -2311,10 +2475,7 @@ void main() {
             ),
           ),
         );
-        expect(
-          await Directory('${root.path}/tmp/kelivo_backup_staging').exists(),
-          isFalse,
-        );
+        expect(await stagingDirectory.exists(), isFalse);
         expect(preferences.getBool('backup_encryption_enabled_v1'), isTrue);
       },
     );
@@ -2375,9 +2536,7 @@ void main() {
         );
         expect(await backup.readAsBytes(), original);
         expect(
-          (await Directory(
-            '${root.path}/tmp/kelivo_backup_staging',
-          ).list().toList()).where(
+          (await stagingDirectory.list().toList()).where(
             (e) => p.basename(e.path).startsWith('kelivo_decrypted_'),
           ),
           isEmpty,
@@ -2397,9 +2556,7 @@ void main() {
           'keep-on-cancel',
         );
         expect(
-          (await Directory(
-            '${root.path}/tmp/kelivo_backup_staging',
-          ).list().toList()).where(
+          (await stagingDirectory.list().toList()).where(
             (e) => p.basename(e.path).startsWith('kelivo_decrypted_'),
           ),
           isEmpty,
@@ -2489,12 +2646,7 @@ void main() {
           await RestoreStartupGate.inspect(appDataDirectory: root),
           isNull,
         );
-        expect(
-          await Directory(
-            '${root.path}/tmp/kelivo_backup_staging',
-          ).list().toList(),
-          isEmpty,
-        );
+        expect(await stagingDirectory.list().toList(), isEmpty);
       },
     );
 
@@ -2658,12 +2810,7 @@ void main() {
             'KELIVENC',
           );
           expect(mimeTypes[archivePath], 'application/octet-stream');
-          expect(
-            await Directory(
-              '${root.path}/tmp/kelivo_backup_staging',
-            ).list().toList(),
-            isEmpty,
-          );
+          expect(await stagingDirectory.list().toList(), isEmpty);
           final items = useS3
               ? await s3.listRemote(s3Config)
               : await dav.listRemote(davConfig);
@@ -2699,12 +2846,7 @@ void main() {
             (await service.exportSettings())['global_proxy_password_v1'],
             'remote-secret',
           );
-          expect(
-            await Directory(
-              '${root.path}/tmp/kelivo_backup_staging',
-            ).list().toList(),
-            isEmpty,
-          );
+          expect(await stagingDirectory.list().toList(), isEmpty);
 
           // A compromised endpoint must not downgrade the selected .kbackup
           // to an ordinary ZIP when the downloaded file has a temporary name.
@@ -2745,12 +2887,7 @@ void main() {
             (await service.exportSettings())['global_proxy_password_v1'],
             'keep-secret',
           );
-          expect(
-            await Directory(
-              '${root.path}/tmp/kelivo_backup_staging',
-            ).list().toList(),
-            isEmpty,
-          );
+          expect(await stagingDirectory.list().toList(), isEmpty);
         },
       );
     }
@@ -3730,7 +3867,7 @@ void main() {
           : false,
     );
 
-    test('empty versioned asset roots clear old files on startup', () async {
+    test('legacy empty roots preserve creations', () async {
       for (final rootName in RestorePreviousAssetsPlan.rootNames) {
         final directory = Directory('${root.path}/$rootName');
         await directory.create(recursive: true);
@@ -3762,7 +3899,15 @@ void main() {
       for (final rootName in RestorePreviousAssetsPlan.rootNames) {
         final directory = Directory('${root.path}/$rootName');
         expect(await directory.exists(), isTrue, reason: rootName);
-        expect(await directory.list().toList(), isEmpty, reason: rootName);
+        if (rootName == 'generations') {
+          expect(await File('${directory.path}/old.bin').readAsBytes(), [
+            1,
+            2,
+            3,
+          ]);
+        } else {
+          expect(await directory.list().toList(), isEmpty, reason: rootName);
+        }
       }
     });
 
@@ -3951,6 +4096,16 @@ void main() {
           );
           await output.parent.create(recursive: true);
           await output.writeAsString('unreadable document');
+          if (!lockDirectory) {
+            // A POSIX sparse file occupies no additional data blocks. Its
+            // logical size must not disqualify the readable part of the backup.
+            final sparse = output.openSync(mode: FileMode.write);
+            try {
+              sparse.truncateSync(BackupArchiveLimits.entryBytes + 1);
+            } finally {
+              sparse.closeSync();
+            }
+          }
           final locked = lockDirectory ? output.parent : output;
           addTearDown(() async {
             await Process.run('chmod', ['700', locked.path]);
@@ -3963,7 +4118,7 @@ void main() {
             if (lockDirectory) {
               output.parent.listSync();
             } else {
-              output.readAsBytesSync();
+              output.openSync().closeSync();
             }
             markTestSkipped('Requires an unprivileged process');
             return;
@@ -4690,6 +4845,98 @@ void main() {
         },
       );
     }
+
+    test(
+      'restores distinct files when parent directories differ only by case',
+      () async {
+        final zip = await _createSqliteBackupFixture(
+          root: root,
+          prefix: 'case_folders',
+          settings: const {},
+          includeFiles: true,
+          extraEntries: const {
+            'upload/Photos/a.txt': 'a',
+            'upload/photos/b.txt': 'b',
+          },
+        );
+        final chat = ChatService();
+        try {
+          await DataSync(
+            businessRepository: businessRepository,
+            chatService: chat,
+          ).restoreFromLocalFile(zip, const WebDavConfig());
+        } finally {
+          await chat.close();
+        }
+        final receipt = await _recoverAcrossColdRestart(appDataDirectory: root);
+        expect(receipt?.state, RestoreReceiptState.committed);
+        expect(
+          await File(p.join(root.path, 'upload/Photos/a.txt')).readAsString(),
+          'a',
+        );
+        expect(
+          await File(p.join(root.path, 'upload/photos/b.txt')).readAsString(),
+          'b',
+        );
+      },
+    );
+
+    test(
+      'restores Unicode names only when the destination distinguishes them',
+      () async {
+        const composed = 'caf\u00e9.txt';
+        const decomposed = 'cafe\u0301.txt';
+        await File(p.join(root.path, composed)).writeAsString('probe');
+        final aliases = await File(p.join(root.path, decomposed)).exists();
+        final zip = await _createSqliteBackupFixture(
+          root: root,
+          prefix: 'unicode_names',
+          settings: const {},
+          includeFiles: true,
+          extraEntries: const {
+            'upload/$composed': 'one',
+            'upload/$decomposed': 'two',
+          },
+        );
+        final chat = ChatService();
+        try {
+          final restoring = DataSync(
+            businessRepository: businessRepository,
+            chatService: chat,
+          ).restoreFromLocalFile(zip, const WebDavConfig());
+          if (aliases) {
+            await expectLater(
+              restoring,
+              throwsA(
+                isA<FormatException>().having(
+                  (error) => error.message,
+                  'duplicate destination',
+                  startsWith('duplicate_zip_entry:'),
+                ),
+              ),
+            );
+            expect(
+              await RestoreStartupGate.inspect(appDataDirectory: root),
+              isNull,
+            );
+            return;
+          }
+          await restoring;
+        } finally {
+          await chat.close();
+        }
+        final receipt = await _recoverAcrossColdRestart(appDataDirectory: root);
+        expect(receipt?.state, RestoreReceiptState.committed);
+        expect(
+          await File(p.join(root.path, 'upload', composed)).readAsString(),
+          'one',
+        );
+        expect(
+          await File(p.join(root.path, 'upload', decomposed)).readAsString(),
+          'two',
+        );
+      },
+    );
 
     test('rejects case-folded duplicate ZIP paths before restoring', () async {
       final firstSettings = File('${root.path}/duplicate_settings_one.json');
@@ -5900,9 +6147,7 @@ void main() {
         encoder.addFileSync(chatsFile, 'chats.json');
         encoder.addFileSync(untrustedCandidate, 'candidate.sqlite');
         encoder.closeSync();
-        final chatService = _CandidateCleanupChatService(
-          Directory('${root.path}/tmp/kelivo_backup_staging'),
-        );
+        final chatService = _CandidateCleanupChatService(stagingDirectory);
 
         await DataSync(
           businessRepository: businessRepository,
@@ -6463,7 +6708,6 @@ void main() {
           businessRepository: businessRepository,
           chatService: ChatService(),
         );
-        final tmpDir = Directory('${root.path}/tmp/kelivo_backup_staging');
         final relativeSentinel = File('${root.path}/webdav_relative.zip');
         final absoluteSentinel = File('${root.path}/webdav_absolute.zip');
         await relativeSentinel.writeAsString('keep relative');
@@ -6496,7 +6740,7 @@ void main() {
 
         expect(await relativeSentinel.readAsString(), 'keep relative');
         expect(await absoluteSentinel.readAsString(), 'keep absolute');
-        expect(await tmpDir.list().toList(), isEmpty);
+        expect(await stagingDirectory.list().toList(), isEmpty);
       },
     );
   });

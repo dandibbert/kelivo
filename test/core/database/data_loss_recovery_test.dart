@@ -32,6 +32,7 @@ class _TestPathProvider extends PathProviderPlatform {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpRecoverySnapshotPaths();
   late Directory root;
   late PathProviderPlatform previousPathProvider;
   setUp(() async {

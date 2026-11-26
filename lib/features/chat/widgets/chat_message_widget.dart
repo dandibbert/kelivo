@@ -31,7 +31,6 @@ import '../../../shared/widgets/optional_shader_mask.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:open_filex/open_filex.dart';
-// import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart' show sha256;
 import '../../home/widgets/file_processing_indicator.dart';
@@ -77,6 +76,7 @@ import '../../../core/utils/multimodal_input_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/providers/settings_provider.dart';
+import '../../../theme/chat_bubble_style.dart';
 import 'package:Kelivo/theme/app_semantic_colors.dart';
 import '../../../core/services/model_spec/model_spec_resolver.dart';
 import '../../../core/models/assistant_regex.dart';
@@ -103,6 +103,7 @@ import 'timeline_visibility.dart';
 import 'citation_sources_sheet.dart';
 import '../../../shared/markdown/citation_syntax.dart';
 import 'chat_surface.dart';
+import 'chat_creation_images.dart';
 import 'collapsible_user_text.dart';
 import 'chat_suggestion_bubbles.dart';
 import 'token_display_widget.dart';
@@ -155,7 +156,7 @@ Uri? _tryNormalizeExternalUri(String raw) {
 @visibleForTesting
 const double kToolImageTimelineHeight = timelineToolImageHeight;
 @visibleForTesting
-const double kToolImageTimelineMaxWidth = 240;
+const double kToolImageTimelineMaxWidth = timelineToolImageMaxWidth;
 const double kBrowserStepImageHeight = 64;
 const double kBrowserStepImageMaxWidth = 120;
 const int _browserStepsFoldThreshold = 6;
@@ -254,6 +255,39 @@ Widget _buildResolvedImage(
   double? maxLogicalWidth,
   BoxFit fit = BoxFit.contain,
 }) {
+  final logicalHeight = height ?? width ?? kToolImageCardHeight;
+  final logicalWidth =
+      maxLogicalWidth ??
+      width ??
+      (height != null ? height * 2 : kToolImageTimelineMaxWidth);
+  final provider = _previewImageProvider(
+    rawPath,
+    logicalWidth: logicalWidth,
+    logicalHeight: logicalHeight,
+    devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+    fit: fit,
+  );
+  final image = _buildPreviewImage(
+    context,
+    provider,
+    width: width,
+    height: height,
+    fit: fit,
+  );
+  if (maxLogicalWidth == null || provider == null) return image;
+  return ConstrainedBox(
+    constraints: BoxConstraints(maxWidth: maxLogicalWidth),
+    child: image,
+  );
+}
+
+Widget _buildPreviewImage(
+  BuildContext context,
+  ImageProvider? provider, {
+  required double? width,
+  required double? height,
+  BoxFit fit = BoxFit.contain,
+}) {
   final cs = Theme.of(context).colorScheme;
   Widget errorWidget() => Container(
     width: width ?? (height != null ? height * 0.67 : 120),
@@ -267,20 +301,8 @@ Widget _buildResolvedImage(
     ),
   );
 
-  final logicalHeight = height ?? width ?? kToolImageCardHeight;
-  final logicalWidth =
-      maxLogicalWidth ??
-      width ??
-      (height != null ? height * 2 : kToolImageTimelineMaxWidth);
-  final provider = _previewImageProvider(
-    rawPath,
-    logicalWidth: logicalWidth,
-    logicalHeight: logicalHeight,
-    devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-    fit: fit,
-  );
   if (provider == null) return errorWidget();
-  Widget image = Image(
+  return Image(
     image: provider,
     width: width,
     height: height,
@@ -288,13 +310,6 @@ Widget _buildResolvedImage(
     gaplessPlayback: true,
     errorBuilder: (_, __, ___) => errorWidget(),
   );
-  if (maxLogicalWidth != null) {
-    image = ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxLogicalWidth),
-      child: image,
-    );
-  }
-  return image;
 }
 
 ImageProvider? _previewImageProvider(
@@ -1331,6 +1346,10 @@ class ChatMessageWidget extends StatefulWidget {
 
   /// When null, follows [SettingsProvider.showToolCards].
   final bool? showToolCards;
+
+  /// When null, follows [SettingsProvider.collapseThinkingSteps].
+  /// A false override also expands browser tool groups in the export.
+  final bool? collapseThinkingSteps;
   final void Function(String imageKey, double aspectRatio)? onInlineImageAspect;
 
   /// Off for exports, which must render the whole user message.
@@ -1384,6 +1403,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.onRecoveredAskUserAnswer,
     this.showThinkingCards,
     this.showToolCards,
+    this.collapseThinkingSteps,
     this.onInlineImageAspect,
     this.collapseLongUserText = true,
   });
@@ -2858,7 +2878,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 : cs.primary.withValues(alpha: 0.08))
           : null,
       bare: !showBubble,
-      isUser: isUser,
+      target: isUser
+          ? ChatBubbleStyleTarget.user
+          : ChatBubbleStyleTarget.assistant,
       child: child,
     );
   }
@@ -3363,6 +3385,22 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       reasoningSegments: effectiveReasoningSegments,
       sourceMap: mappedVisual.sourceMap,
     );
+    final inlineChatImages = context.select<SettingsProvider, bool>(
+      (s) => s.inlineChatImages,
+    );
+    final creationAttachments = widget.message.parts
+        .whereType<ImagePart>()
+        .where((part) => part.generationItemId != null)
+        .toList();
+    final imagePlacement = inlineChatImages
+        ? ChatImagePlacement.resolve(
+            context,
+            widget.message.id,
+            creationAttachments,
+            timelineProjection,
+          )
+        : null;
+    final imageOrdinals = imagePlacement?.atCall.keys.toSet() ?? const <int>{};
     final mediaPreview = _buildAttachmentPreview(
       context,
       parts: timelineProjection.fromParts
@@ -3370,7 +3408,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
               for (final part in widget.message.parts)
                 if (part is FilePart) part,
             ]
-          : widget.message.parts,
+          : [
+              for (final part in widget.message.parts)
+                if (part is! ImagePart || part.generationItemId == null) part,
+            ],
       isDark: isDark,
       alignEnd: false,
     );
@@ -3378,7 +3419,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     return ChatSurfaceTheme(
       palette: fg,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: assistantMessageHorizontalPadding,
+          vertical: 12,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3470,6 +3514,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   null;
               final visibleBlocks = _timelineVisibility.project(
                 timelineProjection,
+                imageCallOrdinals: imageOrdinals,
                 showThinkingCards: showThinkingCards,
                 showToolCards: showToolCards,
                 isPendingApproval: isPending,
@@ -3547,7 +3592,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                       ? 'text'
                       : block.isImage
                       ? block.imageKey
-                      : block.thinkingSteps.first.sourceOrdinal,
+                      : block.imageCallOrdinal == null
+                      ? block.thinkingSteps.first.sourceOrdinal
+                      : ('creation', block.imageCallOrdinal),
                 );
               }
 
@@ -3590,6 +3637,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   structureToken: (
                     widget.message.id,
                     visibleBlocks.length,
+                    inlineChatImages,
                     showThinkingCards,
                     showToolCards,
                   ),
@@ -3602,7 +3650,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   ),
                   estimateExtent: (index, width) {
                     final block = visibleBlocks[index];
-                    if (block.isImage) {
+                    if (block.isImage || block.imageCallOrdinal != null) {
                       return estimateTimelineImageHeight(
                         maxWidth: width,
                         aspectRatio: block.aspectRatio,
@@ -3618,6 +3666,14 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   },
                   itemBuilder: (context, index) {
                     final block = visibleBlocks[index];
+                    if (block.imageCallOrdinal case final ordinal?) {
+                      return ChatCreationImages.forSlots(
+                        messageId: widget.message.id,
+                        key: ValueKey(blockKey(index)),
+                        slots: imagePlacement!.atCall[ordinal]!,
+                        streaming: widget.message.isStreaming,
+                      );
+                    }
                     if (block.isImage) {
                       return _buildAssistantImageBlock(
                         context,
@@ -3653,6 +3709,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                       streaming,
                       showThinkingCards,
                       showToolCards,
+                      widget.collapseThinkingSteps,
                       blockKey(index),
                       widget.message.modelId,
                       widget.message.timestamp,
@@ -3671,6 +3728,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                       ),
                       showThinkingCards: showThinkingCards,
                       showToolCards: showToolCards,
+                      collapseThinkingSteps: widget.collapseThinkingSteps,
                       streaming: streaming,
                       onRecoveredAnswer: widget.onRecoveredAskUserAnswer == null
                           ? null
@@ -3695,6 +3753,20 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
               }
               return widgets;
             }(),
+            if (imagePlacement != null)
+              ChatCreationImages.forSlots(
+                messageId: widget.message.id,
+                key: ValueKey(('creation-images', widget.message.id)),
+                slots: imagePlacement.footer,
+                streaming: widget.message.isStreaming,
+              )
+            else
+              ChatCreationImages(
+                key: ValueKey(('creation-images', widget.message.id)),
+                messageId: widget.message.id,
+                attachments: creationAttachments,
+                streaming: widget.message.isStreaming,
+              ),
             if (showProducedFiles &&
                 _producedWorkspaceParts(widget.toolParts).isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -4370,19 +4442,23 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final isUser = widget.message.role == 'user';
+    final target = switch (widget.message.role) {
+      'user' => ChatBubbleStyleTarget.user,
+      'tool' => ChatBubbleStyleTarget.thinkingToolCard,
+      _ => ChatBubbleStyleTarget.assistant,
+    };
     final palette = computeChatSurfaceForegroundPalette(
       context,
-      isUser: isUser,
+      target: target,
     );
-    final child = isUser
-        ? _buildUserMessage()
-        : widget.message.role == 'tool'
-        ? _buildToolMessage()
-        : PageStorage(
-            bucket: widget.timelineStorage ?? _localTimelineStorage,
-            child: _buildAssistantMessage(),
-          );
+    final child = switch (target) {
+      ChatBubbleStyleTarget.user => _buildUserMessage(),
+      ChatBubbleStyleTarget.thinkingToolCard => _buildToolMessage(),
+      ChatBubbleStyleTarget.assistant => PageStorage(
+        bucket: widget.timelineStorage ?? _localTimelineStorage,
+        child: _buildAssistantMessage(),
+      ),
+    };
     return ChatSurfaceTheme(palette: palette, child: child);
   }
 }
@@ -4786,6 +4862,22 @@ List<WorkspaceToolPart> _producedWorkspaceParts(List<ToolUIPart>? parts) {
 class ToolPartSnapshot extends UnmodifiableListView<ToolUIPart> {
   ToolPartSnapshot(Iterable<ToolUIPart> parts)
     : super(List<ToolUIPart>.of(parts, growable: false));
+
+  ToolPartSnapshot.withPart(
+    List<ToolUIPart> previous,
+    int index,
+    ToolUIPart part,
+  ) : super(
+        List<ToolUIPart>.generate(
+          index == previous.length ? previous.length + 1 : previous.length,
+          (i) => i == index ? part : previous[i],
+          growable: false,
+        ),
+      );
+
+  late final ToolUIPart? lastLoading = reversed
+      .where((part) => part.loading)
+      .firstOrNull;
 }
 
 // Data for a reasoning segment (for mixed display)
@@ -4991,7 +5083,7 @@ enum _ReasoningStepState { collapsed, preview, expanded }
 const double _timelineStepPaddingV = 8;
 const double _timelineIconSize = 18;
 const double _timelineIconColumnWidth = 24;
-const double _timelineGap = 8;
+const double _timelineGap = timelineStepContentInset - _timelineIconColumnWidth;
 const double _timelineLineGap = 3;
 const double _timelineLineX = (_timelineIconColumnWidth - 1) / 2;
 
@@ -5073,6 +5165,7 @@ class _ChainOfThoughtCard extends StatefulWidget {
     required this.message,
     required this.showThinkingCards,
     required this.showToolCards,
+    required this.collapseThinkingSteps,
     required this.streaming,
     this.onRecoveredAnswer,
   });
@@ -5082,6 +5175,7 @@ class _ChainOfThoughtCard extends StatefulWidget {
   String get conversationId => message.conversationId;
   final bool showThinkingCards;
   final bool showToolCards;
+  final bool? collapseThinkingSteps;
   final bool streaming;
   final Future<void> Function(ToolUIPart part, AskUserResult result)?
   onRecoveredAnswer;
@@ -5166,10 +5260,13 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final fg = chatSurfaceForegroundPalette(context);
-    final collapseThinkingSteps = context.select<SettingsProvider, bool>(
-      (s) => s.collapseThinkingSteps,
+    final fg = computeChatSurfaceForegroundPalette(
+      context,
+      target: ChatBubbleStyleTarget.thinkingToolCard,
     );
+    final collapseThinkingSteps =
+        widget.collapseThinkingSteps ??
+        context.select<SettingsProvider, bool>((s) => s.collapseThinkingSteps);
     final showToolResultSummary = context.select<SettingsProvider, bool>(
       (s) => s.showToolResultSummary,
     );
@@ -5243,15 +5340,17 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
 
     final card = buildSharedChatSurface(
       context,
+      target: ChatBubbleStyleTarget.thinkingToolCard,
       borderRadius: BorderRadius.circular(16),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: timelineCardHorizontalPadding,
+        vertical: 4,
+      ),
       defaultColor: cs.primaryContainer.withValues(
         alpha: theme.brightness == Brightness.dark ? 0.25 : 0.30,
       ),
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 300),
+      child: _TimelineAnimatedSize(
         curve: Curves.easeInOutCubicEmphasized,
-        alignment: Alignment.topLeft,
         child: _RecoveredAskUserAction(
           conversationId: widget.conversationId,
           onSubmit: widget.onRecoveredAnswer,
@@ -5305,7 +5404,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                     ),
                   ),
                 ViewportBlockList(
-                  storageId: ('steps', widget.key),
+                  storageId: ('steps', widget.key, showBrowserPageCards),
                   revealIndex: findStep >= 0 ? findStep - hiddenCount : null,
                   itemCount: visibleSteps.length,
                   structureToken: (visibleSteps.length, hiddenCount),
@@ -5323,7 +5422,14 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                       toolName: step.tool!.toolName,
                     );
                   },
-                  estimateExtent: (i, width) => 36,
+                  estimateExtent: (i, width) {
+                    final step = visibleSteps[i];
+                    if (!showBrowserPageCards || step.browserTools == null) {
+                      return 36;
+                    }
+                    return 36 +
+                        estimateBrowserGroupBodyHeight(lite: step.browserLite);
+                  },
                   keepAlive: (i) =>
                       visibleSteps[i].tool?.toolName ==
                           LocalToolNames.askUser &&
@@ -5364,6 +5470,8 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                     }
                     final part = step.tool!;
                     if (step.browserTools case final tools?) {
+                      final expandAllSteps =
+                          widget.collapseThinkingSteps == false;
                       return _CachedTimelineStep(
                         key: ValueKey(
                           'browser-group-${tools.first.id}-${step.sourceOrdinal}',
@@ -5385,6 +5493,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                             ),
                           ),
                           step.browserLite,
+                          expandAllSteps,
                           isFirst,
                           isLast,
                           fg,
@@ -5399,6 +5508,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
                           sourceOrdinal: step.sourceOrdinal,
                           tools: tools,
                           lite: step.browserLite,
+                          expandAllSteps: expandAllSteps,
                           conversationId: widget.conversationId,
                           isFirst: isFirst,
                           isLast: isLast,
@@ -5449,7 +5559,7 @@ class _ChainOfThoughtCardState extends State<_ChainOfThoughtCard>
     return Align(
       alignment: Alignment.centerLeft,
       widthFactor: fillWidth ? null : 1,
-      child: card,
+      child: ChatSurfaceTheme(palette: fg, child: card),
     );
   }
 }
@@ -5581,7 +5691,7 @@ class _TimelineStepBody extends StatelessWidget {
     final body = visible
         ? Padding(
             padding: EdgeInsets.only(
-              left: _timelineIconColumnWidth + _timelineGap,
+              left: timelineStepContentInset,
               top: 4,
               bottom: bottomPadding,
             ),
@@ -5605,15 +5715,72 @@ class _TimelineStepBody extends StatelessWidget {
             ),
           ),
         if (animate)
-          AnimatedSize(
-            duration: const Duration(milliseconds: 300),
+          _TimelineAnimatedSize(
             curve: const Cubic(0.2, 0.8, 0.2, 1),
-            alignment: Alignment.topLeft,
             child: body,
           )
         else
           body,
       ],
+    );
+  }
+}
+
+class _TimelineAnimatedSize extends StatefulWidget {
+  const _TimelineAnimatedSize({required this.curve, required this.child});
+
+  final Curve curve;
+  final Widget child;
+
+  static void snapAncestors(BuildContext context, int layoutFrames) {
+    context.visitAncestorElements((element) {
+      if (element case StatefulElement(
+        state: final _TimelineAnimatedSizeState state,
+      )) {
+        state._snap(layoutFrames);
+      }
+      return true;
+    });
+  }
+
+  @override
+  State<_TimelineAnimatedSize> createState() => _TimelineAnimatedSizeState();
+}
+
+class _TimelineAnimatedSizeState extends State<_TimelineAnimatedSize> {
+  final _bodyKey = GlobalKey();
+  int _snapFrames = 0;
+
+  void _snap(int frames) {
+    if (_snapFrames > 0) {
+      _snapFrames = math.max(_snapFrames, frames);
+      return;
+    }
+    setState(() => _snapFrames = frames);
+    WidgetsBinding.instance.addPostFrameCallback(_finishFrame);
+  }
+
+  void _finishFrame(Duration _) {
+    if (!mounted) return;
+    if (_snapFrames > 1) {
+      _snapFrames--;
+      WidgetsBinding.instance.addPostFrameCallback(_finishFrame);
+    } else {
+      setState(() => _snapFrames = 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Apply an asynchronously decoded size within the anchored layouts, while
+    // keeping the interactive subtree mounted when the animation is bypassed.
+    final body = KeyedSubtree(key: _bodyKey, child: widget.child);
+    if (_snapFrames > 0) return body;
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: widget.curve,
+      alignment: Alignment.topLeft,
+      child: body,
     );
   }
 }
@@ -5846,7 +6013,6 @@ class _ChainOfThoughtReasoningStepState
         const <SourceSpan>[];
     final label = ThinkingSheen(
       enabled: widget.step.loading,
-      color: fg.strong,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -5994,6 +6160,7 @@ class _ChainOfThoughtBrowserGroup extends StatefulWidget {
     required this.sourceOrdinal,
     required this.tools,
     required this.lite,
+    required this.expandAllSteps,
     required this.conversationId,
     required this.isFirst,
     required this.isLast,
@@ -6004,6 +6171,7 @@ class _ChainOfThoughtBrowserGroup extends StatefulWidget {
   final int sourceOrdinal;
   final List<ToolUIPart> tools;
   final bool lite, isFirst, isLast, hideImages, showPageCard, streaming;
+  final bool expandAllSteps;
   final String conversationId;
   @override
   State<_ChainOfThoughtBrowserGroup> createState() =>
@@ -6170,12 +6338,14 @@ class _ChainOfThoughtBrowserGroupState
     super.dispose();
   }
 
-  bool get _isExpanded => _userToggled
-      ? _expanded!
-      : !widget.lite &&
-            !_executing &&
-            _displayAction == null &&
-            _actions.any((action) => action.failed);
+  bool get _isExpanded =>
+      widget.expandAllSteps ||
+      (_userToggled
+          ? _expanded!
+          : !widget.lite &&
+                !_executing &&
+                _displayAction == null &&
+                _actions.any((action) => action.failed));
 
   void _finishStepsAnimation() {
     if (!_isExpanded && _keepSteps) {
@@ -6199,8 +6369,10 @@ class _ChainOfThoughtBrowserGroupState
     final expanded = _isExpanded;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final tools = widget.tools;
+    final expandAllSteps = widget.expandAllSteps;
     final firstVisible =
         _keepSteps &&
+            !expandAllSteps &&
             !_showAll &&
             widget.tools.length > _browserStepsFoldThreshold
         ? widget.tools.length - _browserStepsTail
@@ -6217,7 +6389,7 @@ class _ChainOfThoughtBrowserGroupState
           ? _loadingIcon(fg.strong)
           : Icon(Lucide.AppWindow, size: 16, color: fg.strong),
       label: Semantics(
-        button: true,
+        button: !expandAllSteps,
         expanded: expanded,
         label: l.browserGroupToggleSemantics,
         child: Row(
@@ -6226,7 +6398,6 @@ class _ChainOfThoughtBrowserGroupState
             Flexible(
               child: ThinkingSheen(
                 enabled: running,
-                color: fg.strong,
                 child: AnimatedSwitcher(
                   duration: reduceMotion
                       ? Duration.zero
@@ -6278,19 +6449,23 @@ class _ChainOfThoughtBrowserGroupState
       ),
       isFirst: widget.isFirst,
       isLast: widget.isLast && !_keepSteps,
-      onTap: () => setState(() {
-        _expanded = !expanded;
-        _userToggled = true;
-        // Keep the current rows (including revealed earlier steps) until
-        // closing ends, so reversal starts at the same visual position.
-        _keepSteps = !reduceMotion || _expanded!;
-        if (!_keepSteps) _showAll = false;
-      }),
-      indicator: Icon(
-        expanded ? Lucide.ChevronUp : Lucide.ChevronDown,
-        size: 16,
-        color: fg.muted,
-      ),
+      onTap: expandAllSteps
+          ? null
+          : () => setState(() {
+              _expanded = !expanded;
+              _userToggled = true;
+              // Keep the current rows (including revealed earlier steps) until
+              // closing ends, so reversal starts at the same visual position.
+              _keepSteps = !reduceMotion || _expanded!;
+              if (!_keepSteps) _showAll = false;
+            }),
+      indicator: expandAllSteps
+          ? null
+          : Icon(
+              expanded ? Lucide.ChevronUp : Lucide.ChevronDown,
+              size: 16,
+              color: fg.muted,
+            ),
     );
     final steps = <Widget>[];
     if (_keepSteps) {
@@ -6404,14 +6579,18 @@ class _ChainOfThoughtBrowserGroupState
     final fg = chatSurfaceForegroundPalette(context);
     final cs = Theme.of(context).colorScheme;
     final l = AppLocalizations.of(context)!;
-    final tab = action.action == 'switch_tab'
-        ? BrowserService.instance.tabs
-              .where((tab) => tab.id == action.tabId)
-              .firstOrNull
-        : null;
-    final target = tab == null
+    final tabUrl = switch ((action.action, widget.expandAllSteps)) {
+      ('switch_tab', true) => action.url,
+      ('switch_tab', false) =>
+        BrowserService.instance.tabs
+            .where((tab) => tab.id == action.tabId)
+            .firstOrNull
+            ?.url,
+      _ => null,
+    };
+    final target = tabUrl == null
         ? action.target(l, [if (snapshot != null) snapshot])
-        : browserUrlLabel(tab.url, includePath: true);
+        : browserUrlLabel(tabUrl, includePath: true);
     final content = <Widget>[
       if (action.failed)
         Text(
@@ -6470,7 +6649,6 @@ class _ChainOfThoughtBrowserGroupState
             Flexible(
               child: ThinkingSheen(
                 enabled: action.loading,
-                color: fg.strong,
                 child: Text(
                   action.failed
                       ? l.browserActionFailed(action.label(l))
@@ -6525,6 +6703,121 @@ class _ChainOfThoughtBrowserGroupState
           conversationId: widget.conversationId,
         ),
       ),
+    );
+  }
+}
+
+class _SingleToolImageThumbnail extends StatefulWidget {
+  const _SingleToolImageThumbnail({
+    super.key,
+    required this.path,
+    required this.knownAspect,
+  });
+
+  final String path;
+  final double? knownAspect;
+
+  @override
+  State<_SingleToolImageThumbnail> createState() =>
+      _SingleToolImageThumbnailState();
+}
+
+class _SingleToolImageThumbnailState extends State<_SingleToolImageThumbnail> {
+  ImageStream? _stream;
+  ImageStreamListener? _listener;
+  (ImageProvider, Map<String, double>)? _listenedInput;
+
+  @override
+  void didUpdateWidget(_SingleToolImageThumbnail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.path != widget.path ||
+        oldWidget.knownAspect != widget.knownAspect) {
+      _stopListening();
+      _listenedInput = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopListening();
+    super.dispose();
+  }
+
+  void _stopListening() {
+    final listener = _listener;
+    if (listener != null) _stream?.removeListener(listener);
+    _stream = null;
+    _listener = null;
+  }
+
+  void _listenForAspect(ImageProvider provider, Map<String, double> aspects) {
+    final input = (provider, aspects);
+    if (_listenedInput == input) return;
+    _stopListening();
+    _listenedInput = input;
+    final path = widget.path;
+    _stream = provider.resolve(createLocalImageConfiguration(context));
+    _listener = ImageStreamListener((info, synchronous) {
+      final aspect = info.image.width / info.image.height;
+      info.dispose();
+      _stopListening();
+      void applyAspect() {
+        if (!mounted || _listenedInput != input) return;
+        final frames = ViewportBlockList.layoutFramesForChildResize(context);
+        preserveScrollLayoutAnchor(context, layoutFrames: frames);
+        _TimelineAnimatedSize.snapAncestors(context, frames);
+        setState(() => aspects[path] = aspect);
+      }
+
+      // Cached pixels may arrive during build even when a recycled row has
+      // no measured aspect. Wait for its reserved height to be laid out so
+      // we can anchor the same resize as an asynchronously decoded frame.
+      if (synchronous) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => applyAspect());
+      } else {
+        applyAspect();
+      }
+    }, onError: (_, _) => _stopListening());
+    _stream!.addListener(_listener!);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final path = widget.path;
+    final provider = _previewImageProvider(
+      path,
+      logicalWidth: kToolImageTimelineMaxWidth,
+      logicalHeight: kToolImageTimelineHeight,
+      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+      fit: BoxFit.contain,
+    );
+    var aspect = widget.knownAspect;
+    if (aspect == null && provider != null) {
+      final storage = PageStorage.of(context);
+      const id = timelineToolImageAspectsStorageId;
+      final cached =
+          storage.readState(context, identifier: id) as Map<String, double>?;
+      final aspects = cached ?? <String, double>{};
+      if (cached == null) storage.writeState(context, aspects, identifier: id);
+      if (!aspects.containsKey(path)) _listenForAspect(provider, aspects);
+      aspect = aspects[path];
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = timelineToolImageSize(constraints.maxWidth, aspect);
+        return GestureDetector(
+          onTap: () => _showToolFullImage(context, path),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: _buildPreviewImage(
+              context,
+              provider,
+              width: size.width,
+              height: size.height,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -6701,7 +6994,6 @@ class _ChainOfThoughtToolStepState extends State<_ChainOfThoughtToolStep>
     );
     final label = ThinkingSheen(
       enabled: widget.part.loading && !_isAskUser,
-      color: fg.strong,
       child: Text(
         title,
         maxLines: 2,
@@ -6775,10 +7067,21 @@ class _ChainOfThoughtToolStepState extends State<_ChainOfThoughtToolStep>
               color: fg.body,
             ),
           );
-    final Widget? imageThumbnails =
-        (!_isAskUser && !hideToolResultImages && imagePaths.isNotEmpty)
-        ? SizedBox(
-            key: ValueKey('tool-image-thumbnails:${widget.part.id}'),
+    final showImages =
+        !_isAskUser && !hideToolResultImages && imagePaths.isNotEmpty;
+    final useCompactImage =
+        showImages && usesCompactToolImage(widget.part.toolName, imagePaths);
+    final thumbnailsKey = ValueKey('tool-image-thumbnails:${widget.part.id}');
+    final Widget? imageThumbnails = !showImages
+        ? null
+        : useCompactImage
+        ? _SingleToolImageThumbnail(
+            key: thumbnailsKey,
+            path: imagePaths.single,
+            knownAspect: viewImageResultAspect(cleanText),
+          )
+        : SizedBox(
+            key: thumbnailsKey,
             height: kToolImageTimelineHeight,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
@@ -6800,8 +7103,7 @@ class _ChainOfThoughtToolStepState extends State<_ChainOfThoughtToolStep>
                 );
               },
             ),
-          )
-        : null;
+          );
     final Widget? content =
         (summaryContent == null &&
             imageThumbnails == null &&
@@ -7020,6 +7322,7 @@ class _ToolCallItemState extends State<_ToolCallItem> {
       padding: EdgeInsets.zero,
       child: buildSharedChatSurface(
         context,
+        target: ChatBubbleStyleTarget.thinkingToolCard,
         borderRadius: BorderRadius.circular(16),
         padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
         defaultColor: cs.primaryContainer.withValues(
@@ -7072,7 +7375,6 @@ class _ToolCallItemState extends State<_ToolCallItem> {
                       // Title: always show tool name; add "waiting" badge when pending
                       ThinkingSheen(
                         enabled: widget.part.loading && !isPendingApproval,
-                        color: fg.strong,
                         child: Text(
                           _titleFor(
                             context,
@@ -7347,6 +7649,7 @@ class _AskUserToolCardState extends State<_AskUserToolCard> {
     final expanded = _expanded ?? true;
     return buildSharedChatSurface(
       context,
+      target: ChatBubbleStyleTarget.thinkingToolCard,
       borderRadius: BorderRadius.circular(16),
       padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
       defaultColor: cs.primaryContainer.withValues(alpha: isDark ? 0.25 : 0.30),
@@ -8404,7 +8707,6 @@ class _ReasoningSectionState extends State<_ReasoningSection> {
             const SizedBox(width: 8),
             ThinkingSheen(
               enabled: loading,
-              color: fg.strong,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

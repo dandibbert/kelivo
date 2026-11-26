@@ -1663,6 +1663,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get hotkeysResetAll => 'Сбросить все по умолчанию';
 
   @override
+  String hotkeysShortcutInUse(String action) {
+    return 'Это сочетание клавиш уже назначено действию «$action».';
+  }
+
+  @override
+  String get hotkeysTextEditing => 'Редактирование текста и перемещение фокуса';
+
+  @override
   String get assistantEditTemperatureTitle => 'Температура';
 
   @override
@@ -1749,6 +1757,20 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get backupPageChooseExternalFolder =>
       'Выберите iCloud Drive или папку вне «На моём iPhone > Kelivo». Файлы в папке Kelivo удаляются вместе с приложением. Резервная копия не сохранена.';
+
+  @override
+  String get backupPageChooseNewFile =>
+      'Выберите новое имя файла или другую папку для сохранения резервной копии.';
+
+  @override
+  String backupArchiveFileSizeLimit(String name, String limit) {
+    return 'Файл резервной копии «$name» превышает предельный размер одного файла $limit.';
+  }
+
+  @override
+  String backupArchiveTotalSizeLimit(String limit) {
+    return 'Размер резервной копии в распакованном виде превышает предел $limit.';
+  }
 
   @override
   String get backupPageFilesLabel => 'Файлы и изображения';
@@ -1881,7 +1903,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Установка резервной копии';
 
   @override
-  String get restoreProgressStageVerifying => 'Проверка';
+  String get restoreProgressStageVerifying => 'Проверка восстановленных данных';
 
   @override
   String get restoreProgressStageRollingBack =>
@@ -2198,13 +2220,43 @@ class AppLocalizationsRu extends AppLocalizations {
   String get backupProgressPreparing => 'Подготовка';
 
   @override
+  String get backupProgressScanning => 'Сканирование файлов резервной копии';
+
+  @override
+  String backupProgressDiscoveredFiles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Найдено $count файла',
+      many: 'Найдено $count файлов',
+      few: 'Найдено $count файла',
+      one: 'Найден $count файл',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backupProgressCheckingDatabase => 'Проверка базы данных';
+
+  @override
+  String get backupProgressChoosingDestination => 'Выбор места сохранения';
+
+  @override
+  String get backupProgressSavingFile => 'Сохранение файла резервной копии';
+
+  @override
+  String backupProgressElapsed(String time) {
+    return 'Прошло $time';
+  }
+
+  @override
   String get backupProgressSnapshotting => 'Создание снимка базы данных';
 
   @override
   String get backupProgressPacking => 'Упаковка';
 
   @override
-  String get backupProgressVerifying => 'Проверка';
+  String get backupProgressVerifying => 'Проверка архива резервной копии';
 
   @override
   String get backupProgressUploading => 'Загрузка';
@@ -2216,13 +2268,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get backupProgressExtracting => 'Распаковка';
 
   @override
-  String get backupProgressValidating => 'Валидация';
+  String get backupProgressValidating => 'Проверка файлов восстановления';
 
   @override
   String get backupProgressReadingSettings => 'Чтение настроек';
 
   @override
-  String get backupProgressStaging => 'Подготовка данных';
+  String get backupProgressStaging => 'Подготовка файлов восстановления';
 
   @override
   String get backupProgressCommitting => 'Фиксация';
@@ -3151,6 +3203,9 @@ class AppLocalizationsRu extends AppLocalizations {
       'Показывать карточки рассуждений и инструментов';
 
   @override
+  String get messageExportSheetExpandAllSteps => 'Развернуть все шаги';
+
+  @override
   String get messageExportSheetShowThinkingContent =>
       'Показывать содержимое рассуждений';
 
@@ -3488,13 +3543,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatInputBarImageProcessing => 'Обработка изображения';
 
   @override
-  String get chatInputBarImageMode => 'Режим изображений';
-
-  @override
-  String get chatInputBarDisableImageModeTooltip =>
-      'Отключить режим изображений';
-
-  @override
   String get chatInputBarQueuedPending => 'В очереди на отправку';
 
   @override
@@ -3793,7 +3841,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get defaultModelPageTitleModelSubtitle =>
-      'Суммирует заголовки чатов: по умолчанию используется текущая модель чата или выбранная модель.';
+      'По умолчанию суммирует названия чатов с помощью текущей модели чата или выбранной модели. Также используется для автоматического названия тем при создании.';
 
   @override
   String get titleModelThinkingTitle => 'Включить рассуждение';
@@ -4578,6 +4626,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get providerBalanceInterval => 'Обновление по таймеру';
+
+  @override
+  String get providerBalanceFalPermissionHint =>
+      'Для запроса баланса нужен ключ fal с разрешением billing:usage:read. Чтобы использовать отдельный ключ для биллинга, добавьте сюда заголовок Authorization со значением Key, пробелом и ключом.';
+
+  @override
+  String get providerBalanceRefreshAfterGeneration =>
+      'Обновлять после генерации';
 
   @override
   String get providerBalanceRefreshOnReply => 'Обновлять после ответов';
@@ -6949,6 +7005,13 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get searchProviderYouDescription =>
       'You.com Search API. Возвращает веб-результаты и новости с highlights или сниппетами.';
+
+  @override
+  String get searchServiceNameKeenable => 'Keenable';
+
+  @override
+  String get searchProviderKeenableDescription =>
+      'Keenable Search. API-ключ необязателен; без него используется публичный эндпоинт.';
 
   @override
   String get searchServicesDialogContentMode => 'Режим контента';
@@ -9838,6 +9901,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Пустые строки разбивают ответ ассистента на отдельные пузыри для каждого абзаца';
 
   @override
+  String get messageStyleSettingsPageCustomizeThinkingToolCards =>
+      'Настроить карточки рассуждений и инструментов';
+
+  @override
+  String get messageStyleSettingsPageCustomizeThinkingToolCardsSubtitle =>
+      'Задайте отдельный вид для рассуждений и вызовов инструментов';
+
+  @override
   String get messageStyleSettingsPageStyleFrostedSubtitle =>
       'Полупрозрачное матовое стекло';
 
@@ -9891,8 +9962,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get messageStyleSettingsPageRoleAssistant => 'Ассистент';
 
   @override
+  String get messageStyleSettingsPageRoleThinkingTool => 'Карточки';
+
+  @override
   String get messageStyleSettingsPageRoleAssistantHint =>
-      'Настройки ассистента также применяются к карточкам рассуждения, вызова инструментов и перевода.';
+      'Карточки перевода используют стиль ассистента. Карточки рассуждений и инструментов по умолчанию также используют его.';
 
   @override
   String get localSnapshotSectionTitle => 'Локальные копии';
@@ -15360,7 +15434,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compressOverSnack =>
-      'Сводка всё ещё слишком длинная и превысит лимит, поэтому она не была использована. Сожмите ещё раз или переключитесь на модель с большим контекстом.';
+      'Результат может превысить контекстное окно модели чата. Вы можете просмотреть и применить сводку.';
 
   @override
   String get contextSummaryHint =>
@@ -16471,6 +16545,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get imageContextOmitted => 'Не включено';
 
   @override
+  String get imageContextExclude => 'Исключить из контекста';
+
+  @override
+  String get imageContextRestore => 'Отменить исключение';
+
+  @override
+  String get imageContextExcluded => 'Исключено вами';
+
+  @override
+  String get imageContextExcludedWithOriginal =>
+      'Исходное изображение исключено';
+
+  @override
   String get imageContextPin => 'Закрепить изображение';
 
   @override
@@ -16496,7 +16583,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get imageContextActionsHint =>
-      'Закрепите, чтобы отдать приоритет изображению, или снова добавьте его в поле ввода.';
+      'Исключайте отдельные изображения, закрепляйте их для приоритетного сохранения или снова добавляйте в поле ввода.';
 
   @override
   String get imageContextEmptyDescription =>
@@ -16714,13 +16801,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get compressionTrigger => 'Начинать при';
 
   @override
-  String get compressionTarget => 'Сжимать до';
+  String get compressionTarget => 'Целевой расход';
 
   @override
-  String get compressionWindow => 'Ёмкость модели сводки';
-
-  @override
-  String get compressionRequests => 'Максимум запросов';
+  String get compressionWindow => 'Окно планирования автосжатия';
 
   @override
   String get compressionReference => 'Использовать справочные материалы';
@@ -16794,16 +16878,12 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get compressionBudgetError =>
-      'Для этого потребуется больше запросов к модели, чем позволяет текущий лимит, поэтому контекст не изменён. Увеличьте «Максимум запросов» или переключитесь на модель с большим контекстом.';
-
-  @override
   String get compressionIncomplete =>
       'Сводка была обрезана или отклонена, контекст не изменён. Увеличьте лимит вывода или попробуйте другую модель.';
 
   @override
-  String get compressionReferenceTooLarge =>
-      'Справочные материалы уже занимают всю ёмкость этой модели, и для сводки не остаётся места. Используйте меньше справочных материалов или переключитесь на модель с большим контекстом.';
+  String get compressionProviderContextRejected =>
+      'Провайдер сообщил, что запрос слишком большой. Попробуйте модель с большим контекстом.';
 
   @override
   String get compressionReferenceChanged =>
@@ -16811,7 +16891,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compressionTargetNotReached =>
-      'Даже после сжатия использование всё ещё будет выше порога автоматического запуска, поэтому исходный контекст сохранён. Сократите сводку или увеличьте «Запускать при».';
+      'По оценке, результат займёт не меньше контекста, чем исходный. Вы можете просмотреть и сократить сводку.';
 
   @override
   String get compressionTemplateMissing =>
@@ -16900,8 +16980,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Сжать один раз, затем повторить неудачный ответ';
 
   @override
-  String compressionPlannedCalls(int count, int limit) {
-    return 'Ожидается запросов: $count · лимит $limit, включая повторы';
+  String compressionPlannedCalls(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Около $count запроса',
+      many: 'Около $count запросов',
+      few: 'Около $count запросов',
+      one: 'Около $count запроса',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -16995,9 +17083,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get compressionTurnUnit => 'ходов';
 
   @override
-  String get compressionCallUnit => 'вызовов';
-
-  @override
   String get compressionRequestTimeout => 'Тайм-аут запроса сжатия';
 
   @override
@@ -17020,10 +17105,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compressionAdvancedHint =>
-      'Справочные материалы, повторное обращение к оригиналам и лимит запросов';
+      'Фоновые ссылки, исходная история и оценки окна';
 
   @override
   String get compressionAutomaticWindow => 'Авто';
+
+  @override
+  String compressionSummaryWindowEstimate(String tokens, String source) {
+    return 'Окно модели сводки · $tokens токенов · $source';
+  }
 
   @override
   String get compressionAutoOffHint => 'Сжимайте вручную, когда потребуется.';
@@ -17067,7 +17157,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compressionAutoKeepHint =>
-      'Автоматическое сжатие всегда сохраняет недавние оригиналы независимо от диапазона, выбранного для ручного запуска. Число ходов общее с ручным сжатием.';
+      'Автоматическое сжатие сохраняет последние ходы, пока есть место. При необходимости оно может суммировать дополнительные старые ходы и всегда защищает текущий запрос.';
 
   @override
   String get requestBudgetTitle => 'Лимиты изображений и запросов';
@@ -17212,6 +17302,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get languageDisplayTurkish => 'Турецкий';
+
+  @override
+  String get languageDisplayBangla => 'Бенгальский';
+
+  @override
+  String get languageDisplayArabic => 'Арабский';
+
+  @override
+  String get translationLanguageManagerTitle => 'Языки перевода';
+
+  @override
+  String get translationLanguageManagerHint =>
+      'Включите языки, которые должны отображаться. Перетаскивайте для изменения порядка.';
+
+  @override
+  String get translationLanguageManagerShown => 'Показаны в меню';
+
+  @override
+  String get translationLanguageManagerHidden => 'Скрыты';
+
+  @override
+  String get translationLanguageManagerKeepOne =>
+      'Оставьте хотя бы один язык перевода видимым.';
+
+  @override
+  String get translationLanguageManagerSaveFailed =>
+      'Не удалось сохранить языки перевода. Попробуйте ещё раз.';
 
   @override
   String sideDrawerDeleteConfirmContent(String title) {
@@ -18090,4 +18207,1254 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get deepLinkGenNewOnlyHint =>
       'Ассистент и временный чат применяются только к новому чату.';
+
+  @override
+  String get worldBookGroupActions => 'Действия с группой';
+
+  @override
+  String get worldBookGroupLabel => 'Группа';
+
+  @override
+  String get worldBookOrder => 'Настроить порядок внедрения';
+
+  @override
+  String worldBookGroupSelectedBooks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Выбрано $count книги',
+      many: 'Выбрано $count книг',
+      few: 'Выбрано $count книги',
+      one: 'Выбрана $count книга',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get worldBookGroupUngrouped => 'Без группы';
+
+  @override
+  String get worldBookGroupNew => 'Новая группа';
+
+  @override
+  String get worldBookGroupName => 'Название группы';
+
+  @override
+  String get worldBookGroupNameInvalid => 'Введите уникальное название группы.';
+
+  @override
+  String get worldBookGroupRename => 'Переименовать группу';
+
+  @override
+  String get worldBookGroupDelete => 'Удалить группу';
+
+  @override
+  String worldBookGroupDeleteMessage(String group) {
+    return 'Книги в «$group» будут перемещены в «Без группы».';
+  }
+
+  @override
+  String get worldBookGroupMove => 'Переместить в группу';
+
+  @override
+  String get worldBookGroupSelectBooks => 'Выбрать книги мира';
+
+  @override
+  String get worldBookGroupSaveFailed =>
+      'Не удалось сохранить изменения. Попробуйте ещё раз.';
+
+  @override
+  String get worldBookGroupSelectAll => 'Выбрать все в группе';
+
+  @override
+  String get worldBookGroupClearSelection => 'Снять выбор группы';
+
+  @override
+  String get sidebarSettingsTitle => 'Боковая панель';
+
+  @override
+  String get sidebarCustomize => 'Настроить боковую панель';
+
+  @override
+  String get sidebarLayoutTitle => 'Макет';
+
+  @override
+  String get sidebarPresetCurrent => 'Текущий макет';
+
+  @override
+  String get sidebarPresetNavigation => 'Список навигации';
+
+  @override
+  String get sidebarPresetAssistantBottom => 'Ассистент внизу';
+
+  @override
+  String get sidebarPresetAllTop => 'Всё сверху';
+
+  @override
+  String get sidebarPresetCustom => 'Свой макет';
+
+  @override
+  String get sidebarReorderTitle => 'Расположение блоков';
+
+  @override
+  String get sidebarReorderHint => 'Перетащите выше или ниже списка чатов';
+
+  @override
+  String get sidebarReorderHandle => 'Переместить';
+
+  @override
+  String get sidebarBlockUser => 'Панель пользователя';
+
+  @override
+  String get sidebarBlockSearch => 'Строка поиска';
+
+  @override
+  String get sidebarBlockEntries => 'Пункты';
+
+  @override
+  String get sidebarBlockAssistant => 'Ассистент';
+
+  @override
+  String get sidebarBlockConversations => 'Список чатов';
+
+  @override
+  String get sidebarBlockTop => 'Сверху';
+
+  @override
+  String get sidebarBlockBottom => 'Снизу';
+
+  @override
+  String get sidebarDisplayAs => 'Отображать как';
+
+  @override
+  String get sidebarStyleList => 'Список';
+
+  @override
+  String get sidebarStyleIcons => 'Значки';
+
+  @override
+  String get sidebarVisibilityShow => 'Показать';
+
+  @override
+  String get sidebarMore => 'Ещё';
+
+  @override
+  String get sidebarVisibilityHidden => 'Скрыть';
+
+  @override
+  String get sidebarLocationEntries => 'Список пунктов';
+
+  @override
+  String get sidebarLocationSearch => 'Рядом с поиском';
+
+  @override
+  String get sidebarLocationUserBar => 'Значки на панели пользователя';
+
+  @override
+  String get sidebarLocationMore => 'В разделе «Ещё»';
+
+  @override
+  String get sidebarLocationHidden => 'Скрыто из боковой панели';
+
+  @override
+  String get sidebarLocationRail => 'Левая панель значков';
+
+  @override
+  String get sidebarMenuShow => 'Показать в боковой панели';
+
+  @override
+  String get sidebarMenuMore => 'Переместить в «Ещё»';
+
+  @override
+  String get sidebarMenuHide => 'Скрыть из боковой панели';
+
+  @override
+  String get sidebarHideCustomize => 'Скрыть из «Ещё»';
+
+  @override
+  String get sidebarShowCustomizeInMore =>
+      'Показывать «Настроить боковую панель» в «Ещё»';
+
+  @override
+  String get sidebarShowCustomizeInMoreHint =>
+      'Вы всегда можете изменить это здесь';
+
+  @override
+  String get sidebarHideSingleAssistant =>
+      'Скрывать строку ассистента, если он один';
+
+  @override
+  String get sidebarHideSingleAssistantHint =>
+      'Строка ассистента показывается по умолчанию';
+
+  @override
+  String get sidebarRestoreDefaults => 'Восстановить по умолчанию';
+
+  @override
+  String get sidebarOpenSettings => 'Открыть настройки боковой панели…';
+
+  @override
+  String get creationTitle => 'Создание';
+
+  @override
+  String get creationTopics => 'Темы';
+
+  @override
+  String get creationNewTopic => 'Новая тема';
+
+  @override
+  String get creationNameAfterSending => 'Название по первому запросу';
+
+  @override
+  String get creationPromptTitle =>
+      'Использует начало вашего запроса как заголовок';
+
+  @override
+  String get creationSearchTopics => 'Поиск тем и запросов';
+
+  @override
+  String get creationTopicsEmpty => 'Темы появятся здесь после первого запроса';
+
+  @override
+  String get creationNaming => 'Присвоение названия…';
+
+  @override
+  String get creationRenameTopic => 'Переименовать тему';
+
+  @override
+  String get creationDeleteTopic => 'Удалить тему';
+
+  @override
+  String get creationDeleteTopicBody => 'Удалить эту тему и все её работы?';
+
+  @override
+  String get creationImage => 'Изображение';
+
+  @override
+  String get creationVideo => 'Видео';
+
+  @override
+  String get creationImagePrompt => 'Опишите изображение для создания';
+
+  @override
+  String get creationVideoPrompt => 'Опишите видео для генерации';
+
+  @override
+  String get creationNewImagePrompt =>
+      'Опишите изображение, чтобы начать новую тему';
+
+  @override
+  String get creationNewVideoPrompt => 'Опишите видео, чтобы начать новую тему';
+
+  @override
+  String get creationSelectModel => 'Выбрать модель';
+
+  @override
+  String get creationSearchModels => 'Поиск моделей или провайдеров';
+
+  @override
+  String get creationNoModelTitle => 'Моделей для изображений и видео пока нет';
+
+  @override
+  String get creationNoModelBody =>
+      'Создание использует модели изображений и видео, настроенные в разделе «Провайдеры». Войдите по подписке или введите API-ключ для fal или другого провайдера.';
+
+  @override
+  String get creationEmptyTitle => 'Начните с идеи';
+
+  @override
+  String get creationEmptyBody =>
+      'Опишите, что нужно создать. Отправка первого запроса создаст тему для результата и последующих правок.';
+
+  @override
+  String get creationAddReference => 'Добавить референсное изображение';
+
+  @override
+  String get creationReferenceTooLarge =>
+      'Общий размер референсных изображений не должен превышать 20 МБ.';
+
+  @override
+  String get creationApiProtocol => 'Протокол API создания';
+
+  @override
+  String get creationApiProtocolHelp =>
+      'Авто использует API провайдера. Для пользовательского шлюза выберите протокол, указанный в его документации.';
+
+  @override
+  String get creationAspectRatio => 'Соотношение сторон';
+
+  @override
+  String get creationCountLabel => 'Количество изображений';
+
+  @override
+  String get creationDuration => 'Длительность';
+
+  @override
+  String creationDurationSeconds(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: '$seconds секунды',
+      many: '$seconds секунд',
+      few: '$seconds секунды',
+      one: '$seconds секунда',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creationResolution => 'Разрешение';
+
+  @override
+  String get creationFirstLastFrame => 'Первый и последний кадры';
+
+  @override
+  String get creationFirstFrame => 'Первый кадр';
+
+  @override
+  String get creationLastFrame => 'Последний кадр';
+
+  @override
+  String get creationBothFramesRequired => 'Выберите первый и последний кадр.';
+
+  @override
+  String get creationFirstFrameRequired =>
+      'Выберите первый кадр. Последний кадр необязателен.';
+
+  @override
+  String get creationFirstFrameOnly =>
+      'Эта модель поддерживает только первый кадр.';
+
+  @override
+  String get creationImageModels => 'Модели изображений';
+
+  @override
+  String get creationVideoModels => 'Модели видео';
+
+  @override
+  String get creationPlayVideo => 'Воспроизвести видео';
+
+  @override
+  String get creationPauseVideo => 'Пауза';
+
+  @override
+  String get creationMuteVideo => 'Без звука';
+
+  @override
+  String get creationUnmuteVideo => 'Включить звук';
+
+  @override
+  String get creationOpenVideo => 'Открыть в системном плеере';
+
+  @override
+  String get creationFullScreen => 'Полный экран';
+
+  @override
+  String get creationExitFullScreen => 'Выйти из полноэкранного режима';
+
+  @override
+  String get creationSaveVideo => 'Сохранить видео';
+
+  @override
+  String get creationParameters => 'Параметры генерации';
+
+  @override
+  String get creationAuto => 'Авто';
+
+  @override
+  String get creationGenerate => 'Сгенерировать';
+
+  @override
+  String get creationWaitingImage => 'Создание изображения';
+
+  @override
+  String get creationWaitingVideo => 'Подготовка видео';
+
+  @override
+  String get creationDownloading => 'Загрузка';
+
+  @override
+  String get creationFailed => 'Ошибка генерации';
+
+  @override
+  String get creationInterrupted =>
+      'Генерация прервана при закрытии приложения';
+
+  @override
+  String get creationCancelled => 'Отменено';
+
+  @override
+  String get creationPartial => 'Некоторые результаты не удалось сохранить';
+
+  @override
+  String get creationRetry => 'Повторить';
+
+  @override
+  String get creationCopyPrompt => 'Копировать запрос';
+
+  @override
+  String get creationSaveImage => 'Сохранить изображение';
+
+  @override
+  String get creationCopyImage => 'Копировать изображение';
+
+  @override
+  String get creationShare => 'Поделиться';
+
+  @override
+  String get creationDeleteItem => 'Удалить творение';
+
+  @override
+  String get creationDeleteItemBody => 'Удалить это творение?';
+
+  @override
+  String get creationActionFailed => 'Не удалось выполнить действие';
+
+  @override
+  String get creationOptionSaved => 'Сохранено';
+
+  @override
+  String get creationOptionCopied => 'Скопировано';
+
+  @override
+  String get backupScopeCreations => 'Творения';
+
+  @override
+  String creationQueuePosition(int count) {
+    return 'В очереди · впереди $count';
+  }
+
+  @override
+  String creationImagesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count изображения',
+      many: '$count изображений',
+      few: '$count изображения',
+      one: '$count изображение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creationGenerationCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count генерации',
+      many: '$count генераций',
+      few: '$count генерации',
+      one: '$count генерация',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creationWorksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count творения',
+      many: '$count творений',
+      few: '$count творения',
+      one: '$count творение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creationTopicCount(int count) {
+    return 'Темы $count';
+  }
+
+  @override
+  String get creationMoreOptions => 'Дополнительно';
+
+  @override
+  String get creationImageSize => 'Размер изображения';
+
+  @override
+  String get creationQuality => 'Качество';
+
+  @override
+  String get creationLowQuality => 'Низкое';
+
+  @override
+  String get creationMediumQuality => 'Среднее';
+
+  @override
+  String get creationHighQuality => 'Высокое';
+
+  @override
+  String get creationNegativePrompt => 'Негативный промпт';
+
+  @override
+  String get creationSeed => 'Сид';
+
+  @override
+  String get creationTransparentBackground => 'Прозрачный фон';
+
+  @override
+  String get creationOutputFormat => 'Формат вывода';
+
+  @override
+  String get creationExtraJson => 'Дополнительные параметры (JSON)';
+
+  @override
+  String get creationExtraJsonHint =>
+      'Эти значения отправляются с каждым запросом. Их можно переопределить в разделе «Дополнительно».';
+
+  @override
+  String get creationModelKnown =>
+      'Значения по умолчанию взяты из встроенных данных о моделях Kelivo. Изменения применяются только к этой модели.';
+
+  @override
+  String get creationModelUnknown =>
+      'Kelivo заполнил общие параметры. Их можно настроить по документации вашего провайдера.';
+
+  @override
+  String get creationMaxPerRequest => 'Максимум за запрос';
+
+  @override
+  String get creationMaxPerRequestHelp =>
+      'Большие пакеты разбиваются на несколько запросов и объединяются в одну группу.';
+
+  @override
+  String get creationReferenceLimit => 'Референсные изображения';
+
+  @override
+  String get creationReferenceLimitHelp =>
+      'Установите 0, чтобы скрыть референсные изображения и редактирование для этой модели.';
+
+  @override
+  String get creationRatioHelp =>
+      'Выберите пропорции, доступные в разделе «Создание». «Авто» позволяет модели решить самостоятельно.';
+
+  @override
+  String get creationMediaOther => 'Другие параметры';
+
+  @override
+  String get creationEnableOptionHelp =>
+      'Показывать этот элемент управления в разделе «Дополнительно».';
+
+  @override
+  String get creationImageTypeHelp =>
+      'Модели изображений отображаются в разделе «Создание» и в инструменте «Генерация изображений».';
+
+  @override
+  String get creationVideoTypeHelp =>
+      'Видеомодели отображаются в разделе «Создание».';
+
+  @override
+  String get creationFalKeyHint =>
+      'Создайте ключ в fal.ai › Dashboard › API Keys';
+
+  @override
+  String get creationFalCatalogHint =>
+      'Нажмите «Загрузить», чтобы просмотреть актуальный каталог fal, или «+», чтобы добавить модель по её endpoint ID.';
+
+  @override
+  String falUnsupportedInput(String field) {
+    return 'Эта модель требует $field, который Creation не может предоставить.';
+  }
+
+  @override
+  String get falUnsupportedOutput =>
+      'Эта модель не возвращает изображение или видео, которое Creation может сохранить.';
+
+  @override
+  String get falAdditionalSettings => 'Дополнительные настройки';
+
+  @override
+  String get falRefreshAdditionalSettings => 'Обновить настройки модели';
+
+  @override
+  String get falNoPublishedSettings =>
+      'fal не опубликовал настройки для этой конечной точки.';
+
+  @override
+  String get falNoAdditionalSettings =>
+      'У этой модели нет дополнительных настроек.';
+
+  @override
+  String get falCopyDraftId => 'Копировать ID черновика';
+
+  @override
+  String get falOptionalPrompt => 'Запрос (необязательно)';
+
+  @override
+  String get falWatermark => 'Водяной знак';
+
+  @override
+  String get falSyncMode => 'Режим синхронизации';
+
+  @override
+  String get falSafetyChecker => 'Включить проверку безопасности';
+
+  @override
+  String get falCheckingModel => 'Проверка модели…';
+
+  @override
+  String get falInvalidEndpointId =>
+      'Введите ID эндпоинта fal, например fal-ai/flux/dev.';
+
+  @override
+  String get creationOptionalTitle => 'Назовите эту работу (необязательно)';
+
+  @override
+  String get falCatalogMore => 'Загрузить ещё модели';
+
+  @override
+  String get falCatalogNoMatch =>
+      'Нет подходящих моделей изображений или видео';
+
+  @override
+  String falCatalogLoadFailed(String error) {
+    return 'Не удалось загрузить данные моделей fal ($error)';
+  }
+
+  @override
+  String get creationFalModelId => 'ID модели';
+
+  @override
+  String get creationSelectPlatformImage => 'Выбрать изображение';
+
+  @override
+  String get creationPlatformOptions => 'Параметры модели';
+
+  @override
+  String get creationParameterRequired => 'Обязательно';
+
+  @override
+  String get creationBackground => 'Фон';
+
+  @override
+  String get creationOpaqueBackground => 'Непрозрачный';
+
+  @override
+  String get creationTransparentOption => 'Прозрачный';
+
+  @override
+  String get creationChatModelBadge => 'Модель чата';
+
+  @override
+  String get creationCommonOptions => 'Общие параметры';
+
+  @override
+  String get creationNoCommonOptions => 'У этой модели нет общих параметров.';
+
+  @override
+  String get creationGallery => 'Все работы';
+
+  @override
+  String get creationFilterAll => 'Все';
+
+  @override
+  String get creationFilterImages => 'Изображения';
+
+  @override
+  String get creationFilterVideos => 'Видео';
+
+  @override
+  String get creationFilterFavorites => 'Избранное';
+
+  @override
+  String get creationSearchGallery => 'Поиск по промптам или темам';
+
+  @override
+  String get creationGalleryEmpty => 'Работ пока нет';
+
+  @override
+  String get creationFavoritesEmpty => 'В избранном пока пусто';
+
+  @override
+  String get creationGalleryNoResults => 'Подходящих работ не найдено';
+
+  @override
+  String get creationShowInTopic => 'Показать в теме';
+
+  @override
+  String get creationFavorite => 'В избранное';
+
+  @override
+  String get creationUnfavorite => 'Убрать из избранного';
+
+  @override
+  String get creationFavorited => 'Добавлено в избранное';
+
+  @override
+  String get creationUnfavorited => 'Удалено из избранного';
+
+  @override
+  String get creationTopicDisplay => 'Отображение темы';
+
+  @override
+  String get creationCoversAndTitles => 'Обложки и названия';
+
+  @override
+  String get creationCoversOnly => 'Только обложки';
+
+  @override
+  String get creationTopicList => 'Список';
+
+  @override
+  String get creationAutoTitle => 'Автоматически называть темы';
+
+  @override
+  String get creationAutoTitleHelp =>
+      'Использовать модель суммаризации заголовков для названия темы по первому запросу.';
+
+  @override
+  String get creationAutoTitleOffHelp =>
+      'Использовать начало первого промпта как название.';
+
+  @override
+  String get creationCustomCount => 'Своё';
+
+  @override
+  String get creationCustomCountMaximum => 'До 16';
+
+  @override
+  String creationRequestSplit(String model, int limit, int requests) {
+    return '$model создаёт до $limit изображений за запрос. $requests запросов будут объединены в одну группу.';
+  }
+
+  @override
+  String get creationNoModelPlaceholder =>
+      'Сначала добавьте модель, которая умеет создавать медиа';
+
+  @override
+  String get creationConnectChatGPT => 'Войти в ChatGPT';
+
+  @override
+  String get creationConnectGrok => 'Войти в Grok';
+
+  @override
+  String get creationConfigureFal => 'Настроить fal';
+
+  @override
+  String get creationOtherProviders => 'Другие провайдеры';
+
+  @override
+  String get creationChooseReferenceFile => 'Выбрать файлы…';
+
+  @override
+  String get creationChooseFromLibrary => 'Выбрать из фото';
+
+  @override
+  String get creationTakeReferencePhoto => 'Сделать фото';
+
+  @override
+  String get creationPasteReference => 'Вставить изображение';
+
+  @override
+  String get creationRecentImages => 'Недавние изображения';
+
+  @override
+  String get creationReferenceDrop =>
+      'Отпустите, чтобы добавить референсные изображения';
+
+  @override
+  String get creationFirstFrameDrop => 'Отпустите, чтобы задать первый кадр';
+
+  @override
+  String get creationReferenceDropHint =>
+      'Также можно перетащить изображения прямо в раздел «Создать».';
+
+  @override
+  String get creationNoClipboardImage => 'В буфере обмена нет изображения';
+
+  @override
+  String get creationReferenceAdded => 'Добавлено в референсы';
+
+  @override
+  String get creationReferenceAlreadyAdded => 'Уже в ваших референсах';
+
+  @override
+  String creationReferenceLimitReached(int count) {
+    return 'Эта модель принимает до $count референсных изображений.';
+  }
+
+  @override
+  String creationReferenceUnsupported(String model) {
+    return '$model не поддерживает референсные изображения';
+  }
+
+  @override
+  String get creationReferenceIgnored =>
+      'Референсы останутся в черновике. Их сможет использовать модель, которая их принимает.';
+
+  @override
+  String get creationRecentChat => 'Чат';
+
+  @override
+  String get creationRecentCreation => 'Создание';
+
+  @override
+  String creationReferenceSlotsAvailable(int count) {
+    return 'Можно выбрать ещё до $count';
+  }
+
+  @override
+  String get creationTapToSelect => 'Нажмите на изображение, чтобы выбрать его';
+
+  @override
+  String creationSelectedImages(int count) {
+    return 'Выбрано: $count';
+  }
+
+  @override
+  String creationAddSelected(int count) {
+    return 'Добавить ($count)';
+  }
+
+  @override
+  String get creationRecentEmpty => 'Нет недавних изображений';
+
+  @override
+  String get creationEditImage => 'Редактировать изображение';
+
+  @override
+  String get creationUseReference => 'Использовать как референс';
+
+  @override
+  String get creationEditReference => 'Редактирование с этим изображением';
+
+  @override
+  String get creationEditPrompt => 'Что изменить?';
+
+  @override
+  String get creationEditPromptExample =>
+      'Например, фон на пляже, сохранить человека и освещение';
+
+  @override
+  String get creationEditOriginalRatio => 'Исходное соотношение';
+
+  @override
+  String get creationEditNewGroup => 'Создать новую группу';
+
+  @override
+  String get creationEditHelp =>
+      'Результат редактирования появится в этой теме как новая группа.';
+
+  @override
+  String get creationEditStarted =>
+      'Редактирование начато. Результат появится внизу этой темы.';
+
+  @override
+  String get creationEditedResult => 'Изменённый результат';
+
+  @override
+  String get creationEditedFrom => 'Отредактировано из';
+
+  @override
+  String get creationRepeat => 'Сгенерировать ещё раз';
+
+  @override
+  String get creationDeleteBatch => 'Удалить группу';
+
+  @override
+  String creationDeleteBatchBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Удалить эту группу и её $count файла с этого устройства?',
+      many: 'Удалить эту группу и её $count файлов с этого устройства?',
+      few: 'Удалить эту группу и её $count файла с этого устройства?',
+      one: 'Удалить эту группу и её файл с этого устройства?',
+      zero: 'Удалить эту запись генерации с этого устройства?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creationRequestDetails => 'Детали запроса';
+
+  @override
+  String get creationNoRequestDetails => 'Детали запроса недоступны.';
+
+  @override
+  String creationReferenceSummary(int count, int limit) {
+    return 'Референсы $count / $limit';
+  }
+
+  @override
+  String get creationPrevious => 'Предыдущее творение';
+
+  @override
+  String get creationNext => 'Следующее творение';
+
+  @override
+  String get creationWaitingSketch => 'Набрасываем композицию';
+
+  @override
+  String get creationWaitingDetails => 'Прорабатываем детали';
+
+  @override
+  String get creationWaitingFinish => 'Завершаем изображение';
+
+  @override
+  String get creationWaitingVideoMotion => 'Планируем движение';
+
+  @override
+  String get creationWaitingVideoFrames => 'Генерируем кадры';
+
+  @override
+  String get creationWaitingVideoFinish => 'Завершаем видео';
+
+  @override
+  String get creationWaitingLong => 'Это занимает немного больше времени';
+
+  @override
+  String get creationSuggestionPoster =>
+      'Создай минималистичный концертный постер';
+
+  @override
+  String get creationSuggestionLandscape =>
+      'Нарисуй горную деревню на рассвете';
+
+  @override
+  String get creationSuggestionProduct =>
+      'Сфотографируй керамическую чашку в мягком дневном свете';
+
+  @override
+  String get creationSuggestionIllustration =>
+      'Нарисуй лису под звёздным небом';
+
+  @override
+  String get creationSuggestionRoom =>
+      'Нарисуй уголок для чтения из тёплого дерева';
+
+  @override
+  String get creationSuggestionSticker =>
+      'Сделай набор забавных стикеров с растениями';
+
+  @override
+  String get creationSuggestionMotion =>
+      'Медленный наезд камеры на сад под дождём';
+
+  @override
+  String get creationSuggestionOcean => 'Волны, накатывающие на пляж на закате';
+
+  @override
+  String get creationWaitingDraft => 'Создаём первый черновик';
+
+  @override
+  String get creationWaitingScene => 'Готовим сцену';
+
+  @override
+  String get creationWaitingVideoRendering => 'Рендерим движение';
+
+  @override
+  String get creationWaitingVideoComposite => 'Собираем видео';
+
+  @override
+  String get creationWaitingNearlyDone => 'Почти готово';
+
+  @override
+  String creationUseGroupReferences(int count) {
+    return 'Использовать все $count как референсы';
+  }
+
+  @override
+  String get creationDownloadFailed => 'Не удалось скачать';
+
+  @override
+  String get creationAutomaticRetry => 'Автоматический повтор';
+
+  @override
+  String get creationNoAutomaticRetry => 'Ручной повтор';
+
+  @override
+  String get creationRetryHistory => 'История повторов';
+
+  @override
+  String get creationLoggedRequest => 'Метаданные запроса';
+
+  @override
+  String get creationLoggedResponse => 'Метаданные ответа';
+
+  @override
+  String get creationDefaultImage => 'Модель генерации изображений';
+
+  @override
+  String get creationDefaultImageHelp =>
+      'Используется для изображений в разделе «Создание» и инструмента генерации изображений в чате.';
+
+  @override
+  String get creationDefaultVideo => 'Модель генерации видео';
+
+  @override
+  String get creationDefaultVideoHelp =>
+      'Используется в режиме видео в разделе «Создание».';
+
+  @override
+  String get creationDefaultEnhance => 'Модель улучшения промптов';
+
+  @override
+  String get creationDefaultEnhanceHelp =>
+      'Улучшает промпты в разделе «Создание». Референсные изображения включаются, если модель поддерживает ввод изображений.';
+
+  @override
+  String creationEnhanceTemplateVariable(String variable) {
+    return 'Используйте $variable для текущего промпта создания.';
+  }
+
+  @override
+  String get creationLocalToolTitle => 'Генерация изображений';
+
+  @override
+  String get creationLocalToolHelp =>
+      'Позволяет ассистенту рисовать или редактировать изображения в чате с помощью модели генерации изображений по умолчанию.';
+
+  @override
+  String creationStorageFileCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count файла',
+      many: '$count файлов',
+      few: '$count файла',
+      one: '$count файл',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creationSelectDefaultImage =>
+      'Выбрать модель генерации изображений по умолчанию';
+
+  @override
+  String get creationConfigureImageProvider =>
+      'Сначала добавьте или включите модель изображений в разделе «Провайдеры».';
+
+  @override
+  String get displayChatImagesAtToolCall =>
+      'Показывать созданные изображения у вызова инструмента';
+
+  @override
+  String get displayChatImageInfo => 'Показывать сведения об изображениях';
+
+  @override
+  String get displayChatImageLink => 'Показывать ссылку на «Создание»';
+
+  @override
+  String get creationLocalToolNeedsModel =>
+      'Сначала выберите модель генерации изображений в разделе «Модели по умолчанию».';
+
+  @override
+  String creationChatSource(String title) {
+    return 'Чат · $title';
+  }
+
+  @override
+  String get creationSendToChat => 'Отправить в чат';
+
+  @override
+  String get creationShowInConversation => 'Показать в чате';
+
+  @override
+  String get creationShowInCreation => 'Показать в «Создании»';
+
+  @override
+  String get creationChatCancelled => 'Создание изображения отменено';
+
+  @override
+  String get creationChatRegenerate => 'Сгенерировать снова';
+
+  @override
+  String get creationChatImageUnavailable => 'Изображение недоступно';
+
+  @override
+  String creationChatResultCaption(int count, String model, String ratio) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Сгенерировано $count изображения',
+      many: 'Сгенерировано $count изображений',
+      few: 'Сгенерировано $count изображения',
+      one: 'Сгенерировано $count изображение',
+    );
+    return '$_temp0 · $model · $ratio';
+  }
+
+  @override
+  String get creationEnhance => 'Улучшить промпт';
+
+  @override
+  String get creationEnhanceLoading => 'Переписываем промпт…';
+
+  @override
+  String get creationEnhanceResult => 'Переписанный промпт';
+
+  @override
+  String get creationEnhanceOriginal => 'Оригинал';
+
+  @override
+  String get creationEnhanceAgain => 'Другой вариант';
+
+  @override
+  String get creationEnhanceApply => 'Заменить';
+
+  @override
+  String get creationEnhanceNeedsModel =>
+      'Выберите модель для улучшения промптов в разделе «Модели по умолчанию».';
+
+  @override
+  String get creationStorageHint =>
+      'Изображения, видео, миниатюры и референсные изображения, сохранённые в «Творчестве».';
+
+  @override
+  String get creationStorageDate => 'Очистить творения до этой даты';
+
+  @override
+  String creationStorageConfirm(String date) {
+    return 'Удалить завершённые генерации до $date, включая их изображения, видео и копии референсов? Изображения из этих генераций также станут недоступны в чате.';
+  }
+
+  @override
+  String creationStorageRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Очищено $count генерации',
+      many: 'Очищено $count генераций',
+      few: 'Очищено $count генерации',
+      one: 'Очищена $count генерация',
+      zero: 'Нет генераций для очистки',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creationStorageClean => 'Очистить по дате';
+
+  @override
+  String get creationDisplayAndGames => 'Отображение и игры ожидания';
+
+  @override
+  String get creationWaitGame => 'Игра ожидания';
+
+  @override
+  String get creationGameRandom => 'Случайно';
+
+  @override
+  String get creationGameOff => 'Выкл.';
+
+  @override
+  String get creationGameSnake => 'Змейка';
+
+  @override
+  String get creationGameBrick => 'Арканоид';
+
+  @override
+  String get creationGameSnakeControls =>
+      'Змейка. Управляйте стрелками, W A S D или свайпами. Пробел — пауза или продолжение, Escape — выход.';
+
+  @override
+  String get creationGameBrickControls =>
+      'Арканоид. Перетаскивайте платформу или удерживайте стрелки влево/вправо, A или D. Пробел — пауза или продолжение, Escape — выход.';
+
+  @override
+  String creationGameDuringImage(String game) {
+    return 'Играть в $game во время генерации изображения';
+  }
+
+  @override
+  String creationGameDuringVideo(String game) {
+    return 'Играть в $game во время генерации видео';
+  }
+
+  @override
+  String creationGameScore(int score) {
+    return 'Счёт: $score';
+  }
+
+  @override
+  String creationGamePaused(int score) {
+    return 'Пауза · $score';
+  }
+
+  @override
+  String creationGameEnded(int score) {
+    return 'Игра окончена · $score';
+  }
+
+  @override
+  String creationGameCompleted(int score) {
+    return 'Готово · $score';
+  }
+
+  @override
+  String get creationNoSelectableModels => 'Нет доступных моделей';
+
+  @override
+  String get creationNoMatchingTopics => 'Нет подходящих тем';
+
+  @override
+  String creationAllTopicCount(int count) {
+    return 'Все темы $count';
+  }
+
+  @override
+  String get creationNoImageModels => 'Моделей генерации изображений пока нет';
+
+  @override
+  String get creationNoVideoModels => 'Моделей генерации видео пока нет';
+
+  @override
+  String get creationFrameSources =>
+      'Добавить из недавних изображений, файлов или буфера обмена';
+
+  @override
+  String creationFrameModelFirstOnly(String model) {
+    return '$model поддерживает только первый кадр';
+  }
+
+  @override
+  String get creationSubscriptionLogin => 'Подписка';
+
+  @override
+  String creationModelReferenceLimit(int count) {
+    return 'До $count референсов';
+  }
+
+  @override
+  String get creationTextOnlyImage => 'Текст в изображение';
+
+  @override
+  String get creationTextOnlyVideo => 'Текст в видео';
+
+  @override
+  String get creationCustomCountLabel => 'Своё количество';
+
+  @override
+  String creationFailureCategory(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'network': 'Сетевое подключение',
+      'rateLimited': 'Превышен лимит запросов',
+      'server': 'Ошибка провайдера',
+      'rejected': 'Запрос отклонён',
+      'login': 'Требуется вход',
+      'unavailable': 'Модель или эндпоинт недоступны',
+      'parameters': 'Неверные параметры',
+      'referenceTooLarge': 'Слишком большой референс',
+      'download': 'Ошибка загрузки',
+      'invalidResponse': 'Неверный ответ',
+      'other': 'Ошибка генерации',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get creationInterruptedHelp =>
+      'Приложение закрылось до завершения этого запроса. Ваш промпт и настройки сохранены.';
+
+  @override
+  String get creationCancelledHelp =>
+      'Ваш промпт и настройки сохранены. Вы можете сгенерировать снова в любое время.';
+
+  @override
+  String get creationChatImageReady => 'Изображение создано';
 }
