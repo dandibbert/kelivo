@@ -9,6 +9,7 @@ import 'package:Kelivo/core/database/extension_entity_store.dart';
 import 'package:Kelivo/core/models/assistant.dart';
 import 'package:Kelivo/core/models/conversation.dart';
 import 'package:Kelivo/core/models/image_context.dart';
+import 'package:Kelivo/core/models/media_creation.dart';
 import 'package:Kelivo/core/models/workspace_binding.dart';
 import 'package:Kelivo/core/providers/assistant_provider.dart';
 import 'package:Kelivo/core/providers/environment_provider.dart';
@@ -19,6 +20,7 @@ import 'package:Kelivo/core/services/chat/chat_service.dart';
 import 'package:Kelivo/core/services/sandbox/environment_manager.dart';
 import 'package:Kelivo/core/services/workspace/workspace_runtime.dart';
 import 'package:Kelivo/features/chat/widgets/chat_tools_sheet.dart';
+import 'package:Kelivo/features/provider/pages/providers_page.dart';
 import 'package:Kelivo/desktop/tools_popover.dart';
 import 'package:Kelivo/features/home/services/local_tool_labels.dart';
 import 'package:Kelivo/features/home/services/local_tools_service.dart';
@@ -270,10 +272,6 @@ void main() {
       (tester) async {
         final conversation = Conversation(id: 'images', title: 'Images');
         final chat = _TemporaryImageChat(conversation);
-        await chat.setImageContextSettings(
-          'images',
-          const ImageContextSettings(automatic: false, pinned: {'pinned'}),
-        );
         addTearDown(chat.dispose);
         final l10n = await pumpSheet(
           tester,
@@ -317,23 +315,17 @@ void main() {
         expect(row, findsOneWidget);
         await tester.tap(row);
         await tester.pumpAndSettle();
-        expect(
-          (await chat.imageContextSettings('images')).allowRecall,
-          isFalse,
-        );
-        expect((await chat.imageContextSettings('images')).automatic, isFalse);
-        expect((await chat.imageContextSettings('images')).pinned, {'pinned'});
+        expect((await chat.imageContextSettings('images')).allowRecall, isTrue);
         await chat.setImageContextSettings(
           'images',
-          const ImageContextSettings(),
+          const ImageContextSettings(automatic: false, pinned: {'pinned'}),
         );
         await tester.pumpAndSettle();
         await tester.tap(row);
         await tester.pumpAndSettle();
-        expect(
-          (await chat.imageContextSettings('images')).allowRecall,
-          isFalse,
-        );
+        expect((await chat.imageContextSettings('images')).allowRecall, isTrue);
+        expect((await chat.imageContextSettings('images')).automatic, isFalse);
+        expect((await chat.imageContextSettings('images')).pinned, {'pinned'});
       },
     );
 
@@ -443,6 +435,109 @@ void main() {
     );
   }
 
+  for (final desktop in [false, true]) {
+    testWidgets(
+      'image tool requires choosing a default before enabling, desktop=$desktop',
+      (tester) async {
+        const hapticChannel = MethodChannel('haptic_feedback');
+        final messenger = tester.binding.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(hapticChannel, (_) async => null);
+        addTearDown(
+          () => messenger.setMockMethodCallHandler(hapticChannel, null),
+        );
+        const model = 'gpt-image-2';
+        final provider = ProviderConfig(
+          id: 'images-test',
+          name: 'Test image provider',
+          enabled: true,
+          apiKey: 'fixture',
+          baseUrl: 'https://images.example.test/v1',
+          models: const [model],
+        );
+        await tester.runAsync(
+          () => settings.setProviderConfig(provider.id, provider),
+        );
+        final l10n = await pumpSheet(tester, desktop: desktop);
+        if (!desktop) {
+          await tester.tap(find.text(l10n.assistantEditPageLocalToolsTab));
+        }
+        await tester.pumpAndSettle();
+        final configure = find.text(l10n.creationSelectDefaultImage);
+        expect(configure, findsOneWidget);
+        await tester.tap(configure);
+        await tester.pumpAndSettle();
+        expect(find.text(model), findsOneWidget);
+        expect(
+          assistants.getById(assistantId)!.localToolIds,
+          isNot(contains(LocalToolNames.generateImage)),
+        );
+        Navigator.of(tester.element(find.text(model))).pop();
+        await tester.pumpAndSettle();
+        expect(settings.creationModel(CreationModelSlot.image), isNull);
+        expect(
+          assistants.getById(assistantId)!.localToolIds,
+          isNot(contains(LocalToolNames.generateImage)),
+        );
+        if (desktop) {
+          await tester.tap(find.text('Open tools'));
+          await tester.pumpAndSettle();
+        }
+        await tester.tap(configure);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(model));
+        await tester.pumpAndSettle();
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 100)),
+        );
+        await tester.pumpAndSettle();
+        expect(settings.creationModel(CreationModelSlot.image), (
+          providerKey: provider.id,
+          modelId: model,
+        ));
+        expect(
+          assistants.getById(assistantId)!.localToolIds,
+          contains(LocalToolNames.generateImage),
+        );
+      },
+      variant: TargetPlatformVariant.only(
+        desktop ? TargetPlatform.macOS : TargetPlatform.iOS,
+      ),
+    );
+  }
+
+  testWidgets(
+    'a previously enabled image tool shows setup instead of an active switch when its model is missing',
+    (tester) async {
+      final assistant = assistants.getById(assistantId)!;
+      await tester.runAsync(
+        () => assistants.updateAssistant(
+          assistant.copyWith(localToolIds: [LocalToolNames.generateImage]),
+        ),
+      );
+      final l10n = await pumpSheet(tester);
+      await tester.tap(find.text(l10n.assistantEditPageLocalToolsTab));
+      await tester.pumpAndSettle();
+      final row = find.byKey(
+        ChatToolsSheet.localToolKey(LocalToolNames.generateImage),
+      );
+      expect(
+        tester
+            .widget<IosSwitch>(
+              find.descendant(of: row, matching: find.byType(IosSwitch)),
+            )
+            .value,
+        isFalse,
+      );
+      expect(find.text(l10n.creationSelectDefaultImage), findsOneWidget);
+      await tester.tap(find.text(l10n.creationSelectDefaultImage));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProvidersPage), findsOneWidget);
+      expect(settings.creationModel(CreationModelSlot.image), isNull);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+    },
+  );
+
   testWidgets('tool sheet has no standalone browser entry', (tester) async {
     await pumpSheet(tester);
     expect(find.byKey(const ValueKey('chat-tools-open-browser')), findsNothing);
@@ -455,7 +550,7 @@ void main() {
 
     expect(find.byKey(ChatToolsSheet.localGroupKey), findsOneWidget);
     expect(
-      find.text('1/${availableLocalToolIds().length + 1}'),
+      find.text('0/${availableLocalToolIds().length + 1}'),
       findsOneWidget,
       reason: 'the folded header still reports how many tools are on',
     );
@@ -471,7 +566,7 @@ void main() {
     tester,
   ) async {
     final l10n = await pumpSheet(tester);
-    final count = '1/${availableLocalToolIds().length + 1}';
+    final count = '0/${availableLocalToolIds().length + 1}';
     expect(find.text(count), findsOneWidget);
 
     await tester.tap(find.text(l10n.assistantEditPageLocalToolsTab));
@@ -542,18 +637,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final enabledCount = '1/${availableLocalToolIds().length + 1}';
     expect(
-      find.text('2/${availableLocalToolIds().length + 1}'),
+      find.text(enabledCount),
       findsOneWidget,
       reason: 'the count updates while the local tools remain expanded',
     );
 
     await tester.tap(find.text(l10n.assistantEditPageLocalToolsTab));
     await tester.pumpAndSettle();
-    expect(
-      find.text('2/${availableLocalToolIds().length + 1}'),
-      findsOneWidget,
-    );
+    expect(find.text(enabledCount), findsOneWidget);
   });
 
   testWidgets('hides the MCP group when nothing is connected', (tester) async {

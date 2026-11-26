@@ -1,7 +1,10 @@
+import '../../media/pages/media_creation_page.dart';
+import '../../media/providers/media_creation_controller.dart';
 import '../services/composer_document_route.dart';
 import '../../chat/controllers/conversation_find_controller.dart';
 import '../../chat/models/conversation_find_candidate.dart';
 import '../../chat/services/conversation_find_service.dart';
+import '../../chat/services/conversation_find_worker.dart';
 import '../../chat/widgets/conversation_find_bar.dart';
 import '../../../shared/widgets/app_selection_area.dart';
 import '../../../shared/widgets/source_rect_scroll.dart';
@@ -23,13 +26,14 @@ import '../../chat/widgets/quote_interaction_scope.dart';
 import '../../../core/models/quote_ref.dart';
 import '../../../core/services/chat/chat_service.dart';
 import 'dart:async';
+import '../../../desktop/hotkeys/chat_action_bus.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart'
     show kIsWeb, mapEquals, ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
-    show MissingPluginException, Clipboard, ClipboardData, LogicalKeyboardKey;
-import 'package:desktop_drop/desktop_drop.dart';
+    show MissingPluginException, Clipboard, ClipboardData;
+import '../../../shared/widgets/desktop_file_drop_target.dart';
 import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
@@ -41,8 +45,8 @@ import '../../../shared/widgets/snackbar.dart';
 import '../../../theme/app_font_weights.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../core/providers/settings_provider.dart';
-import '../../../core/providers/hotkey_provider.dart';
 import '../../../core/services/model_spec/model_spec_resolver.dart';
+import '../../../core/services/api/response_speed.dart';
 import '../../../core/providers/assistant_provider.dart';
 import '../../../core/providers/quick_phrase_provider.dart';
 import '../../../core/providers/instruction_injection_provider.dart';
@@ -96,6 +100,7 @@ import '../../quick_phrase/pages/quick_phrases_page.dart';
 import '../../quick_phrase/widgets/quick_phrase_menu.dart';
 import '../../workspace/widgets/skills/conversation_skills_sheet.dart';
 import '../widgets/chat_input_bar.dart';
+import '../widgets/mini_map_search.dart';
 import '../widgets/mini_map_sheet.dart';
 import '../widgets/instruction_injection_sheet.dart';
 import '../widgets/world_book_sheet.dart';
@@ -121,6 +126,8 @@ class _DeepLinkExecutionException implements Exception {
 
   final String code;
 }
+
+enum HomeSurface { chat, creation }
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -193,6 +200,10 @@ class _HomePageState extends State<HomePage>
   // ============================================================================
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  HomeSurface _surface = HomeSurface.chat;
+  StreamSubscription<CreationChatAction>? _creationActionSub;
+  OpenCreationArtwork? _artworkRequest;
+  int _creationNavigationSerial = 0;
   final InteractiveDrawerController _drawerController =
       InteractiveDrawerController();
   final ValueNotifier<int> _assistantPickerCloseTick = ValueNotifier<int>(0);
@@ -234,6 +245,7 @@ class _HomePageState extends State<HomePage>
   Map<String, int> _findVersions = const {};
   ValueListenable<int>? _findRevision;
   final _liveFindRows = <String, ConversationFindCandidate>{};
+  final _findCache = ConversationFindCache();
   ConversationFindService? _findPresentation;
 
   ConversationFindService _findService() {
@@ -274,9 +286,13 @@ class _HomePageState extends State<HomePage>
     if (id == null) return {};
     final service = _findPresentation = _findService();
     return service.search(
-      context.read<ChatService>().conversationFindCandidates(id),
+      context.read<ChatService>().conversationFindCandidates(
+        id,
+        isCurrent: current,
+      ),
       query,
       options,
+      cache: _findCache,
       isCurrent: current,
       liveCandidate: (row) {
         if (row.streaming) _liveFindRows[row.id] = row;
@@ -309,12 +325,10 @@ class _HomePageState extends State<HomePage>
     ConversationFindHit hit,
     bool Function() valid,
   ) async {
+    final id = _findConversation;
     bool current() =>
-        mounted &&
-        valid() &&
-        _controller.currentConversation?.id == _findConversation;
-    final conversationId = _findConversation;
-    if (conversationId == null || !current()) return;
+        mounted && valid() && _controller.currentConversation?.id == id;
+    if (id == null || !current()) return;
     await _controller.scrollToMessageId(
       hit.messageId,
       stillCurrent: current,
@@ -332,7 +346,7 @@ class _HomePageState extends State<HomePage>
       revealMatch: (isCurrent, {required waitForMount}) {
         if (hit.surfaceKey case final key?) {
           return _controller.uiSearchNavigation.revealMatch(
-            conversationId,
+            id,
             hit.messageId,
             key,
             isCurrent,
@@ -349,7 +363,7 @@ class _HomePageState extends State<HomePage>
   }
 
   void _onFindChanged() {
-    if (!_find.opened || _find.searching || _find.current == null) {
+    if ((_find.searching && !_find.hasPreview) || _find.activeHit == null) {
       _controller.cancelFindJump();
     }
   }
@@ -363,6 +377,7 @@ class _HomePageState extends State<HomePage>
       _findRevision = null;
       _findConversation = id;
       _findPresentation = null;
+      _findCache.clear();
       _findVersions = const {};
       _liveFindRows.clear();
       _find.setConversation(id);
@@ -421,26 +436,9 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Widget _findKeyBinding(Widget child) {
-    final apple = PlatformUtils.isMacOS || PlatformUtils.isIOS;
-    final shortcut = SingleActivator(
-      LogicalKeyboardKey.keyF,
-      meta: apple,
-      control: !apple,
-    );
-    final claimed =
-        PlatformUtils.isDesktop &&
-        context.select<HotkeyProvider?, bool>(
-          (provider) => provider?.handlesShortcut(shortcut) ?? false,
-        );
-    return CallbackShortcuts(
-      bindings: {if (!claimed) shortcut: _openConversationFind},
-      child: child,
-    );
-  }
-
-  Widget _chatFindShortcuts(Widget body) => _findKeyBinding(
-    Focus(
+  Widget _chatFindShortcuts(Widget body) => ConversationFindShortcut(
+    onOpen: _openConversationFind,
+    child: Focus(
       focusNode: _chatFocus,
       autofocus: true,
       skipTraversal: true,
@@ -450,8 +448,9 @@ class _HomePageState extends State<HomePage>
 
   PreferredSizeWidget _mobileFindHeader() => PreferredSize(
     preferredSize: const Size.fromHeight(kToolbarHeight),
-    child: _findKeyBinding(
-      SafeArea(
+    child: ConversationFindShortcut(
+      onOpen: _openConversationFind,
+      child: SafeArea(
         bottom: false,
         child: SizedBox(
           height: kToolbarHeight,
@@ -589,6 +588,9 @@ class _HomePageState extends State<HomePage>
     _drawerController.addListener(_onDrawerValueChanged);
 
     _chatReady = _controller.initChat();
+    _creationActionSub = ChatActionBus.instance.creationStream.listen(
+      _handleCreationAction,
+    );
     _initProcessText();
     _initIncomingShares();
     _initDeepLinks();
@@ -643,6 +645,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
+    unawaited(_creationActionSub?.cancel());
     try {
       WidgetsBinding.instance.removeObserver(this);
     } catch (_) {}
@@ -1023,6 +1026,7 @@ class _HomePageState extends State<HomePage>
     }
 
     _returnToHomeRoute();
+    _openChatSurface();
     if (action is OpenChatDeepLinkAction) {
       _inputFocus.requestFocus();
       return;
@@ -1289,6 +1293,77 @@ class _HomePageState extends State<HomePage>
         ),
       );
 
+  void _openCreation({bool closeDrawer = true}) {
+    if (closeDrawer) unawaited(_drawerController.close());
+    if (_surface == HomeSurface.creation) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    _controller.cancelSelection();
+    unawaited(context.read<SettingsProvider>().markMediaEntrySeen());
+    setState(() => _surface = HomeSurface.creation);
+  }
+
+  void _openChatSurface() {
+    if (_surface != HomeSurface.chat) {
+      setState(() {
+        _surface = HomeSurface.chat;
+        _artworkRequest = null;
+      });
+    }
+  }
+
+  Future<void> _handleCreationAction(CreationChatAction action) async {
+    if (!mounted ||
+        _controller.isDesktopPlatform &&
+            ModalRoute.of(context)?.isCurrent == false) {
+      return;
+    }
+    final serial = ++_creationNavigationSerial;
+    bool current() => mounted && serial == _creationNavigationSerial;
+    if (action is OpenCreationArtwork) {
+      if (_controller.isDesktopPlatform) return;
+      _openCreation();
+      setState(() => _artworkRequest = action);
+      return;
+    }
+    if (!_controller.isDesktopPlatform) {
+      final route = ModalRoute.of(context);
+      if (route != null) {
+        Navigator.of(
+          context,
+        ).popUntil((candidate) => identical(candidate, route));
+      }
+      unawaited(_drawerController.close());
+      _openChatSurface();
+    }
+    try {
+      await _chatReady;
+      await WidgetsBinding.instance.endOfFrame;
+      if (!current()) return;
+      switch (action) {
+        case PrefillChatImage(:final path):
+          if (await _controller.prefillCreationImage(path)) return;
+        case OpenCreationConversation(:final conversationId, :final messageId):
+          if (await _controller.openCreationSource(
+            conversationId: conversationId,
+            messageId: messageId,
+            stillCurrent: current,
+          )) {
+            return;
+          }
+        case OpenCreationArtwork():
+          return;
+      }
+    } catch (_) {
+      // The target conversation or image may have been removed during navigation.
+    }
+    if (mounted && current()) {
+      showAppSnackBar(
+        context,
+        message: AppLocalizations.of(context)!.creationActionFailed,
+      );
+    }
+  }
+
   Widget _buildPage(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final desktop = !kIsWeb && _controller.isDesktopPlatform;
@@ -1317,7 +1392,8 @@ class _HomePageState extends State<HomePage>
     _controller.setCompactDesktopLayout(
       desktop && width < AppBreakpoints.tablet,
     );
-    if (desktop || width >= AppBreakpoints.tablet) {
+    if (desktop ||
+        _surface == HomeSurface.chat && width >= AppBreakpoints.tablet) {
       return _buildTabletLayout(
         context,
         providerName: modelInfo.providerName,
@@ -1342,70 +1418,93 @@ class _HomePageState extends State<HomePage>
   }) {
     final allSelected = _controller.allSelectableMessagesSelected;
 
-    return HomeMobileScaffold(
-      scaffoldKey: _scaffoldKey,
-      drawerController: _drawerController,
-      assistantPickerCloseTick: _assistantPickerCloseTick,
-      loadingConversationIds: _controller.loadingConversationIds,
-      conversationId: _controller.currentConversation?.id,
-      providerName: providerName,
-      modelDisplay: modelDisplay,
-      onToggleDrawer: () => _drawerController.toggle(),
-      onDismissKeyboard: _controller.dismissKeyboard,
-      onSelectConversation: (id) {
-        _controller.switchConversationAnimated(id);
-      },
-      onNewConversation: () async {
-        await _controller.createNewConversationAnimated();
-      },
-      onOpenMiniMap: _openMiniMap,
-      onCreateNewConversation: () async {
-        await _controller.createNewConversationAnimated();
-        if (mounted) {
-          _controller.forceScrollToBottomSoon(animate: false);
+    final creation = _surface == HomeSurface.creation;
+    return PopScope(
+      canPop: !creation,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && creation && _drawerController.isClosed) {
+          _openChatSurface();
         }
       },
-      onToggleTemporaryConversation: () async {
-        await _controller.toggleTemporaryConversation();
-        if (mounted) {
-          _controller.forceScrollToBottomSoon(animate: false);
-        }
-      },
-      canToggleTemporaryConversation:
-          _controller.canToggleTemporaryConversation,
-      temporaryConversationEnabled: _controller.isTemporaryConversation,
-      onSelectModel: () =>
-          showModelSelectSheet(context, controller: _controller),
-      globalSearchMode: _controller.isGlobalSearchMode,
-      globalSearchQuery: _controller.globalSearchQuery,
-      onGlobalSearchQueryChanged: _controller.setGlobalSearchQuery,
-      onEnterGlobalSearch: () =>
-          _controller.enterGlobalSearchMode(preserveQuery: false),
-      onExitGlobalSearch: () =>
-          _controller.exitGlobalSearchMode(clearQuery: true),
-      onOpenGlobalSearchResult: (convId, msgId, surfaceKey) =>
-          _controller.openGlobalSearchResult(
+      child: HomeMobileScaffold(
+        scaffoldKey: _scaffoldKey,
+        creationSelected: creation,
+        onOpenCreation: context.read<MediaCreationController?>() == null
+            ? null
+            : _openCreation,
+        drawerController: _drawerController,
+        assistantPickerCloseTick: _assistantPickerCloseTick,
+        loadingConversationIds: _controller.loadingConversationIds,
+        conversationId: _controller.currentConversation?.id,
+        providerName: providerName,
+        modelDisplay: modelDisplay,
+        onToggleDrawer: () => _drawerController.toggle(),
+        onDismissKeyboard: _controller.dismissKeyboard,
+        onSelectConversation: (id) {
+          _openChatSurface();
+          _controller.switchConversationAnimated(id);
+        },
+        onNewConversation: () async {
+          await _controller.createNewConversationAnimated();
+        },
+        onOpenMiniMap: _openMiniMap,
+        onCreateNewConversation: () async {
+          _openChatSurface();
+          await _controller.createNewConversationAnimated();
+          if (mounted) {
+            _controller.forceScrollToBottomSoon(animate: false);
+          }
+        },
+        onToggleTemporaryConversation: () async {
+          await _controller.toggleTemporaryConversation();
+          if (mounted) {
+            _controller.forceScrollToBottomSoon(animate: false);
+          }
+        },
+        canToggleTemporaryConversation:
+            _controller.canToggleTemporaryConversation,
+        temporaryConversationEnabled: _controller.isTemporaryConversation,
+        onSelectModel: () =>
+            showModelSelectSheet(context, controller: _controller),
+        globalSearchMode: _controller.isGlobalSearchMode,
+        globalSearchQuery: _controller.globalSearchQuery,
+        onGlobalSearchQueryChanged: _controller.setGlobalSearchQuery,
+        onEnterGlobalSearch: () =>
+            _controller.enterGlobalSearchMode(preserveQuery: false),
+        onExitGlobalSearch: () =>
+            _controller.exitGlobalSearchMode(clearQuery: true),
+        onOpenGlobalSearchResult: (convId, msgId, surfaceKey) async {
+          _openChatSurface();
+          await _controller.openGlobalSearchResult(
             conversationId: convId,
             messageId: msgId,
             surfaceKey: surfaceKey,
-          ),
-      appBarOverride: _find.opened
-          ? _mobileFindHeader()
-          : _controller.selecting
-          ? ChatSelectionAppBar(
-              selectedCount: _controller.selectedCount,
-              allSelected: allSelected,
-              onClose: _controller.cancelSelection,
-              onOpenMiniMap: () {
-                unawaited(_openSelectionMiniMap());
-              },
-              miniMapKey: _selectionMiniMapKey,
-              onToggleSelectAll: _controller.toggleSelectAll,
-              onInvertSelection: _controller.invertSelection,
-            )
-          : null,
-      body: _chatFindShortcuts(
-        _wrapWithDropTarget(_buildMobileBody(context, cs)),
+          );
+        },
+        appBarOverride: _find.opened
+            ? _mobileFindHeader()
+            : _controller.selecting
+            ? ChatSelectionAppBar(
+                selectedCount: _controller.selectedCount,
+                allSelected: allSelected,
+                onClose: _controller.cancelSelection,
+                onOpenMiniMap: () {
+                  unawaited(_openSelectionMiniMap());
+                },
+                miniMapKey: _selectionMiniMapKey,
+                onToggleSelectAll: _controller.toggleSelectAll,
+                onInvertSelection: _controller.invertSelection,
+              )
+            : null,
+        body: creation
+            ? MediaCreationPage(
+                onOpenDrawer: () => _drawerController.open(),
+                artworkRequest: _artworkRequest,
+                onArtworkOpened: () => setState(() => _artworkRequest = null),
+              )
+            : _chatFindShortcuts(
+                _wrapWithDropTarget(_buildMobileBody(context, cs)),
+              ),
       ),
     );
   }
@@ -1478,6 +1577,11 @@ class _HomePageState extends State<HomePage>
 
     return HomeDesktopScaffold(
       scaffoldKey: _scaffoldKey,
+      onOpenCreation:
+          !_controller.isDesktopPlatform &&
+              context.read<MediaCreationController?>() != null
+          ? () => _openCreation(closeDrawer: false)
+          : null,
       assistantPickerCloseTick: _assistantPickerCloseTick,
       loadingConversationIds: _controller.loadingConversationIds,
       conversationId: _controller.currentConversation?.id,
@@ -1606,6 +1710,13 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildTabletBody(BuildContext context, ColorScheme cs) {
+    final fullWidth =
+        !kIsWeb &&
+        _controller.isDesktopPlatform &&
+        context.watch<SettingsProvider>().desktopFullWidthChat;
+    final maxContentWidth = fullWidth
+        ? double.infinity
+        : ChatLayoutConstants.maxContentWidth;
     final bottomContentPadding = _controller.inputBarHeight + 16;
     final topContentPadding = _chatTopOverlayInset(context) + 8;
     final backgroundImageActive = _assistantBackgroundActive(context);
@@ -1629,6 +1740,7 @@ class _HomePageState extends State<HomePage>
             ),
             child: _buildMessageListView(
               context,
+              fullWidth: fullWidth,
               topContentPadding: topContentPadding,
               bottomContentPadding: bottomContentPadding,
               dividerPadding: const EdgeInsets.symmetric(
@@ -1642,7 +1754,7 @@ class _HomePageState extends State<HomePage>
       bottomOverlay: _controller.selecting
           ? ConstrainedBox(
               constraints: const BoxConstraints(
-                maxWidth: ChatLayoutConstants.maxInputWidth,
+                maxWidth: ChatLayoutConstants.maxContentWidth,
               ),
               child: _buildSelectionActionBar(context),
             )
@@ -1661,9 +1773,7 @@ class _HomePageState extends State<HomePage>
                       alignment: Alignment.bottomCenter,
                       heightFactor: 1,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: ChatLayoutConstants.maxInputWidth,
-                        ),
+                        constraints: BoxConstraints(maxWidth: maxContentWidth),
                         child: input,
                       ),
                     );
@@ -1697,6 +1807,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildMessageListView(
     BuildContext context, {
+    bool fullWidth = false,
     required double topContentPadding,
     required double bottomContentPadding,
     required EdgeInsetsGeometry dividerPadding,
@@ -1811,13 +1922,20 @@ class _HomePageState extends State<HomePage>
       selecting: _controller.selecting,
       selectedItems: _controller.selectedItems,
       suggestions: suggestions,
+      fullWidth: fullWidth,
+      rightOverlayWidth:
+          fullWidth &&
+              settings.desktopMessageNavButtonsMode !=
+                  DesktopMessageNavButtonsMode.never
+          ? ScrollNavButtonsPanel.defaultOverlayWidth
+          : 0,
       topContentPadding: topContentPadding,
       bottomContentPadding: bottomContentPadding,
       dividerPadding: dividerPadding,
       streamingContentNotifier: _controller.streamingContentNotifier,
       conversationFind: _find,
       spotlightMessageId: _controller.spotlightMessageId,
-      spotlightToken: _controller.spotlightToken,
+      spotlightOpacity: _controller.spotlightOpacity,
       removingSlotIds: _controller.removingSlotIds,
       hasMoreBefore: _controller.chatController.hasMoreBefore,
       isLoadingWindow: _controller.isLoadingWindow,
@@ -1833,6 +1951,7 @@ class _HomePageState extends State<HomePage>
       collapseThinkingSteps: settings.collapseThinkingSteps,
       showThinkingCards: settings.showThinkingCards,
       showToolCards: settings.showToolCards,
+      inlineChatImages: settings.inlineChatImages,
       showProducedFiles: settings.showProducedFiles,
       showToolResultSummary: settings.showToolResultSummary,
       hideToolResultImages: settings.hideToolResultImages,
@@ -2194,33 +2313,63 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _openMiniMap() async {
     final conversation = _controller.currentConversation?.id;
+    if (conversation == null) return;
+    bool inConversation() =>
+        mounted && _controller.currentConversation?.id == conversation;
     final collapsed = await _controller
         .loadAllCollapsedMessagesForCurrentConversation();
     if (!mounted || _controller.currentConversation?.id != conversation) return;
     void openFind() {
-      if (mounted && _controller.currentConversation?.id == conversation) {
-        _openConversationFind();
-      }
+      if (inConversation()) _openConversationFind();
     }
 
-    String? selectedId;
+    Stream<List<ConversationFindPreview>> search(
+      String query,
+      ConversationFindWorker worker,
+    ) {
+      bool current() => worker.isCurrent && inConversation();
+      if (!current()) return const Stream.empty();
+      final finder = _findService();
+      return finder.searchPreviews(
+        context.read<ChatService>().conversationFindCandidates(
+          conversation,
+          isCurrent: current,
+          prefilter: finder.previewPrefilter(query),
+          worker: worker,
+        ),
+        query,
+        worker: worker,
+        cache: _findCache,
+        isCurrent: current,
+        liveCandidate: _findSnapshot,
+      );
+    }
+
+    MiniMapSelection? selected;
     if (PlatformUtils.isDesktop) {
-      selectedId = await showDesktopMiniMapPopover(
+      selected = await showDesktopMiniMapPopover(
         context,
         anchorKey: _inputBarKey,
         messages: collapsed,
         onOpenConversationFind: openFind,
+        onSearch: search,
       );
     } else {
-      selectedId = await showMiniMapSheet(
+      selected = await showMiniMapSheet(
         context,
         collapsed,
         onOpenConversationFind: openFind,
+        onSearch: search,
       );
     }
-    if (!mounted || _controller.currentConversation?.id != conversation) return;
-    if (selectedId != null && selectedId.isNotEmpty) {
-      await _controller.scrollToMessageId(selectedId, useRikkaTransition: true);
+    if (!inConversation() || selected == null) return;
+    if (selected.match case final match?) {
+      _find.revealPreview(match);
+    } else {
+      await _controller.scrollToMessageId(
+        selected.messageId,
+        useRikkaTransition: true,
+      );
     }
   }
 
@@ -2237,61 +2386,36 @@ class _HomePageState extends State<HomePage>
 
   Widget _wrapWithDropTarget(Widget child) {
     if (!_controller.isDesktopPlatform) return child;
-    return DropTarget(
-      onDragEntered: (_) {
-        _controller.setDragHovering(true);
-      },
-      onDragExited: (_) {
-        _controller.setDragHovering(false);
-      },
-      onDragDone: (details) async {
-        _controller.setDragHovering(false);
-        try {
-          final files = details.files;
-          await _controller.onFilesDroppedDesktop(files);
-        } catch (_) {}
-      },
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          child,
-          if (_controller.isDragHovering)
-            IgnorePointer(
-              child: Container(
+    return DesktopFileDropTarget(
+      onFiles: _controller.onFilesDroppedDesktop,
+      overlay: Container(
+        color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.12),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
                 color: Theme.of(
                   context,
-                ).colorScheme.scrim.withValues(alpha: 0.12),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surface.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.4),
-                        width: 2,
-                      ),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.homePageDropToUpload,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: AppFontWeights.semibold,
-                      ),
-                    ),
-                  ),
-                ),
+                ).colorScheme.primary.withValues(alpha: 0.4),
+                width: 2,
               ),
             ),
-        ],
+            child: Text(
+              AppLocalizations.of(context)!.homePageDropToUpload,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: AppFontWeights.semibold,
+              ),
+            ),
+          ),
+        ),
       ),
+      child: child,
     );
   }
 
@@ -2354,7 +2478,8 @@ class _HomePageState extends State<HomePage>
     if (providerKey == null || modelId == null) return;
     final settings = context.read<SettingsProvider>();
     final config = settings.getProviderConfig(providerKey);
-    if (!ModelSpecResolver.instance.spec(config, modelId).supportsReasoning) {
+    if (!ModelSpecResolver.instance.spec(config, modelId).supportsReasoning &&
+        ResponseSpeedCapabilities.resolve(config, modelId).tiers.isEmpty) {
       return;
     }
     final assistant = context.read<AssistantProvider>().currentAssistant;

@@ -5,8 +5,10 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
   bitsdojo_window_windows
+  connectivity_plus
   desktop_drop
   dynamic_color
+  fc_native_video_thumbnail
   file_selector_windows
   flutter_inappwebview_windows
   flutter_secure_storage_windows
@@ -21,6 +23,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   super_native_extensions
   tray_manager
   url_launcher_windows
+  video_player_win
   webview_windows
   window_manager
 )

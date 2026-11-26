@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -25,14 +27,18 @@ abstract final class BackupStaging {
 
   // Linux and Windows return a shared system temp directory. A working ZIP
   // may still be plaintext, so keep desktop staging in the owning data root.
-  static Future<Directory> _parent() => Platform.isLinux || Platform.isWindows
+  static Future<Directory> _parent() =>
+      defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.windows
       ? AppDirectories.getAppDataDirectory()
       : getTemporaryDirectory();
 
+  /// Resolves the path without creating the staging directory.
+  static Future<Directory> resolveRoot({Directory? temporary}) async =>
+      Directory(p.join((temporary ?? await _parent()).path, directoryName));
+
   static Future<Directory> root({Directory? temporary}) async {
-    final dir = Directory(
-      p.join((temporary ?? await _parent()).path, directoryName),
-    );
+    final dir = await resolveRoot(temporary: temporary);
     if (await FileSystemEntity.type(dir.path, followLinks: false) ==
         FileSystemEntityType.link) {
       throw FileSystemException('Invalid backup staging directory', dir.path);
@@ -104,9 +110,9 @@ abstract final class BackupStaging {
     // for legacy files. Reclaim old names only in private app cache roots.
     final privateLegacyRoot =
         temporary != null ||
-        Platform.isAndroid ||
-        Platform.isIOS ||
-        Platform.isMacOS;
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
     if (privateLegacyRoot && _legacySwept.add(parent.path)) {
       try {
         await clean(parent, legacy: true);

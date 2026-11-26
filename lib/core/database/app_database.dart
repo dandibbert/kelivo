@@ -1,4 +1,5 @@
 import '../models/message_part.dart';
+import '../models/media_creation.dart';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -10,8 +11,10 @@ import '../../features/intelligent_ui/catalog/ui_budgets.dart';
 import '../../utils/app_directories.dart';
 import '../../utils/utf16_safe_cut.dart';
 import 'schema_versions.dart';
+import 'gen_ui_derived_schema.dart';
 
 part 'app_database.g.dart';
+part 'generation_tables.dart';
 
 typedef SqliteExecutionIsolateProbeResult = ({
   int samples,
@@ -354,6 +357,11 @@ class AssetReferenceDirtyRows extends Table {
 @TableIndex(
   name: 'idx_generation_runs_state_updated',
   columns: {#state, #updatedAt, #id},
+)
+// Cascading message deletes check references from runs in every state.
+@TableIndex(
+  name: 'idx_timeline_generation_target',
+  columns: {#targetRevisionId},
 )
 class GenerationRunRows extends Table {
   TextColumn get id => text()();
@@ -805,6 +813,9 @@ class GenUiSurfaceStateRows extends Table {
     TombstoneRows,
     ExtensionEntityRows,
     GenUiSurfaceStateRows,
+    GenerationTopicRows,
+    GenerationBatchRows,
+    GenerationItemRows,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -817,14 +828,15 @@ class AppDatabase extends _$AppDatabase {
   // (extras_json columns, message updated_at/sender_id, tombstone_rows,
   // extension_entity_rows) so later features can ship without further
   // migrations. Schema 5 adds isolated GenUI state and its derived search index;
-  // schema 4 was never published. Every version outside
+  // schema 4 was never published. Schema 6 adds media creation records.
+  // Schema 7 indexes generation runs by target revision. Every version outside
   // [publishedSchemaVersions] belongs to an unpublished or future format and
   // is rejected.
-  static const currentSchemaVersion = 5;
+  static const currentSchemaVersion = 7;
 
   /// Every schema that has ever shipped. A file at any of these can be
   /// upgraded by `SchemaMigrations`; anything else is rejected outright.
-  static const publishedSchemaVersions = <int>{1, 2, 3, 5};
+  static const publishedSchemaVersions = <int>{1, 2, 3, 5, 6, 7};
 
   /// Whether a live application connection may use a file as-is: either freshly
   /// created (0) or already at the current schema.
@@ -1064,11 +1076,34 @@ FROM probe;
       // v4 was never published: migrate directly between the frozen snapshots.
       from3To5: (m, schema) async {
         await m.createTable(schema.genUiSurfaceStateRows);
+        await customStatement(
+          'DELETE FROM chat_storage_meta_rows WHERE key = ?',
+          [GenUiDerivedSchema.searchBackfillKey],
+        );
         // The composite PK creates the ordinary owner index with the table.
         await m.create(schema.genUiSurfaceSearch);
         await m.create(schema.genUiStateSearchInsert);
         await m.create(schema.genUiStateSearchUpdate);
         await m.create(schema.genUiStateSearchDelete);
+      },
+      from5To6: (m, schema) async {
+        await m.createTable(schema.generationTopicRows);
+        await m.createTable(schema.generationBatchRows);
+        await m.createTable(schema.generationItemRows);
+        await m.create(schema.idxGenerationTopicsUpdated);
+        await m.create(schema.idxGenerationBatchesTopicCreated);
+        await m.create(schema.idxGenerationBatchesCreated);
+        await m.create(schema.idxGenerationBatchesStatus);
+        await m.create(schema.idxGenerationItemsBatchOrdinal);
+        await m.create(schema.idxGenerationItemsFavorite);
+        await m.create(schema.idxGenerationItemsModeCreated);
+      },
+      from6To7: (m, schema) async {
+        // An older install may have built this index lazily or kept a
+        // different same-name definition from a forward-compatible backup.
+        final index = schema.idxTimelineGenerationTarget;
+        await m.drop(index);
+        await m.create(index);
       },
     ),
     beforeOpen: (details) async {

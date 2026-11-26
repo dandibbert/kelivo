@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.8+102] - 2026-11-20
+
+### Changed
+- Sync upstream through `0a44bc36`: full-width desktop layout, model response speed overrides, desktop model reordering, automatic balance refresh, 4get search provider and custom search icons, `view_image` remote image URL support, minimap search previews and match counts, bulk reply selection and optional instruction injections in compression, official import toolbox guidance, and markdown/OAuth/backup/Windows/Android fixes.
+- Preserve the fork's deep links, Share extension diagnostics, localization workflow, and pinned dependencies.
+- Bump build number to 1.3.8+102 for test builds.
+
 ## [1.3.8] - 2026-11-11
 
 ### Changed

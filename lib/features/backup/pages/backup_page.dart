@@ -22,17 +22,16 @@ import '../../../core/providers/s3_backup_provider.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../../core/services/chat/chat_service.dart';
 import '../../../core/services/backup/backup_cancel_token.dart';
-import '../../../core/services/backup/backup_task_progress.dart';
-import '../../../core/services/backup/data_sync.dart';
 import '../backup_task_runner.dart';
 import 'local_snapshots_page.dart';
 import '../widgets/backup_progress_dialog.dart';
-import '../../../core/services/native_file_save.dart';
 import '../../../shared/widgets/ios_switch.dart';
 import '../../../shared/widgets/loading_dialog_card.dart';
 import '../../../core/services/backup/cherry_importer.dart';
 import '../../../core/services/backup/chatbox_importer.dart';
+import '../../../core/services/backup/import_toolbox.dart';
 import '../backup_restore_error_message.dart';
+import '../import_toolbox_link.dart';
 import '../forward_compat_consent_dialog.dart';
 import '../backup_restart_dialog.dart';
 import '../widgets/backup_reminder_helpers.dart';
@@ -155,7 +154,10 @@ class _BackupPageState extends State<BackupPage> {
     );
   }
 
-  Future<RestoreMode?> _chooseImportModeDialog(BuildContext context) {
+  Future<RestoreMode?> _chooseImportModeDialog(
+    BuildContext context, {
+    bool mergeOnly = false,
+  }) {
     final l10n = AppLocalizations.of(context)!;
     final cardColor = context.appColors.surfaceFill;
 
@@ -166,13 +168,16 @@ class _BackupPageState extends State<BackupPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _ActionCard(
-              color: cardColor,
-              icon: Lucide.RotateCw,
-              title: l10n.backupPageOverwriteMode,
-              subtitle: l10n.backupPageOverwriteModeDescription,
-              onTap: () => Navigator.of(ctx).pop(RestoreMode.overwrite),
-            ),
+            if (mergeOnly)
+              Text(l10n.backupPageToolboxImportMergeOnlyHint)
+            else
+              _ActionCard(
+                color: cardColor,
+                icon: Lucide.RotateCw,
+                title: l10n.backupPageOverwriteMode,
+                subtitle: l10n.backupPageOverwriteModeDescription,
+                onTap: () => Navigator.of(ctx).pop(RestoreMode.overwrite),
+              ),
             const SizedBox(height: 10),
             _ActionCard(
               color: cardColor,
@@ -230,8 +235,7 @@ class _BackupPageState extends State<BackupPage> {
     final vm = context.watch<BackupProvider>();
     final s3Vm = context.watch<S3BackupProvider>();
     final busy = context.watch<ExternalBackupAutoProvider>().busy;
-    final cfg = vm.config;
-    final s3Cfg = s3Vm.config;
+    final (webDav: cfg, s3: s3Cfg) = settings.backupConfigs;
 
     // iOS-style section header
     Widget header(String text, {bool first = false}) => Padding(
@@ -278,14 +282,7 @@ class _BackupPageState extends State<BackupPage> {
                 scope: cfg.scope,
                 onChanged: busy || vm.busy || s3Vm.busy
                     ? null
-                    : (scope) async {
-                        final newCfg = vm.config.copyWith(scope: scope);
-                        final newS3Cfg = s3Vm.config.copyWith(scope: scope);
-                        vm.updateConfig(newCfg);
-                        s3Vm.updateConfig(newS3Cfg);
-                        await settings.setWebDavConfig(newCfg);
-                        await settings.setS3Config(newS3Cfg);
-                      },
+                    : settings.setBackupScope,
               ),
               _iosDivider(context),
               BackupEncryptionTile(busy: busy || vm.busy || s3Vm.busy),
@@ -309,8 +306,7 @@ class _BackupPageState extends State<BackupPage> {
                 context,
                 icon: Lucide.Settings,
                 label: l10n.backupPageWebDavServerSettings,
-                onTap: () =>
-                    _showWebDavSettingsPage(context, settings, vm, cfg),
+                onTap: () => _showWebDavSettingsPage(context, settings),
               ),
               _iosDivider(context),
               _iosNavRow(
@@ -320,7 +316,7 @@ class _BackupPageState extends State<BackupPage> {
                 onTap: busy || vm.busy
                     ? null
                     : () async {
-                        await vm.test();
+                        await vm.test(cfg);
                         if (!context.mounted) return;
                         final rawMessage = vm.message;
                         final message = rawMessage ?? l10n.backupPageTestDone;
@@ -346,6 +342,7 @@ class _BackupPageState extends State<BackupPage> {
                           list = await _runWithImportingOverlay(
                             context,
                             (handle) => vm.listRemote(
+                              cfg,
                               onProgress: handle.report,
                               cancelToken: handle.cancelToken,
                             ),
@@ -434,7 +431,10 @@ class _BackupPageState extends State<BackupPage> {
                               }
 
                               try {
-                                final list = await vm.deleteAndReload(item);
+                                final list = await vm.deleteAndReload(
+                                  cfg,
+                                  item,
+                                );
 
                                 // Close loading dialog
                                 if (context.mounted) {
@@ -528,6 +528,7 @@ class _BackupPageState extends State<BackupPage> {
                                         }
                                         try {
                                           final list = await vm.deleteAndReload(
+                                            cfg,
                                             item,
                                           );
                                           if (context.mounted) {
@@ -581,6 +582,7 @@ class _BackupPageState extends State<BackupPage> {
                                         await _runWithImportingOverlay(
                                           context,
                                           (handle) => vm.restoreFromItem(
+                                            cfg,
                                             item,
                                             mode: mode,
                                             onProgress: handle.report,
@@ -656,6 +658,7 @@ class _BackupPageState extends State<BackupPage> {
                                 await _runWithImportingOverlay(
                                   context,
                                   (handle) => vm.restoreFromItem(
+                                    cfg,
                                     item,
                                     mode: mode,
                                     onProgress: handle.report,
@@ -719,8 +722,7 @@ class _BackupPageState extends State<BackupPage> {
                 context,
                 icon: Lucide.Settings,
                 label: l10n.backupPageS3ServerSettings,
-                onTap: () =>
-                    _showS3SettingsPage(context, settings, s3Vm, s3Cfg),
+                onTap: () => _showS3SettingsPage(context, settings),
               ),
               _iosDivider(context),
               _iosNavRow(
@@ -730,7 +732,7 @@ class _BackupPageState extends State<BackupPage> {
                 onTap: busy || s3Vm.busy
                     ? null
                     : () async {
-                        await s3Vm.test();
+                        await s3Vm.test(s3Cfg);
                         if (!context.mounted) return;
                         final rawMessage = s3Vm.message;
                         final message = rawMessage ?? l10n.backupPageTestDone;
@@ -756,6 +758,7 @@ class _BackupPageState extends State<BackupPage> {
                           list = await _runWithImportingOverlay(
                             context,
                             (handle) => s3Vm.listRemote(
+                              s3Cfg,
                               onProgress: handle.report,
                               cancelToken: handle.cancelToken,
                             ),
@@ -837,7 +840,10 @@ class _BackupPageState extends State<BackupPage> {
                               }
 
                               try {
-                                final list = await s3Vm.deleteAndReload(item);
+                                final list = await s3Vm.deleteAndReload(
+                                  s3Cfg,
+                                  item,
+                                );
                                 if (context.mounted) {
                                   Navigator.of(
                                     context,
@@ -922,7 +928,7 @@ class _BackupPageState extends State<BackupPage> {
                                         }
                                         try {
                                           final list = await s3Vm
-                                              .deleteAndReload(item);
+                                              .deleteAndReload(s3Cfg, item);
                                           if (context.mounted) {
                                             Navigator.of(
                                               context,
@@ -974,6 +980,7 @@ class _BackupPageState extends State<BackupPage> {
                                         await _runWithImportingOverlay(
                                           context,
                                           (handle) => s3Vm.restoreFromItem(
+                                            s3Cfg,
                                             item,
                                             mode: mode,
                                             onProgress: handle.report,
@@ -1048,6 +1055,7 @@ class _BackupPageState extends State<BackupPage> {
                                 await _runWithImportingOverlay(
                                   context,
                                   (handle) => s3Vm.restoreFromItem(
+                                    s3Cfg,
                                     item,
                                     mode: mode,
                                     onProgress: handle.report,
@@ -1120,7 +1128,7 @@ class _BackupPageState extends State<BackupPage> {
             icon: Lucide.Export,
             label: l10n.backupPageExportToFile,
             subtitle: l10n.backupPageExportToFileSubtitle,
-            onTap: busy ? null : () => _doExport(context, vm),
+            onTap: busy ? null : () => runLocalFileBackup(context),
           ),
           _iosDivider(context),
           _iosNavRow(
@@ -1142,6 +1150,14 @@ class _BackupPageState extends State<BackupPage> {
             icon: Lucide.Box,
             label: l10n.backupPageImportFromChatbox,
             onTap: busy ? null : () => _doImportChatbox(context),
+          ),
+          _iosDivider(context),
+          _iosNavRow(
+            context,
+            icon: Lucide.ExternalLink,
+            label: l10n.backupPageImportFromOtherApps,
+            subtitle: l10n.backupPageImportFromOtherAppsSubtitle,
+            onTap: () => openImportToolbox(context),
           ),
         ],
       ),
@@ -1186,14 +1202,7 @@ class _BackupPageState extends State<BackupPage> {
     final ok = await runBackupTask(
       context,
       title: l10n.backupPageImportFromCherryStudio,
-      errorMessage: (error) {
-        if (error is CherryUnsupportedBackupVersionException) {
-          return l10n.backupPageCherryStudioUnsupportedBackupVersion(
-            '${error.version}',
-          );
-        }
-        return error.toString();
-      },
+      errorMessage: (error) => error.toString(),
       task: (handle) async {
         imported = await CherryImporter.importFromCherryStudio(
           file: File(path),
@@ -1265,122 +1274,27 @@ class _BackupPageState extends State<BackupPage> {
     );
   }
 
-  Future<void> _doExport(BuildContext context, BackupProvider vm) async {
-    final l10n = AppLocalizations.of(context)!;
-    File? file;
-    final ok = await runBackupTask(
-      context,
-      title: l10n.backupPageExportToFile,
-      errorMessage: (error) => l10n.backupPageExportFailedMessage(
-        backupRestoreErrorMessage(l10n, error),
-      ),
-      task: (handle) async {
-        file = await vm.exportToFile(
-          password: await backupPasswordForExport(context),
-          onProgress: handle.report,
-          cancelToken: handle.cancelToken,
-        );
-      },
-    );
-    if (!ok || file == null) return;
-    final exported = file!;
-
-    try {
-      if (!context.mounted) return;
-      final isMobile = Platform.isAndroid || Platform.isIOS;
-      if (isMobile) {
-        try {
-          Future<bool> save() => NativeFileSave.saveFileFromPath(
-            sourcePath: exported.path,
-            fileName: exported.uri.pathSegments.last,
-            requireOutsideAppContainer: Platform.isIOS,
-            dialogTitle: l10n.backupPageChooseBackupFolder,
-          );
-          var saved = false;
-          if (Platform.isIOS) {
-            await runBackupTask(
-              context,
-              title: l10n.backupPageExportToFile,
-              task: (handle) async {
-                handle.report(
-                  const BackupProgress(
-                    phase: BackupPhase.finalizing,
-                    processed: 0,
-                    cancellable: false,
-                  ),
-                );
-                saved = await save();
-                if (!saved) throw const BackupCancelledException();
-              },
-            );
-          } else {
-            saved = await save();
-          }
-          if (saved && context.mounted) {
-            await context
-                .read<BackupReminderProvider>()
-                .recordBackupCompleted();
-          }
-        } catch (e) {
-          if (!context.mounted) return;
-          showAppSnackBar(
-            context,
-            message: backupRestoreErrorMessage(l10n, e),
-            type: NotificationType.error,
-          );
-        }
-      } else {
-        final savePath = await FilePicker.platform.saveFile(
-          dialogTitle: l10n.backupPageExportToFile,
-          fileName: exported.uri.pathSegments.last,
-          type: FileType.custom,
-          allowedExtensions: [
-            exported.path.endsWith('.kbackup') ? 'kbackup' : 'zip',
-          ],
-        );
-        if (savePath != null) {
-          try {
-            await File(savePath).parent.create(recursive: true);
-            await exported.copy(savePath);
-            if (context.mounted) {
-              await context
-                  .read<BackupReminderProvider>()
-                  .recordBackupCompleted();
-            }
-          } catch (e) {
-            // A full disk or unwritable target must not look like a
-            // successful export.
-            if (!context.mounted) return;
-            showAppSnackBar(
-              context,
-              message: e.toString(),
-              type: NotificationType.error,
-            );
-          }
-        }
-      }
-    } finally {
-      await DataSync.cleanupTemporaryBackupFile(file);
-    }
-  }
-
   Future<void> _doImportLocal(BuildContext context, BackupProvider vm) async {
+    final cfg = context.read<SettingsProvider>().webDavConfig;
     final l10n = AppLocalizations.of(context)!;
     final result = await FilePicker.platform.pickFiles(
       // Mobile MIME registries do not recognize .kbackup. Content inspection
       // below validates both ordinary ZIPs and encrypted backups.
       type: FileType.any,
     );
-    final path = result?.files.single.path;
+    final picked = result?.files.single;
+    final path = picked?.path;
     if (path == null) return;
+    final file = File(path);
+    final mergeOnly = await isToolboxChatImport(file, fileName: picked!.name);
     if (!context.mounted) return;
 
-    final mode = await _chooseImportModeDialog(context);
+    final mode = await _chooseImportModeDialog(context, mergeOnly: mergeOnly);
     if (mode == null) return;
     if (!context.mounted) return;
 
     // Settle the schema question before the progress dialog goes up.
-    final decision = await resolveForwardCompatibility(context, File(path));
+    final decision = await resolveForwardCompatibility(context, file);
     if (!context.mounted) return;
     if (decision == ForwardCompatDecision.cancelled) return;
     if (decision == ForwardCompatDecision.unreadable) {
@@ -1392,7 +1306,8 @@ class _BackupPageState extends State<BackupPage> {
       await _runWithImportingOverlay(
         context,
         (handle) => vm.restoreFromLocalFile(
-          File(path),
+          file,
+          cfg,
           mode: mode,
           onProgress: handle.report,
           cancelToken: handle.cancelToken,
@@ -1424,13 +1339,10 @@ class _BackupPageState extends State<BackupPage> {
   Future<void> _showWebDavSettingsPage(
     BuildContext context,
     SettingsProvider settings,
-    BackupProvider vm,
-    WebDavConfig cfg,
   ) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) =>
-            _WebDavSettingsPage(settings: settings, vm: vm, cfg: cfg),
+        builder: (_) => _WebDavSettingsPage(settings: settings),
       ),
     );
   }
@@ -1438,13 +1350,9 @@ class _BackupPageState extends State<BackupPage> {
   Future<void> _showS3SettingsPage(
     BuildContext context,
     SettingsProvider settings,
-    S3BackupProvider vm,
-    S3Config cfg,
   ) async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => _S3SettingsPage(settings: settings, vm: vm, cfg: cfg),
-      ),
+      MaterialPageRoute(builder: (_) => _S3SettingsPage(settings: settings)),
     );
   }
 }
@@ -2401,22 +2309,53 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
+mixin _ServerSettingsSave<T extends StatefulWidget> on State<T> {
+  bool _saving = false;
+
+  Widget buildForm(BuildContext context);
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: !_saving,
+    child: ExcludeFocus(
+      excluding: _saving,
+      child: AbsorbPointer(absorbing: _saving, child: buildForm(context)),
+    ),
+  );
+
+  Future<void> saveAndClose(Future<void> Function() write) async {
+    if (_saving) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _saving = true);
+    final route = ModalRoute.of(context);
+    try {
+      await write();
+      if (mounted && route?.isCurrent == true) Navigator.of(context).pop();
+    } on BackupSettingsSaveException {
+      if (mounted && route?.isCurrent == true) {
+        showAppSnackBar(
+          context,
+          message: AppLocalizations.of(context)!.backupPageSettingsSaveFailed,
+          type: NotificationType.error,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+}
+
 class _WebDavSettingsPage extends StatefulWidget {
-  const _WebDavSettingsPage({
-    required this.settings,
-    required this.vm,
-    required this.cfg,
-  });
+  const _WebDavSettingsPage({required this.settings});
 
   final SettingsProvider settings;
-  final BackupProvider vm;
-  final WebDavConfig cfg;
 
   @override
   State<_WebDavSettingsPage> createState() => _WebDavSettingsPageState();
 }
 
-class _WebDavSettingsPageState extends State<_WebDavSettingsPage> {
+class _WebDavSettingsPageState extends State<_WebDavSettingsPage>
+    with _ServerSettingsSave<_WebDavSettingsPage> {
   late final TextEditingController _urlCtrl;
   late final TextEditingController _userCtrl;
   late final TextEditingController _passCtrl;
@@ -2427,13 +2366,14 @@ class _WebDavSettingsPageState extends State<_WebDavSettingsPage> {
   @override
   void initState() {
     super.initState();
-    _urlCtrl = TextEditingController(text: widget.cfg.url);
-    _userCtrl = TextEditingController(text: widget.cfg.username);
-    _passCtrl = TextEditingController(text: widget.cfg.password);
+    final cfg = widget.settings.webDavConfig;
+    _urlCtrl = TextEditingController(text: cfg.url);
+    _userCtrl = TextEditingController(text: cfg.username);
+    _passCtrl = TextEditingController(text: cfg.password);
     _pathCtrl = TextEditingController(
-      text: widget.cfg.path.isEmpty ? 'kelivo_backups' : widget.cfg.path,
+      text: cfg.path.isEmpty ? 'kelivo_backups' : cfg.path,
     );
-    _userAgentCtrl = TextEditingController(text: widget.cfg.userAgent);
+    _userAgentCtrl = TextEditingController(text: cfg.userAgent);
   }
 
   @override
@@ -2447,7 +2387,7 @@ class _WebDavSettingsPageState extends State<_WebDavSettingsPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildForm(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
 
@@ -2549,7 +2489,7 @@ class _WebDavSettingsPageState extends State<_WebDavSettingsPage> {
   }
 
   Future<void> _save() async {
-    final newCfg = widget.cfg.copyWith(
+    final newCfg = WebDavConfig(
       url: _urlCtrl.text.trim(),
       username: _userCtrl.text.trim(),
       password: _passCtrl.text,
@@ -2558,30 +2498,25 @@ class _WebDavSettingsPageState extends State<_WebDavSettingsPage> {
           : _pathCtrl.text.trim(),
       userAgent: _userAgentCtrl.text.trim(),
     );
-    await widget.settings.setWebDavConfig(newCfg);
-    widget.vm.updateConfig(newCfg);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    await saveAndClose(
+      () => widget.settings.updateWebDavConfig(
+        (current) => newCfg.copyWith(scope: current.scope),
+      ),
+    );
   }
 }
 
 class _S3SettingsPage extends StatefulWidget {
-  const _S3SettingsPage({
-    required this.settings,
-    required this.vm,
-    required this.cfg,
-  });
+  const _S3SettingsPage({required this.settings});
 
   final SettingsProvider settings;
-  final S3BackupProvider vm;
-  final S3Config cfg;
 
   @override
   State<_S3SettingsPage> createState() => _S3SettingsPageState();
 }
 
-class _S3SettingsPageState extends State<_S3SettingsPage> {
+class _S3SettingsPageState extends State<_S3SettingsPage>
+    with _ServerSettingsSave<_S3SettingsPage> {
   late final TextEditingController _endpointCtrl;
   late final TextEditingController _regionCtrl;
   late final TextEditingController _bucketCtrl;
@@ -2598,17 +2533,18 @@ class _S3SettingsPageState extends State<_S3SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _endpointCtrl = TextEditingController(text: widget.cfg.endpoint);
-    _regionCtrl = TextEditingController(text: widget.cfg.region);
-    _bucketCtrl = TextEditingController(text: widget.cfg.bucket);
-    _accessKeyCtrl = TextEditingController(text: widget.cfg.accessKeyId);
-    _secretKeyCtrl = TextEditingController(text: widget.cfg.secretAccessKey);
-    _sessionTokenCtrl = TextEditingController(text: widget.cfg.sessionToken);
+    final cfg = widget.settings.s3Config;
+    _endpointCtrl = TextEditingController(text: cfg.endpoint);
+    _regionCtrl = TextEditingController(text: cfg.region);
+    _bucketCtrl = TextEditingController(text: cfg.bucket);
+    _accessKeyCtrl = TextEditingController(text: cfg.accessKeyId);
+    _secretKeyCtrl = TextEditingController(text: cfg.secretAccessKey);
+    _sessionTokenCtrl = TextEditingController(text: cfg.sessionToken);
     _prefixCtrl = TextEditingController(
-      text: widget.cfg.prefix.isEmpty ? 'kelivo_backups' : widget.cfg.prefix,
+      text: cfg.prefix.isEmpty ? 'kelivo_backups' : cfg.prefix,
     );
-    _userAgentCtrl = TextEditingController(text: widget.cfg.userAgent);
-    _pathStyle = widget.cfg.pathStyle;
+    _userAgentCtrl = TextEditingController(text: cfg.userAgent);
+    _pathStyle = cfg.pathStyle;
   }
 
   @override
@@ -2625,7 +2561,7 @@ class _S3SettingsPageState extends State<_S3SettingsPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildForm(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
 
@@ -2784,7 +2720,7 @@ class _S3SettingsPageState extends State<_S3SettingsPage> {
   }
 
   Future<void> _save() async {
-    final newCfg = widget.cfg.copyWith(
+    final newCfg = S3Config(
       endpoint: _endpointCtrl.text.trim(),
       region: _regionCtrl.text.trim().isEmpty
           ? 'us-east-1'
@@ -2799,11 +2735,11 @@ class _S3SettingsPageState extends State<_S3SettingsPage> {
       pathStyle: _pathStyle,
       userAgent: _userAgentCtrl.text.trim(),
     );
-    await widget.settings.setS3Config(newCfg);
-    widget.vm.updateConfig(newCfg);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    await saveAndClose(
+      () => widget.settings.updateS3Config(
+        (current) => newCfg.copyWith(scope: current.scope),
+      ),
+    );
   }
 }
 

@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:Kelivo/core/models/assistant.dart';
 import 'package:Kelivo/core/models/assistant_regex.dart';
@@ -7,8 +9,52 @@ import 'package:Kelivo/core/database/generation_run.dart';
 import 'package:Kelivo/features/intelligent_ui/catalog/ui_catalog.dart';
 import 'package:Kelivo/features/chat/models/conversation_find_candidate.dart';
 import 'package:Kelivo/features/chat/services/conversation_find_service.dart';
+import 'package:Kelivo/features/chat/services/conversation_find_worker.dart';
+
+int _busyPage((SendPort, SendPort) ports) {
+  Isolate.current.addOnExitListener(ports.$2);
+  ports.$1.send(true);
+  final watch = Stopwatch()..start();
+  while (watch.elapsed < const Duration(seconds: 10)) {
+    // Model a synchronous parser that cannot service cancellation messages.
+  }
+  return 1;
+}
+
+int _failPage(int _) => throw StateError('bad preview page');
 
 void main() {
+  test(
+    'closing a preview terminates the active CPU job and a fresh query can run',
+    () async {
+      final worker = ConversationFindWorker();
+      final started = ReceivePort(), exited = ReceivePort();
+      addTearDown(worker.close);
+      addTearDown(started.close);
+      addTearDown(exited.close);
+      final work = worker.run(_busyPage, (started.sendPort, exited.sendPort));
+      await started.first.timeout(const Duration(seconds: 5));
+      worker.close();
+      expect(await work.timeout(const Duration(seconds: 2)), isNull);
+      await exited.first.timeout(const Duration(seconds: 2));
+      final next = ConversationFindWorker();
+      addTearDown(next.close);
+      expect(
+        await Future.wait([
+          next.run((int n) => n + 1, 1),
+          next.run((int n) => n + 2, 1),
+        ]),
+        [2, 3],
+      );
+    },
+  );
+
+  test('an error in a preview worker completes the pending request', () async {
+    final worker = ConversationFindWorker();
+    addTearDown(worker.close);
+    await expectLater(worker.run(_failPage, 1), throwsA(isA<RemoteError>()));
+  });
+
   ChatMessage message(
     String body, {
     String role = 'user',
@@ -275,4 +321,88 @@ void main() {
     expect(hits, hasLength(18000));
     expect(hits.last.range.start, 17999);
   });
+
+  test(
+    'minimap previews count the whole message and highlight nearby hits',
+    () async {
+      const service = ConversationFindService();
+      final user = ConversationFindCandidate(
+        message('先说 **知豆**，再说知豆。${'前文' * 50}知豆。\n\n然后说知豆。'),
+      );
+      final assistant = ConversationFindCandidate(
+        ChatMessage(
+          id: 'reply',
+          role: 'assistant',
+          conversationId: 'c',
+          content: '${'开头' * 110}\n\n然后提到 **知豆** 的价格。',
+          translation: '译文也提到知豆。',
+        ),
+      );
+      final batches = await service
+          .searchPreviews(
+            Stream.fromIterable([
+              [user],
+              [assistant],
+            ]),
+            '知豆',
+          )
+          .toList();
+      expect(batches.map((batch) => batch.single.role), ['user', 'assistant']);
+      final userPreview = batches.first.single;
+      final assistantPreview = batches.last.single;
+      expect(userPreview.matchCount, 4);
+      expect(
+        userPreview.segments
+            .where((segment) => segment.highlighted)
+            .map((segment) => segment.text),
+        ['知豆', '知豆'],
+      );
+      expect(assistantPreview.matchCount, 2);
+      expect(assistantPreview.before, '然后提到 ');
+      expect(
+        assistantPreview.segments.map((segment) => segment.text).join(),
+        '知豆 的价格。',
+      );
+      final matches = await service.search(
+        Stream.value([user, assistant]),
+        '知豆',
+        defaultFindOptions,
+      );
+      expect(userPreview.hit, matches['m']!.first);
+      expect(userPreview.matchCount, matches['m']!.length);
+      expect(assistantPreview.hit, matches['reply']!.first);
+      expect(assistantPreview.matchCount, matches['reply']!.length);
+    },
+  );
+
+  test(
+    'cached rendered text follows edits and presentation settings',
+    () async {
+      const markdown = ConversationFindService();
+      const plain = ConversationFindService(userMarkdown: false);
+      final cache = ConversationFindCache();
+      Future<List<ConversationFindHit>> query(
+        ChatMessage row,
+        String word, [
+        ConversationFindService service = markdown,
+      ]) async {
+        final result = await service.search(
+          Stream.value([ConversationFindCandidate(row)]),
+          word,
+          defaultFindOptions,
+          cache: cache,
+        );
+        return result['m']!;
+      }
+
+      final first = message('**old** [label](https://hidden.invalid)');
+      expect(await query(first, 'missing'), isEmpty);
+      expect(await query(first, 'hidden.invalid'), isEmpty);
+      expect(await query(first, 'old'), hasLength(1));
+      expect(await query(first, 'hidden.invalid', plain), hasLength(1));
+      final edited = message('**new**');
+      expect(await query(edited, 'NEW', plain), hasLength(1));
+      expect(await query(edited, 'old', plain), isEmpty);
+    },
+  );
 }

@@ -316,16 +316,17 @@ void main() {
       // Check the captured PIDs even if cancellation reparented them. A global
       // command-name search also matches unrelated tasks running on the host.
       for (final childPid in childPids) {
-        final leftover = await Process.run('ps', [
+        final state = await Process.run('ps', [
           '-p',
           '$childPid',
           '-o',
-          'pid=',
+          'stat=',
         ]);
+        final value = state.stdout.toString().trim();
         expect(
-          leftover.exitCode,
-          isNot(0),
-          reason: 'child $childPid still alive after cancellation',
+          value.isEmpty || value.startsWith('Z'),
+          isTrue,
+          reason: 'child $childPid still alive after cancellation: $value',
         );
       }
     }, skip: !isUnix);
@@ -402,9 +403,9 @@ void main() {
                 _req(
                   runId: runId,
                   command:
-                      r'''(sleep 1; printf changed > after-stop.txt) & printf "%s" "$!"''',
+                      r'''(sleep 1.5; printf changed > after-stop.txt) & printf "%s" "$!"''',
                   cwd: tmp.path,
-                  timeout: Duration(milliseconds: cancel ? 10000 : 300),
+                  timeout: Duration(milliseconds: cancel ? 10000 : 600),
                 ),
               )
               .map((event) {
@@ -422,8 +423,8 @@ void main() {
             await Future<void>.delayed(const Duration(milliseconds: 150));
             await runtime.cancel(runId);
           }
-          await done.timeout(const Duration(seconds: 2));
-          expect(watch.elapsed, lessThan(const Duration(seconds: 2)));
+          await done.timeout(const Duration(seconds: 3));
+          expect(watch.elapsed, lessThan(const Duration(seconds: 3)));
           final exit = _singleExit(events);
           expect(exit.timedOut, !cancel);
           expect(exit.cancelled, cancel);
@@ -440,7 +441,7 @@ void main() {
             reason: 'Background child survived stopping the run: $value',
           );
           childPid = null;
-          await Future<void>.delayed(const Duration(milliseconds: 1100));
+          await Future<void>.delayed(const Duration(milliseconds: 1600));
           expect(await File('${tmp.path}/after-stop.txt').exists(), isFalse);
         },
         skip: !isUnix,

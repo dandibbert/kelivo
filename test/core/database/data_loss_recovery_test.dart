@@ -11,15 +11,39 @@ import 'package:Kelivo/core/database/empty_database_recovery_guard.dart';
 import 'package:Kelivo/core/services/backup/local_copy_catalog.dart';
 import 'package:Kelivo/core/services/backup/data_sync.dart';
 import 'package:Kelivo/core/services/backup/local_snapshot_schedule.dart';
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import '../../support/recovery_snapshot_fixture.dart';
+
+class _TestPathProvider extends PathProviderPlatform {
+  _TestPathProvider(this.root);
+
+  final String root;
+
+  @override
+  Future<String?> getTemporaryPath() async => '$root/tmp';
+
+  @override
+  Future<String?> getApplicationSupportPath() async => '$root/support';
+
+  @override
+  Future<String?> getApplicationDocumentsPath() async => '$root/docs';
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpRecoverySnapshotPaths();
   late Directory root;
+  late PathProviderPlatform previousPathProvider;
   setUp(() async {
     root = await Directory.systemTemp.createTemp('kelivo-loss-recovery-');
+    previousPathProvider = PathProviderPlatform.instance;
+    PathProviderPlatform.instance = _TestPathProvider(root.path);
   });
-  tearDown(() async => root.delete(recursive: true));
+  tearDown(() async {
+    PathProviderPlatform.instance = previousPathProvider;
+    await root.delete(recursive: true);
+  });
   for (final location in [
     '',
     'snapshots',
